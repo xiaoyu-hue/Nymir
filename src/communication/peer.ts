@@ -4,6 +4,16 @@ import type { Room, DataPayload } from '@trystero-p2p/core'
 
 const APP_ID = 'nymir_treehole_v1'
 
+// Public BitTorrent trackers (more reliable)
+const CUSTOM_TRACKERS = [
+  'wss://tracker.openwebtorrent.com',
+  'wss://tracker.btorrent.xyz',
+  'wss://tracker.files.fm:7073/announce',
+]
+
+// Public MQTT brokers
+const CUSTOM_MQTT_BROKER = 'wss://broker.emqx.io:8084/mqtt'
+
 export type PeerCallback = (peerId: string) => void
 export type MessageCallback<T> = (data: T, info: { peerId: string }) => void
 
@@ -56,12 +66,28 @@ export class PeerManager {
   }
 
   private joinWithStrategy(roomId: string, strategy: Strategy): Room {
-    const joinFn = strategy === 'torrent' ? joinTorrent : joinMqtt
-    const room = joinFn({ appId: APP_ID }, roomId)
+    let room: Room
+
+    if (strategy === 'torrent') {
+      room = joinTorrent(
+        {
+          appId: APP_ID,
+          trackerUrls: CUSTOM_TRACKERS,
+        },
+        roomId,
+      )
+    } else {
+      room = joinMqtt(
+        {
+          appId: APP_ID,
+          mqttBroker: CUSTOM_MQTT_BROKER,
+        },
+        roomId,
+      )
+    }
 
     room.onPeerJoin = (peerId: string) => {
       this.peers.add(peerId)
-      // Cancel fallback timer if we got a peer
       if (this.strategyFallbackTimer) {
         clearTimeout(this.strategyFallbackTimer)
         this.strategyFallbackTimer = null
