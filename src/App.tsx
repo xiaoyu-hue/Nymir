@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { roomManager } from './core/room'
-import { securityManager } from './security'
+import { securityManager, e2eeManager } from './security'
 import { useRoom } from './ui/hooks/useRoom'
 import { I18nProvider, useI18n } from './i18n'
 import Starfield from './ui/components/Starfield'
@@ -18,9 +18,11 @@ function AppContent() {
   const [securityReady, setSecurityReady] = useState(false)
 
   useEffect(() => {
-    securityManager.init().then(() => {
+    securityManager.init().then(async () => {
       setLocked(securityManager.isLocked)
       setSecurityReady(true)
+      // 初始化 E2EE
+      await e2eeManager.init()
     })
 
     const unsub = securityManager.onLockChange((isLocked) => {
