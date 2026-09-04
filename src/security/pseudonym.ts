@@ -66,7 +66,13 @@ export function getRoomDisplayName(roomId: string, peerId: string, isSelf: boole
   }
 
   // 从 localStorage 获取对端假名
-  const roomNames = JSON.parse(localStorage.getItem(ROOM_NAMES_KEY) || '{}')
+  let roomNames: Record<string, string> = {}
+  try {
+    roomNames = JSON.parse(localStorage.getItem(ROOM_NAMES_KEY) || '{}')
+  } catch {
+    // JSON 解析失败，使用空对象
+    roomNames = {}
+  }
   const key = `${roomId}:${peerId}`
 
   if (roomNames[key]) {
