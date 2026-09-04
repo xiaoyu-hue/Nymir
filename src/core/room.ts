@@ -130,7 +130,6 @@ export class RoomManager {
         return
       }
 
-      console.log(`[Nymir] Reconnect attempt ${attempts}/${maxAttempts}`)
       peerManager.join(this.roomId)
     }
 
