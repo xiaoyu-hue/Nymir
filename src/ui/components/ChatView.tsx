@@ -22,6 +22,7 @@ export default function ChatView() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const readMsgIdsRef = useRef<Set<string>>(new Set())
   const [keyboardOpen, setKeyboardOpen] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // 虚拟键盘检测
   useEffect(() => {
@@ -29,7 +30,6 @@ export default function ChatView() {
     if (!vv) return
 
     const handleResize = () => {
-      // 如果视口高度小于屏幕高度的 70%，认为键盘已弹出
       setKeyboardOpen(vv.height < window.innerHeight * 0.7)
     }
 
@@ -69,6 +69,13 @@ export default function ChatView() {
 
     await messageManager.send(input.trim(), config)
     setInput('')
+    // 重置输入框高度并保持光标
+    requestAnimationFrame(() => {
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto'
+      }
+      textareaRef.current?.focus()
+    })
   }, [input, burnMode, burnAfter])
 
   const handleKeyDown = useCallback(
@@ -80,6 +87,14 @@ export default function ChatView() {
     },
     [handleSend],
   )
+
+  // 输入框自动增高
+  const handleInput = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value)
+    const ta = e.target
+    ta.style.height = 'auto'
+    ta.style.height = Math.min(ta.scrollHeight, 120) + 'px'
+  }, [])
 
   const handleLeave = useCallback(() => {
     roomManager.leaveRoom()
@@ -112,6 +127,7 @@ export default function ChatView() {
 
   return (
     <div
+      className="page-enter chat-view"
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -147,7 +163,10 @@ export default function ChatView() {
               }}
             >
               {room?.id}
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+              <span
+                className={copied ? 'pop-in' : ''}
+                style={{ fontSize: '0.7rem', color: copied ? 'var(--success)' : 'var(--text-muted)' }}
+              >
                 {copied ? '✓' : '📋'}
               </span>
             </div>
@@ -166,6 +185,7 @@ export default function ChatView() {
                         ? 'var(--warning)'
                         : 'var(--danger)',
                   animation: status === 'reconnecting' ? 'pulse 1.5s infinite' : 'none',
+                  transition: 'background 0.3s ease',
                 }}
               />
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
@@ -195,6 +215,7 @@ export default function ChatView() {
       {/* Room code - prominent display */}
       {room?.id && (
         <div
+          className="room-code-bar"
           onClick={handleCopyCode}
           style={{
             display: 'flex',
@@ -226,7 +247,10 @@ export default function ChatView() {
           >
             {room.id}
           </span>
-          <span style={{ color: copied ? 'var(--success)' : 'var(--text-muted)', fontSize: '0.75rem' }}>
+          <span
+            className={copied ? 'pop-in' : ''}
+            style={{ color: copied ? 'var(--success)' : 'var(--text-muted)', fontSize: '0.75rem' }}
+          >
             {copied ? t.room.copied : t.room.copy}
           </span>
         </div>
@@ -234,6 +258,7 @@ export default function ChatView() {
 
       {/* Messages */}
       <div
+        className="chat-messages"
         style={{
           flex: 1,
           overflowY: 'auto',
@@ -241,6 +266,7 @@ export default function ChatView() {
           flexDirection: 'column',
           padding: '16px 0',
           gap: '4px',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         {messages.length === 0 && (
@@ -248,13 +274,22 @@ export default function ChatView() {
             style={{
               flex: 1,
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               color: 'var(--text-muted)',
-              fontSize: '0.9rem',
+              gap: '12px',
             }}
           >
-            {t.room.empty}
+            <div
+              style={{
+                fontSize: '2rem',
+                animation: 'breathe 3s ease-in-out infinite',
+              }}
+            >
+              💬
+            </div>
+            <span style={{ fontSize: '0.9rem' }}>{t.room.empty}</span>
           </div>
         )}
         {messages.map((msg) => (
@@ -265,7 +300,7 @@ export default function ChatView() {
 
       {/* Input */}
       <GlassCard variant="strong" className="chat-input-area">
-        <div style={{ padding: keyboardOpen ? '8px 12px' : '12px 16px' }}>
+        <div className="chat-input-inner" style={{ padding: keyboardOpen ? '8px 12px' : '12px 16px' }}>
           {/* Burn mode selector - hidden when keyboard is open */}
           {!keyboardOpen && (
           <div
@@ -295,7 +330,6 @@ export default function ChatView() {
                     burnMode === mode
                       ? '1px solid var(--accent)'
                       : '1px solid transparent',
-                  transition: 'all 0.2s',
                 }}
               >
                 {label}
@@ -327,8 +361,9 @@ export default function ChatView() {
           {/* Input row */}
           <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
             <textarea
+              ref={textareaRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={handleInput}
               onKeyDown={handleKeyDown}
               placeholder={t.message.placeholder}
               rows={1}
@@ -343,6 +378,7 @@ export default function ChatView() {
                 resize: 'none',
                 minHeight: '42px',
                 maxHeight: '120px',
+                lineHeight: '1.5',
               }}
             />
             <button
@@ -357,7 +393,6 @@ export default function ChatView() {
                 color: input.trim() ? 'white' : 'var(--text-muted)',
                 fontWeight: 600,
                 fontSize: '0.9rem',
-                transition: 'all 0.2s',
               }}
             >
               {t.message.send}
@@ -365,6 +400,42 @@ export default function ChatView() {
           </div>
         </div>
       </GlassCard>
+      {/* 离线/重连提示 */}
+      {(status === 'reconnecting' || status === 'disconnected') && (
+        <div
+          className="overlay-enter"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            zIndex: 40,
+            borderRadius: 'var(--radius-lg)',
+          }}
+        >
+          <div
+            style={{
+              width: '32px',
+              height: '32px',
+              border: '3px solid rgba(245,158,11,0.2)',
+              borderTopColor: 'var(--warning)',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+            }}
+          />
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+            {status === 'reconnecting' ? t.room.reconnecting : t.room.disconnected}
+          </span>
+        </div>
+      )}
     </div>
   )
 }
