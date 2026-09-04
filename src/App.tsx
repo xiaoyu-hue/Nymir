@@ -63,17 +63,31 @@ function AppContent() {
   if (!securityReady) {
     return (
       <div
+        role="status"
+        aria-live="polite"
         style={{
           width: '100dvw',
           height: '100dvh',
           background: 'linear-gradient(180deg, #0a0a1a 0%, #12122a 50%, #0a0a1a 100%)',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
+          gap: '16px',
           color: 'var(--text-muted)',
         }}
       >
-        Loading...
+        <div
+          style={{
+            width: '40px',
+            height: '40px',
+            border: '3px solid rgba(124,106,239,0.2)',
+            borderTopColor: 'var(--accent)',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+          }}
+        />
+        <span style={{ fontSize: '0.9rem' }}>Loading...</span>
       </div>
     )
   }
