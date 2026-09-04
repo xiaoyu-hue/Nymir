@@ -1,4 +1,4 @@
-import type { Message, BurnMode } from '../core/types'
+import type { Message } from '../core/types'
 
 export function shouldDestroy(msg: Message): boolean {
   if (msg.destroyed) return true
@@ -27,14 +27,4 @@ export function getRemainingMs(msg: Message): number {
     return Math.max(0, msg.burnAt - Date.now())
   }
   return Infinity
-}
-
-export function getBurnModeLabel(mode: BurnMode): string {
-  switch (mode) {
-    case 'read_once': return '阅后即焚'
-    case 'timed': return '定时销毁'
-    case 'scheduled': return '定时销毁'
-    case 'persist': return '永不销毁'
-    default: return ''
-  }
 }
