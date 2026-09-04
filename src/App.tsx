@@ -1,17 +1,43 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { roomManager } from './core/room'
+import { securityManager } from './security'
 import { useRoom } from './ui/hooks/useRoom'
 import { I18nProvider, useI18n } from './i18n'
 import Starfield from './ui/components/Starfield'
 import RoomPanel from './ui/components/RoomPanel'
 import ChatView from './ui/components/ChatView'
 import BackupPanel from './ui/components/BackupPanel'
+import LockScreen from './ui/components/LockScreen'
 import './ui/styles/globals.css'
 
 function AppContent() {
   const { inRoom } = useRoom()
   const { t, toggleLang } = useI18n()
   const [showBackup, setShowBackup] = useState(false)
+  const [locked, setLocked] = useState(true)
+  const [securityReady, setSecurityReady] = useState(false)
+
+  useEffect(() => {
+    securityManager.init().then(() => {
+      setLocked(securityManager.isLocked)
+      setSecurityReady(true)
+    })
+
+    const unsub = securityManager.onLockChange((isLocked) => {
+      setLocked(isLocked)
+    })
+
+    // 监听用户交互，重置锁屏计时器
+    const resetTimer = () => securityManager.resetLockTimer()
+    document.addEventListener('click', resetTimer)
+    document.addEventListener('keydown', resetTimer)
+
+    return () => {
+      unsub()
+      document.removeEventListener('click', resetTimer)
+      document.removeEventListener('keydown', resetTimer)
+    }
+  }, [])
 
   const handleCreateRoom = async (name: string) => {
     await roomManager.createRoom(name)
@@ -19,6 +45,39 @@ function AppContent() {
 
   const handleJoinRoom = async (roomId: string) => {
     await roomManager.joinRoom(roomId)
+  }
+
+  const handleUnlocked = () => {
+    setLocked(false)
+  }
+
+  // 安全模块未就绪，显示加载
+  if (!securityReady) {
+    return (
+      <div
+        style={{
+          width: '100vw',
+          height: '100vh',
+          background: 'linear-gradient(180deg, #0a0a1a 0%, #12122a 50%, #0a0a1a 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'var(--text-muted)',
+        }}
+      >
+        Loading...
+      </div>
+    )
+  }
+
+  // 锁定状态，显示密码界面
+  if (locked) {
+    return (
+      <>
+        <Starfield />
+        <LockScreen onUnlocked={handleUnlocked} />
+      </>
+    )
   }
 
   return (
@@ -57,6 +116,27 @@ function AppContent() {
         }}
       >
         {t.nav.switchLang}
+      </button>
+
+      {/* Lock button */}
+      <button
+        onClick={() => securityManager.lock()}
+        style={{
+          position: 'fixed',
+          top: '16px',
+          right: '80px',
+          padding: '6px 12px',
+          borderRadius: '8px',
+          background: 'rgba(255,255,255,0.08)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid var(--glass-border)',
+          color: 'var(--text-secondary)',
+          fontSize: '0.8rem',
+          zIndex: 50,
+        }}
+        title={t.security.locked}
+      >
+        🔒
       </button>
 
       {/* Backup button */}

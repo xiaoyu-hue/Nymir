@@ -1,0 +1,156 @@
+/**
+ * Nymir 安全管理器
+ * 
+ * 职责：
+ * - 管理用户密码（内存中，不持久化）
+ * - 控制锁定/解锁状态
+ * - 协调加密/解密操作
+ * - 自动锁屏计时
+ */
+
+import { encrypt, decrypt, verifyPassword } from './crypto'
+
+const LOCK_TIMEOUT_MS = 5 * 60 * 1000 // 5分钟自动锁定
+const STORAGE_KEY_PASSWORD_HASH = 'nymir_pwd_hash'
+const STORAGE_KEY_SALT = 'nymir_salt'
+
+export type LockListener = (locked: boolean) => void
+
+class SecurityManager {
+  private password: string | null = null
+  private locked = true
+  private lockTimer: ReturnType<typeof setTimeout> | null = null
+  private lockListeners: LockListener[] = []
+  private initialized = false
+
+  get isLocked(): boolean {
+    return this.locked
+  }
+
+  get isSetup(): boolean {
+    return localStorage.getItem(STORAGE_KEY_PASSWORD_HASH) !== null
+  }
+
+  /**
+   * 初始化安全模块
+   */
+  async init(): Promise<void> {
+    if (this.initialized) return
+    this.initialized = true
+
+    // 检查是否已有密码设置
+    const storedHash = localStorage.getItem(STORAGE_KEY_PASSWORD_HASH)
+    if (!storedHash) {
+      // 首次使用，标记为未设置
+      this.locked = true
+    }
+  }
+
+  /**
+   * 设置新密码
+   */
+  async setupPassword(password: string): Promise<void> {
+    // 生成测试数据来验证密码
+    const testEncrypted = await encrypt('nymir_verify', password)
+    localStorage.setItem(STORAGE_KEY_PASSWORD_HASH, testEncrypted)
+    
+    this.password = password
+    this.locked = false
+    this.startLockTimer()
+    this.notifyListeners(false)
+  }
+
+  /**
+   * 解锁（输入密码）
+   */
+  async unlock(password: string): Promise<boolean> {
+    const storedHash = localStorage.getItem(STORAGE_KEY_PASSWORD_HASH)
+    if (!storedHash) return false
+
+    const valid = await verifyPassword(storedHash, password)
+    if (!valid) return false
+
+    this.password = password
+    this.locked = false
+    this.startLockTimer()
+    this.notifyListeners(false)
+    return true
+  }
+
+  /**
+   * 锁定
+   */
+  lock(): void {
+    this.password = null
+    this.locked = true
+    this.clearLockTimer()
+    this.notifyListeners(true)
+  }
+
+  /**
+   * 加密数据
+   */
+  async encrypt(data: string): Promise<string> {
+    if (!this.password) throw new Error('Security: locked')
+    return encrypt(data, this.password)
+  }
+
+  /**
+   * 解密数据
+   */
+  async decrypt(data: string): Promise<string> {
+    if (!this.password) throw new Error('Security: locked')
+    return decrypt(data, this.password)
+  }
+
+  /**
+   * 重置所有数据（忘记密码）
+   */
+  reset(): void {
+    localStorage.removeItem(STORAGE_KEY_PASSWORD_HASH)
+    localStorage.removeItem(STORAGE_KEY_SALT)
+    this.password = null
+    this.locked = true
+    this.clearLockTimer()
+    this.notifyListeners(true)
+  }
+
+  /**
+   * 监听锁定状态变化
+   */
+  onLockChange(cb: LockListener): () => void {
+    this.lockListeners.push(cb)
+    return () => {
+      this.lockListeners = this.lockListeners.filter((fn) => fn !== cb)
+    }
+  }
+
+  private notifyListeners(locked: boolean): void {
+    for (const cb of this.lockListeners) cb(locked)
+  }
+
+  private startLockTimer(): void {
+    this.clearLockTimer()
+    this.lockTimer = setTimeout(() => {
+      this.lock()
+    }, LOCK_TIMEOUT_MS)
+  }
+
+  private clearLockTimer(): void {
+    if (this.lockTimer) {
+      clearTimeout(this.lockTimer)
+      this.lockTimer = null
+    }
+  }
+
+  /**
+   * 重置锁屏计时器（用户交互时调用）
+   */
+  resetLockTimer(): void {
+    if (!this.locked) {
+      this.startLockTimer()
+    }
+  }
+}
+
+export const securityManager = new SecurityManager()
