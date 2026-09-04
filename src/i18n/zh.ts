@@ -53,6 +53,25 @@ const zh = {
   nav: {
     switchLang: 'English',
   },
+  security: {
+    setupTitle: '设置安全密码',
+    setupDesc: '设置密码以加密本地数据',
+    setup: '设置密码',
+    unlock: '解锁',
+    unlockDesc: '输入密码以访问您的数据',
+    password: '密码',
+    passwordPlaceholder: '请输入密码（至少6位）',
+    confirmPassword: '确认密码',
+    confirmPasswordPlaceholder: '请再次输入密码',
+    processing: '处理中...',
+    wrongPassword: '密码错误',
+    passwordTooShort: '密码至少需要6位',
+    passwordMismatch: '两次输入的密码不一致',
+    forgotPassword: '忘记密码？',
+    resetWarning: '⚠️ 重置将删除所有本地数据，此操作不可恢复！',
+    locked: '已锁定',
+    warning: '忘记密码将永久丢失所有数据，请务必牢记！',
+  },
 }
 
 export type Translations = typeof zh

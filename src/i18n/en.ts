@@ -55,6 +55,25 @@ const en: Translations = {
   nav: {
     switchLang: '中文',
   },
+  security: {
+    setupTitle: 'Set Security Password',
+    setupDesc: 'Set a password to encrypt local data',
+    setup: 'Set Password',
+    unlock: 'Unlock',
+    unlockDesc: 'Enter password to access your data',
+    password: 'Password',
+    passwordPlaceholder: 'Enter password (min 6 chars)',
+    confirmPassword: 'Confirm Password',
+    confirmPasswordPlaceholder: 'Enter password again',
+    processing: 'Processing...',
+    wrongPassword: 'Wrong password',
+    passwordTooShort: 'Password must be at least 6 characters',
+    passwordMismatch: 'Passwords do not match',
+    forgotPassword: 'Forgot password?',
+    resetWarning: '⚠️ Reset will delete all local data. This cannot be undone!',
+    locked: 'Locked',
+    warning: 'Forgot password means permanent data loss. Remember it!',
+  },
 }
 
 export default en
