@@ -203,6 +203,10 @@ textarea {
 .page-enter { animation: pageFadeIn 0.3s ease-out; }
 
 /* ========== ChatView 结构 ========== */
+.chat-header {
+  flex-shrink: 0;
+}
+
 .chat-header-inner {
   display: flex;
   justify-content: space-between;
@@ -457,6 +461,7 @@ select {
 
 /* ========== 安全区 ========== */
 .chat-input-area {
+  flex-shrink: 0;
   padding-bottom: calc(var(--safe-bottom) + 4px) !important;
 }
 
@@ -467,7 +472,8 @@ select {
   }
 
   .chat-header-inner {
-    padding: 8px 10px;
+    padding: calc(var(--safe-top) + 8px) 10px 8px 10px;
+    padding-right: 80px;
   }
 
   .chat-header-name {
