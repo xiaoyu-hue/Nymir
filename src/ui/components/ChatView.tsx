@@ -241,7 +241,7 @@ export default function ChatView() {
           </div>
         )}
         {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} onDestroy={handleDestroy} />
+          <MessageBubble key={msg.id} message={msg} roomId={room?.id ?? ''} onDestroy={handleDestroy} />
         ))}
         <div ref={messagesEndRef} />
       </div>

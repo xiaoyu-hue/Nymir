@@ -4,17 +4,22 @@ import { peerManager } from '../../communication/peer'
 import { formatTime } from '../../utils/time'
 import { useI18n } from '../../i18n'
 import { messageManager } from '../../core/message'
+import { getRoomDisplayName } from '../../security/pseudonym'
 import BurnTimer from './BurnTimer'
 
 type Props = {
   message: Message
+  roomId: string
   onDestroy?: () => void
 }
 
-function MessageBubbleInner({ message, onDestroy }: Props) {
+function MessageBubbleInner({ message, roomId, onDestroy }: Props) {
   const { t } = useI18n()
   const isSelf = message.sender === peerManager.id
   const [showRecall, setShowRecall] = useState(false)
+
+  // 获取显示名称
+  const displayName = getRoomDisplayName(roomId, message.sender, isSelf)
 
   if (message.destroyed) {
     return (
@@ -51,6 +56,20 @@ function MessageBubbleInner({ message, onDestroy }: Props) {
         alignSelf: isSelf ? 'flex-end' : 'flex-start',
       }}
     >
+      {/* 发送者名称 */}
+      <div
+        style={{
+          fontSize: '0.7rem',
+          color: 'var(--text-muted)',
+          marginBottom: '2px',
+          paddingLeft: isSelf ? 0 : '4px',
+          paddingRight: isSelf ? '4px' : 0,
+          textAlign: isSelf ? 'right' : 'left',
+        }}
+      >
+        {isSelf ? '' : displayName}
+      </div>
+
       <div
         style={{
           padding: '10px 14px',
