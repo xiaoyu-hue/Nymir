@@ -1,3 +1,13 @@
+/**
+ * Nymir 端到端加密管理器
+ * 
+ * 职责：
+ * - 管理 E2EE 密钥对
+ * - 管理签名密钥对
+ * - 协调密钥交换
+ * - 提供加密/解密/签名/验证接口
+ */
+
 import {
   generateKeyPair,
   exportPublicKey,
@@ -9,13 +19,25 @@ import {
   type KeyPair,
 } from './e2ee'
 
+import {
+  generateSignKeyPair,
+  exportSignPublicKey,
+  importPeerSignPublicKey,
+  signMessage,
+  verifySignature,
+  type SignKeyPair,
+} from './sign'
+
 export type E2EEStatus = 'initializing' | 'ready' | 'error'
 
 class E2EEManager {
   private keyPair: KeyPair | null = null
+  private signKeyPair: SignKeyPair | null = null
   private peerPublicKeys = new Map<string, CryptoKey>()
+  private peerSignPublicKeys = new Map<string, CryptoKey>()
   private status: E2EEStatus = 'initializing'
-  private peerPublicKeyStrings = new Map<string, string>()
+  private _publicKeyString: string | null = null
+  private _signPublicKeyString: string | null = null
 
   get currentStatus(): E2EEStatus {
     return this.status
@@ -25,7 +47,9 @@ class E2EEManager {
     return this._publicKeyString
   }
 
-  private _publicKeyString: string | null = null
+  get signPublicKeyString(): string | null {
+    return this._signPublicKeyString
+  }
 
   /**
    * 初始化 E2EE
@@ -34,8 +58,12 @@ class E2EEManager {
     try {
       this.keyPair = await generateKeyPair()
       this._publicKeyString = await exportPublicKey(this.keyPair)
+
+      this.signKeyPair = await generateSignKeyPair()
+      this._signPublicKeyString = await exportSignPublicKey(this.signKeyPair)
+
       this.status = 'ready'
-      console.log('[E2EE] Initialized')
+      console.log('[E2EE] Initialized with encryption + signing')
     } catch (e) {
       console.error('[E2EE] Init failed:', e)
       this.status = 'error'
@@ -50,16 +78,32 @@ class E2EEManager {
   }
 
   /**
+   * 获取自己的签名公钥字符串（用于交换）
+   */
+  getOwnSignPublicKey(): string | null {
+    return this._signPublicKeyString
+  }
+
+  /**
    * 处理接收到的对端公钥
    */
-  async handlePeerPublicKey(peerId: string, publicKeyStr: string): Promise<void> {
+  async handlePeerPublicKey(
+    peerId: string,
+    publicKeyStr: string,
+    signPublicKeyStr?: string,
+  ): Promise<void> {
     try {
       const peerKey = await importPeerPublicKey(publicKeyStr)
       this.peerPublicKeys.set(peerId, peerKey)
-      this.peerPublicKeyStrings.set(peerId, publicKeyStr)
-      console.log(`[E2EE] Received public key from ${peerId}`)
+
+      if (signPublicKeyStr) {
+        const peerSignKey = await importPeerSignPublicKey(signPublicKeyStr)
+        this.peerSignPublicKeys.set(peerId, peerSignKey)
+      }
+
+      console.log(`[E2EE] Received keys from ${peerId}`)
     } catch (e) {
-      console.error(`[E2EE] Failed to import key from ${peerId}:`, e)
+      console.error(`[E2EE] Failed to import keys from ${peerId}:`, e)
     }
   }
 
@@ -105,11 +149,43 @@ class E2EEManager {
   }
 
   /**
+   * 签名消息
+   */
+  async sign(message: string): Promise<string | null> {
+    if (!this.signKeyPair) return null
+    try {
+      return await signMessage(message, this.signKeyPair.privateKey)
+    } catch (e) {
+      console.error('[E2EE] Sign failed:', e)
+      return null
+    }
+  }
+
+  /**
+   * 验证消息签名
+   */
+  async verify(
+    message: string,
+    signature: string,
+    peerId: string,
+  ): Promise<boolean> {
+    const peerSignKey = this.peerSignPublicKeys.get(peerId)
+    if (!peerSignKey) return false
+
+    try {
+      return await verifySignature(message, signature, peerSignKey)
+    } catch (e) {
+      console.error(`[E2EE] Verify failed from ${peerId}:`, e)
+      return false
+    }
+  }
+
+  /**
    * 清除某个 peer 的密钥
    */
   removePeerKey(peerId: string): void {
     this.peerPublicKeys.delete(peerId)
-    this.peerPublicKeyStrings.delete(peerId)
+    this.peerSignPublicKeys.delete(peerId)
     clearSharedKey(peerId)
   }
 
@@ -118,7 +194,7 @@ class E2EEManager {
    */
   clearAll(): void {
     this.peerPublicKeys.clear()
-    this.peerPublicKeyStrings.clear()
+    this.peerSignPublicKeys.clear()
     clearAllSharedKeys()
   }
 }

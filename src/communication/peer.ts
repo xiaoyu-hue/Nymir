@@ -19,6 +19,7 @@ export type Strategy = 'torrent' | 'mqtt'
 interface E2EEPayload {
   type: string
   publicKey: string
+  signPublicKey: string
   [key: string]: string
 }
 
@@ -98,9 +99,10 @@ export class PeerManager {
   private sendE2EEKey(targetPeerId: string): void {
     if (!this.e2eeChannel) return
     const publicKey = e2eeManager.getOwnPublicKey()
-    if (!publicKey) return
+    const signPublicKey = e2eeManager.getOwnSignPublicKey()
+    if (!publicKey || !signPublicKey) return
 
-    this.e2eeChannel.send({ type: 'e2ee_key', publicKey }, targetPeerId)
+    this.e2eeChannel.send({ type: 'e2ee_key', publicKey, signPublicKey }, targetPeerId)
   }
 
   /**
@@ -109,9 +111,10 @@ export class PeerManager {
   private broadcastE2EEKey(): void {
     if (!this.e2eeChannel) return
     const publicKey = e2eeManager.getOwnPublicKey()
-    if (!publicKey) return
+    const signPublicKey = e2eeManager.getOwnSignPublicKey()
+    if (!publicKey || !signPublicKey) return
 
-    this.e2eeChannel.send({ type: 'e2ee_key', publicKey })
+    this.e2eeChannel.send({ type: 'e2ee_key', publicKey, signPublicKey })
   }
 
   join(roomId: string): void {
@@ -124,7 +127,7 @@ export class PeerManager {
     this.e2eeChannel = this.makeChannel<E2EEPayload>('e2ee-exchange')
     this.e2eeChannel.onMessage(async (data, { peerId }) => {
       if (data.type === 'e2ee_key') {
-        await e2eeManager.handlePeerPublicKey(peerId, data.publicKey)
+        await e2eeManager.handlePeerPublicKey(peerId, data.publicKey, data.signPublicKey)
       }
     })
 
@@ -143,7 +146,7 @@ export class PeerManager {
         this.e2eeChannel = this.makeChannel<E2EEPayload>('e2ee-exchange')
         this.e2eeChannel.onMessage(async (data, { peerId }) => {
           if (data.type === 'e2ee_key') {
-            await e2eeManager.handlePeerPublicKey(peerId, data.publicKey)
+            await e2eeManager.handlePeerPublicKey(peerId, data.publicKey, data.signPublicKey)
           }
         })
         setTimeout(() => this.broadcastE2EEKey(), 100)
