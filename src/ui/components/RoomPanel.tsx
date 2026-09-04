@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useI18n } from '../../i18n'
 import GlassCard from './GlassCard'
 
 type Props = {
@@ -7,6 +8,7 @@ type Props = {
 }
 
 export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
+  const { t } = useI18n()
   const [tab, setTab] = useState<'create' | 'join'>('create')
   const [name, setName] = useState('')
   const [roomId, setRoomId] = useState('')
@@ -39,7 +41,7 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
           Nymir
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>
-          匿名树洞 · 阅读即焚
+          {t.app.subtitle}
         </p>
       </div>
 
@@ -62,7 +64,7 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
               transition: 'all 0.2s',
             }}
           >
-            创建房间
+            {t.room.create}
           </button>
           <button
             onClick={() => setTab('join')}
@@ -76,7 +78,7 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
               transition: 'all 0.2s',
             }}
           >
-            加入房间
+            {t.room.join}
           </button>
         </div>
 
@@ -85,7 +87,7 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <input
                 type="text"
-                placeholder="房间名称"
+                placeholder={t.room.createName}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 style={{
@@ -112,14 +114,14 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
                   transition: 'all 0.2s',
                 }}
               >
-                创建并进入
+                {t.room.createBtn}
               </button>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <input
                 type="text"
-                placeholder="输入房间代码 (如 A3B7K9)"
+                placeholder={t.room.joinPlaceholder}
                 value={roomId}
                 onChange={(e) => setRoomId(e.target.value.toUpperCase())}
                 style={{
@@ -148,7 +150,7 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
                   transition: 'all 0.2s',
                 }}
               >
-                加入房间
+                {t.room.joinBtn}
               </button>
             </div>
           )}

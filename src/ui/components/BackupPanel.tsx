@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { exportBackup, downloadBackup, importBackup } from '../../persistence/backup'
+import { useI18n } from '../../i18n'
 import GlassCard from './GlassCard'
 
 type Props = {
@@ -7,17 +8,18 @@ type Props = {
 }
 
 export default function BackupPanel({ onClose }: Props) {
+  const { t } = useI18n()
   const [status, setStatus] = useState('')
   const [importing, setImporting] = useState(false)
 
   const handleExport = async () => {
     try {
-      setStatus('导出中...')
+      setStatus(t.backup.exporting)
       const json = await exportBackup()
       downloadBackup(json)
-      setStatus('导出成功！文件已下载')
+      setStatus(t.backup.exportSuccess)
     } catch (e) {
-      setStatus(`导出失败: ${e}`)
+      setStatus(`${t.backup.exportFailed}: ${e}`)
     }
   }
 
@@ -30,13 +32,13 @@ export default function BackupPanel({ onClose }: Props) {
       if (!file) return
 
       setImporting(true)
-      setStatus('导入中...')
+      setStatus(t.backup.importing)
       try {
         const text = await file.text()
         const result = await importBackup(text)
-        setStatus(`导入成功！${result.rooms} 个房间, ${result.messages} 条消息`)
+        setStatus(`${t.backup.importSuccess} ${result.rooms} ${t.backup.rooms}, ${result.messages} ${t.backup.messages}`)
       } catch (err) {
-        setStatus(`导入失败: ${err}`)
+        setStatus(`${t.backup.importFailed}: ${err}`)
       } finally {
         setImporting(false)
       }
@@ -75,7 +77,7 @@ export default function BackupPanel({ onClose }: Props) {
               textAlign: 'center',
             }}
           >
-            数据备份
+            {t.backup.title}
           </h2>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -90,7 +92,7 @@ export default function BackupPanel({ onClose }: Props) {
                 fontSize: '0.95rem',
               }}
             >
-              导出备份
+              {t.backup.export}
             </button>
 
             <button
@@ -106,14 +108,14 @@ export default function BackupPanel({ onClose }: Props) {
                 opacity: importing ? 0.5 : 1,
               }}
             >
-              {importing ? '导入中...' : '导入备份'}
+              {importing ? t.backup.importing : t.backup.import}
             </button>
 
             {status && (
               <p
                 style={{
                   textAlign: 'center',
-                  color: status.includes('失败') ? 'var(--danger)' : 'var(--success)',
+                  color: status.includes('failed') || status.includes('失败') ? 'var(--danger)' : 'var(--success)',
                   fontSize: '0.85rem',
                   marginTop: '4px',
                 }}
@@ -135,7 +137,7 @@ export default function BackupPanel({ onClose }: Props) {
               fontSize: '0.85rem',
             }}
           >
-            关闭
+            {t.backup.close}
           </button>
         </div>
       </GlassCard>

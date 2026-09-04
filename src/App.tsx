@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { roomManager } from './core/room'
 import { useRoom } from './ui/hooks/useRoom'
+import { I18nProvider, useI18n } from './i18n'
 import Starfield from './ui/components/Starfield'
 import RoomPanel from './ui/components/RoomPanel'
 import ChatView from './ui/components/ChatView'
 import BackupPanel from './ui/components/BackupPanel'
 import './ui/styles/globals.css'
 
-export default function App() {
+function AppContent() {
   const { inRoom } = useRoom()
+  const { t, toggleLang } = useI18n()
   const [showBackup, setShowBackup] = useState(false)
 
   const handleCreateRoom = async (name: string) => {
@@ -37,6 +39,26 @@ export default function App() {
         <ChatView />
       )}
 
+      {/* Language toggle */}
+      <button
+        onClick={toggleLang}
+        style={{
+          position: 'fixed',
+          top: '16px',
+          right: '16px',
+          padding: '6px 12px',
+          borderRadius: '8px',
+          background: 'rgba(255,255,255,0.08)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid var(--glass-border)',
+          color: 'var(--text-secondary)',
+          fontSize: '0.8rem',
+          zIndex: 50,
+        }}
+      >
+        {t.nav.switchLang}
+      </button>
+
       {/* Backup button */}
       <button
         onClick={() => setShowBackup(true)}
@@ -58,7 +80,7 @@ export default function App() {
           zIndex: 50,
           transition: 'all 0.2s',
         }}
-        title="数据备份"
+        title={t.backup.title}
       >
         <svg
           width="20"
@@ -78,5 +100,13 @@ export default function App() {
 
       {showBackup && <BackupPanel onClose={() => setShowBackup(false)} />}
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <I18nProvider>
+      <AppContent />
+    </I18nProvider>
   )
 }
