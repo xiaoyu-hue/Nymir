@@ -52,6 +52,11 @@ const en: Translations = {
     close: 'Close',
     rooms: 'rooms',
     messages: 'messages',
+    backupPassword: 'Backup Password',
+    passwordPlaceholder: 'Set backup password (min 6 chars)',
+    passwordRequired: 'Please enter backup password',
+    verifying: 'Verifying...',
+    wrongPassword: 'Wrong password',
   },
   nav: {
     switchLang: '中文',
