@@ -30,13 +30,31 @@ function generateStars(count: number): Star[] {
   }))
 }
 
+/**
+ * 检测是否为低端设备（简化判断）
+ */
+function isLowEndDevice(): boolean {
+  // 检查硬件并发数（CPU 核心数）
+  const cores = navigator.hardwareConcurrency ?? 2
+  if (cores <= 2) return true
+
+  // 检查设备内存（仅 Chrome 支持）
+  const memory = (navigator as { deviceMemory?: number }).deviceMemory
+  if (memory !== undefined && memory < 4) return true
+
+  return false
+}
+
 export default function Starfield() {
-  const stars = useMemo(() => generateStars(120), [])
+  const starCount = isLowEndDevice() ? 40 : 80
+  const stars = useMemo(() => generateStars(starCount), [starCount])
   const [shootingStars, setShootingStars] = useState<ShootingStar[]>([])
 
   useEffect(() => {
     let nextId = 0
+    let cancelled = false
     const spawn = () => {
+      if (cancelled) return
       const id = nextId++
       const startX = Math.random() * 80 + 10
       const startY = Math.random() * 40
@@ -56,7 +74,9 @@ export default function Starfield() {
       ])
 
       setTimeout(() => {
-        setShootingStars((prev) => prev.filter((s) => s.id !== id))
+        if (!cancelled) {
+          setShootingStars((prev) => prev.filter((s) => s.id !== id))
+        }
       }, 1500)
     }
 
@@ -64,6 +84,7 @@ export default function Starfield() {
     const initialTimeout = setTimeout(spawn, 2000)
 
     return () => {
+      cancelled = true
       clearInterval(interval)
       clearTimeout(initialTimeout)
     }
