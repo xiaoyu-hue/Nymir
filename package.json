@@ -2,7 +2,7 @@
   "name": "nymir",
   "private": true,
   "version": "1.0.0",
-  "description": "匿名树洞阅读即焚应用 — 无后端、无服务器、无数据记录",
+  "description": "基于 P2P 的匿名即时通讯工具 — 端对端加密、阅读即焚、数据仅存于本地浏览器。Peer 发现依赖公共信令服务器（MQTT/WebTorrent），并非完全去中心化。",
   "license": "AGPL-3.0",
   "type": "module",
   "scripts": {
