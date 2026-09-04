@@ -1,6 +1,7 @@
 import { peerManager, type Channel } from '../communication/peer'
 import { saveMessage, markMessageRead, destroyMessage } from '../persistence/db'
 import { e2eeManager } from '../security/e2eeManager'
+import { isNoiseMessage, startNoiseGeneration, stopNoiseGeneration } from '../security/noise'
 import { generateMessageId } from '../utils/id'
 import type { Message, BurnConfig } from './types'
 import { shouldDestroy, getRemainingMs } from './burn'
@@ -27,6 +28,11 @@ export class MessageManager {
     this.recallChannel = peerManager.makeChannel<AnyPayload>('recall')
 
     this.channel.onMessage(async (data, { peerId }) => {
+      // 过滤噪声消息
+      if (isNoiseMessage(data)) {
+        return
+      }
+
       // 解密消息内容
       let content = ''
       if (data.encrypted) {
@@ -81,6 +87,11 @@ export class MessageManager {
           await this.burn(msg)
         }
       }
+    })
+
+    // 启动噪声生成
+    startNoiseGeneration((noise) => {
+      this.channel?.send(noise)
     })
   }
 
@@ -250,6 +261,7 @@ export class MessageManager {
   }
 
   destroy(): void {
+    stopNoiseGeneration()
     for (const timer of this.burnTimers.values()) {
       clearTimeout(timer)
     }
