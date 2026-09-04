@@ -2,7 +2,7 @@ import { peerManager } from '../communication/peer'
 import { saveRoom, getAllRooms, deleteRoom as dbDeleteRoom, getMessagesByRoom } from '../persistence/db'
 import { generateRoomId } from '../utils/id'
 import { messageManager } from './message'
-import type { RoomInfo } from './types'
+import type { Message, RoomInfo } from './types'
 import type { StoredMessage } from '../persistence/types'
 
 export type RoomListener = (event: string, data?: unknown) => void
@@ -180,7 +180,5 @@ export class RoomManager {
     await dbDeleteRoom(id)
   }
 }
-
-type Message = import('./types').Message
 
 export const roomManager = new RoomManager()
