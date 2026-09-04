@@ -1,14 +1,11 @@
 const zh = {
   app: {
-    name: 'Nymir · 树洞',
     subtitle: '匿名树洞 · 阅读即焚 · 数据主权归你',
-    tagline: '你的数据，你的主权。让秘密只属于你。',
   },
   room: {
     create: '创建房间',
     join: '加入房间',
     createName: '房间名称',
-    joinCode: '输入房间代码',
     joinPlaceholder: '如 A3B7K9',
     createBtn: '创建并进入',
     joinBtn: '加入房间',

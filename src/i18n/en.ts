@@ -2,15 +2,12 @@ import type { Translations } from './zh'
 
 const en: Translations = {
   app: {
-    name: 'Nymir',
     subtitle: 'Anonymous Tree-Hole · Read-and-Burn · Your Data, Your Sovereignty',
-    tagline: 'Your data, your sovereignty. Let secrets stay with you.',
   },
   room: {
     create: 'Create Room',
     join: 'Join Room',
     createName: 'Room Name',
-    joinCode: 'Enter Room Code',
     joinPlaceholder: 'e.g. A3B7K9',
     createBtn: 'Create & Enter',
     joinBtn: 'Join Room',
