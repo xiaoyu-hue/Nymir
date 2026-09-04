@@ -238,11 +238,16 @@ export class MessageManager {
         for (const peerId of peerList) {
           try {
             const encrypted = await e2eeManager.encrypt(content, peerId, msg.id)
+            if (!encrypted) {
+              // 加密失败（无 peer 公钥）— 不发送明文，跳过该 peer
+              console.warn('[Message] Encrypt returned null, skipping peer:', peerId)
+              continue
+            }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const payload: AnyPayload = {
               ...msg,
-              content: encrypted ?? content,
-              encrypted: !!encrypted,
+              content: encrypted,
+              encrypted: true,
             }
             if (signature) {
               payload.signature = signature
@@ -258,12 +263,7 @@ export class MessageManager {
           }
         }
       } else {
-        // 没有 peer，仅本地保存
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const payload: AnyPayload = { ...msg }
-        if (signature) {
-          payload.signature = signature
-        }
+        // 没有 peer，仅本地保存（不发送）
       }
 
       // 本地存储
