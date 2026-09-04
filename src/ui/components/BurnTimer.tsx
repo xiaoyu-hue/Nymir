@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { Message } from '../../core/types'
 import { getRemainingMs } from '../../core/burn'
 import { formatCountdown } from '../../utils/time'
+import { useI18n } from '../../i18n'
 
 type Props = {
   message: Message
@@ -9,7 +10,10 @@ type Props = {
 }
 
 export default function BurnTimer({ message, onExpired }: Props) {
+  const { t } = useI18n()
   const [remaining, setRemaining] = useState(() => getRemainingMs(message))
+  const onExpiredRef = useRef(onExpired)
+  onExpiredRef.current = onExpired
 
   useEffect(() => {
     if (remaining <= 0 || remaining === Infinity) return
@@ -19,15 +23,15 @@ export default function BurnTimer({ message, onExpired }: Props) {
       setRemaining(r)
       if (r <= 0) {
         clearInterval(interval)
-        onExpired?.()
+        onExpiredRef.current?.()
       }
-    }, 200)
+    }, 1000) // 降至 1000ms，减少渲染次数
 
     return () => clearInterval(interval)
-  }, [message, onExpired, remaining])
+  }, [message]) // 仅依赖 message，不依赖 remaining
 
   if (remaining === Infinity) return null
-  if (remaining <= 0) return <span className="burn-indicator expired">已焚</span>
+  if (remaining <= 0) return <span className="burn-indicator expired">{t.message.burned}</span>
 
   const isUrgent = remaining < 10000
 
