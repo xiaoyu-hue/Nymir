@@ -37,6 +37,14 @@ export class MessageManager {
         content = data.content
       }
 
+      // 验证签名（如果有）
+      if (data.signature) {
+        const valid = await e2eeManager.verify(content, data.signature, peerId)
+        if (!valid) {
+          console.warn(`[Message] Invalid signature from ${peerId}, message may be tampered`)
+        }
+      }
+
       const msg: Message = {
         id: data.id,
         content,
@@ -106,6 +114,12 @@ export class MessageManager {
           content: encrypted,
           encrypted: true,
         }
+      }
+
+      // 签名消息
+      const signature = await e2eeManager.sign(content)
+      if (signature) {
+        sendPayload.signature = signature
       }
     }
 
