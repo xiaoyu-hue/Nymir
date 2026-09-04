@@ -1,4 +1,5 @@
-import { joinRoom, selfId } from '@trystero-p2p/torrent'
+import { joinRoom as joinTorrent } from '@trystero-p2p/torrent'
+import { joinRoom as joinMqtt } from '@trystero-p2p/mqtt'
 import type { Room, DataPayload } from '@trystero-p2p/core'
 
 const APP_ID = 'nymir_treehole_v1'
@@ -11,14 +12,21 @@ export interface Channel<T> {
   onMessage: (cb: MessageCallback<T>) => void
 }
 
+export type Strategy = 'torrent' | 'mqtt'
+
 export class PeerManager {
   private room: Room | null = null
   private peers = new Set<string>()
   private peerJoinCallbacks: PeerCallback[] = []
   private peerLeaveCallbacks: PeerCallback[] = []
+  private currentStrategy: Strategy = 'torrent'
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  private strategyFallbackTimer: ReturnType<typeof setTimeout> | null = null
 
   get id(): string {
-    return selfId
+    return this.currentStrategy === 'torrent'
+      ? (joinTorrent as unknown as { selfId: string }).selfId
+      : (joinMqtt as unknown as { selfId: string }).selfId
   }
 
   get peerList(): string[] {
@@ -27,6 +35,10 @@ export class PeerManager {
 
   get connected(): boolean {
     return this.room !== null
+  }
+
+  get strategy(): Strategy {
+    return this.currentStrategy
   }
 
   onPeerJoin(cb: PeerCallback): () => void {
@@ -43,20 +55,53 @@ export class PeerManager {
     }
   }
 
-  join(roomId: string): void {
-    if (this.room) this.leave()
+  private joinWithStrategy(roomId: string, strategy: Strategy): Room {
+    const joinFn = strategy === 'torrent' ? joinTorrent : joinMqtt
+    const room = joinFn({ appId: APP_ID }, roomId)
 
-    this.room = joinRoom({ appId: APP_ID }, roomId)
-
-    this.room.onPeerJoin = (peerId: string) => {
+    room.onPeerJoin = (peerId: string) => {
       this.peers.add(peerId)
+      // Cancel fallback timer if we got a peer
+      if (this.strategyFallbackTimer) {
+        clearTimeout(this.strategyFallbackTimer)
+        this.strategyFallbackTimer = null
+      }
       for (const cb of this.peerJoinCallbacks) cb(peerId)
     }
 
-    this.room.onPeerLeave = (peerId: string) => {
+    room.onPeerLeave = (peerId: string) => {
       this.peers.delete(peerId)
       for (const cb of this.peerLeaveCallbacks) cb(peerId)
     }
+
+    return room
+  }
+
+  join(roomId: string): void {
+    if (this.room) this.leave()
+
+    this.currentStrategy = 'torrent'
+    this.room = this.joinWithStrategy(roomId, 'torrent')
+
+    // Fallback to MQTT if no peers found within 5 seconds
+    this.strategyFallbackTimer = setTimeout(() => {
+      if (this.peers.size === 0 && this.room) {
+        console.log('[Nymir] BitTorrent signaling slow, falling back to MQTT')
+        this.room.leave()
+        this.currentStrategy = 'mqtt'
+        this.room = this.joinWithStrategy(roomId, 'mqtt')
+      }
+    }, 5000)
+  }
+
+  reconnect(roomId: string): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+    }
+    this.reconnectTimer = setTimeout(() => {
+      console.log('[Nymir] Reconnecting...')
+      this.join(roomId)
+    }, 2000)
   }
 
   makeChannel<T extends DataPayload>(namespace: string): Channel<T> {
@@ -75,6 +120,14 @@ export class PeerManager {
   }
 
   leave(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
+    }
+    if (this.strategyFallbackTimer) {
+      clearTimeout(this.strategyFallbackTimer)
+      this.strategyFallbackTimer = null
+    }
     if (this.room) {
       this.room.leave()
       this.room = null
