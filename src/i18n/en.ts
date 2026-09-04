@@ -8,7 +8,7 @@ const en: Translations = {
     create: 'Create Room',
     join: 'Join Room',
     createName: 'Room Name',
-    joinPlaceholder: 'e.g. A3B7K9',
+    joinPlaceholder: 'Enter 9-digit room code',
     createBtn: 'Create & Enter',
     joinBtn: 'Join Room',
     online: 'online',
@@ -20,6 +20,7 @@ const en: Translations = {
     copy: 'Copy',
     copied: 'Copied',
     copyHint: 'Click to copy room code',
+    invalidCode: 'Invalid room code',
   },
   message: {
     placeholder: 'Say something...',

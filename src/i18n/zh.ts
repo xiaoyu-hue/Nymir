@@ -6,7 +6,7 @@ const zh = {
     create: '创建房间',
     join: '加入房间',
     createName: '房间名称',
-    joinPlaceholder: '如 A3B7K9',
+    joinPlaceholder: '输入9位房间代码',
     createBtn: '创建并进入',
     joinBtn: '加入房间',
     online: '在线',
@@ -18,6 +18,7 @@ const zh = {
     copy: '复制',
     copied: '已复制',
     copyHint: '点击复制房间代码',
+    invalidCode: '无效的房间代码',
   },
   message: {
     placeholder: '说点什么...',

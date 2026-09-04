@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useI18n } from '../../i18n'
+import { isValidRoomId } from '../../utils/id'
 import GlassCard from './GlassCard'
 
 type Props = {
@@ -12,6 +13,20 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
   const [tab, setTab] = useState<'create' | 'join'>('create')
   const [name, setName] = useState('')
   const [roomId, setRoomId] = useState('')
+  const [error, setError] = useState('')
+
+  const handleJoin = () => {
+    const code = roomId.trim().toUpperCase()
+    if (!code) return
+
+    if (!isValidRoomId(code)) {
+      setError(t.room.invalidCode)
+      return
+    }
+
+    setError('')
+    onJoinRoom(code)
+  }
 
   return (
     <div
@@ -123,11 +138,15 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
                 type="text"
                 placeholder={t.room.joinPlaceholder}
                 value={roomId}
-                onChange={(e) => setRoomId(e.target.value.toUpperCase())}
+                onChange={(e) => {
+                  setRoomId(e.target.value.toUpperCase())
+                  setError('')
+                }}
+                maxLength={9}
                 style={{
                   padding: '12px 16px',
                   borderRadius: '12px',
-                  border: '1px solid var(--glass-border)',
+                  border: error ? '1px solid var(--danger)' : '1px solid var(--glass-border)',
                   background: 'rgba(255,255,255,0.05)',
                   color: 'var(--text-primary)',
                   fontSize: '0.95rem',
@@ -135,8 +154,13 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
                   textAlign: 'center',
                 }}
               />
+              {error && (
+                <p style={{ color: 'var(--danger)', fontSize: '0.8rem', textAlign: 'center' }}>
+                  {error}
+                </p>
+              )}
               <button
-                onClick={() => roomId.trim() && onJoinRoom(roomId.trim())}
+                onClick={handleJoin}
                 disabled={!roomId.trim()}
                 style={{
                   padding: '12px',
