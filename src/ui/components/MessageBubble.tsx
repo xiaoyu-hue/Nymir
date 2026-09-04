@@ -2,7 +2,6 @@ import { memo, useState } from 'react'
 import type { Message } from '../../core/types'
 import { peerManager } from '../../communication/peer'
 import { formatTime } from '../../utils/time'
-import { getBurnModeLabel } from '../../core/burn'
 import { useI18n } from '../../i18n'
 import { messageManager } from '../../core/message'
 import BurnTimer from './BurnTimer'
@@ -79,7 +78,7 @@ function MessageBubbleInner({ message, onDestroy }: Props) {
           <span>{formatTime(message.timestamp)}</span>
           {message.burnMode !== 'persist' && (
             <span style={{ color: 'var(--warning)', opacity: 0.7 }}>
-              {getBurnModeLabel(message.burnMode)}
+              {message.burnMode === 'read_once' ? t.burn.readOnce : t.burn.timed}
             </span>
           )}
           {isSelf && readCount > 0 && (
