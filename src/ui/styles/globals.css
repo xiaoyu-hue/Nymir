@@ -207,7 +207,7 @@ textarea {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 14px;
+  padding: calc(var(--safe-top) + 10px) 14px 10px 14px;
   padding-right: 90px;
   gap: 8px;
 }
@@ -457,7 +457,7 @@ select {
 
 /* ========== 安全区 ========== */
 .chat-input-area {
-  padding-bottom: var(--safe-bottom) !important;
+  padding-bottom: calc(var(--safe-bottom) + 4px) !important;
 }
 
 /* ========== 响应式 — 移动端小屏 (< 480px) ========== */
