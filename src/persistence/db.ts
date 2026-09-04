@@ -35,11 +35,6 @@ export async function saveRoom(room: StoredRoom): Promise<void> {
   await db.put('rooms', room)
 }
 
-export async function getRoom(id: string): Promise<StoredRoom | undefined> {
-  const db = await getDB()
-  return db.get('rooms', id)
-}
-
 export async function getAllRooms(): Promise<StoredRoom[]> {
   const db = await getDB()
   return db.getAll('rooms')
@@ -55,19 +50,9 @@ export async function saveMessage(msg: StoredMessage): Promise<void> {
   await db.put('messages', msg)
 }
 
-export async function getMessage(id: string): Promise<StoredMessage | undefined> {
-  const db = await getDB()
-  return db.get('messages', id)
-}
-
 export async function getMessagesByRoom(roomId: string): Promise<StoredMessage[]> {
   const db = await getDB()
   return db.getAllFromIndex('messages', 'roomId', roomId)
-}
-
-export async function deleteMessage(id: string): Promise<void> {
-  const db = await getDB()
-  await db.delete('messages', id)
 }
 
 export async function destroyMessage(id: string): Promise<void> {
@@ -86,16 +71,4 @@ export async function markMessageRead(id: string, peerId: string): Promise<void>
     msg.readBy.push(peerId)
     await db.put('messages', msg)
   }
-}
-
-export async function clearRoomMessages(roomId: string): Promise<void> {
-  const db = await getDB()
-  const tx = db.transaction('messages', 'readwrite')
-  const index = tx.store.index('roomId')
-  let cursor = await index.openCursor(roomId)
-  while (cursor) {
-    await cursor.delete()
-    cursor = await cursor.continue()
-  }
-  await tx.done
 }
