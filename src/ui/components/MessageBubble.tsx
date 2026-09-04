@@ -3,6 +3,7 @@ import type { Message } from '../../core/types'
 import { peerManager } from '../../communication/peer'
 import { formatTime } from '../../utils/time'
 import { getBurnModeLabel } from '../../core/burn'
+import { useI18n } from '../../i18n'
 import BurnTimer from './BurnTimer'
 
 type Props = {
@@ -11,12 +12,13 @@ type Props = {
 }
 
 function MessageBubbleInner({ message, onDestroy }: Props) {
+  const { t } = useI18n()
   const isSelf = message.sender === peerManager.id
 
   if (message.destroyed) {
     return (
       <div className={`message-bubble destroyed ${isSelf ? 'self' : 'other'}`}>
-        <div className="message-ghost">已焚毁</div>
+        <div className="message-ghost">{t.message.destroyed}</div>
       </div>
     )
   }

@@ -4,11 +4,13 @@ import { BurnMode } from '../../core/types'
 import { messageManager } from '../../core/message'
 import { roomManager } from '../../core/room'
 import { useRoom } from '../hooks/useRoom'
+import { useI18n } from '../../i18n'
 import GlassCard from './GlassCard'
 import MessageBubble from './MessageBubble'
 
 export default function ChatView() {
   const { status } = useRoom()
+  const { t } = useI18n()
   const [messages, setMessages] = useState<Message[]>(() =>
     messageManager.getMessages(),
   )
@@ -82,7 +84,7 @@ export default function ChatView() {
           }}
         >
           <div>
-            <div style={{ fontWeight: 600, fontSize: '1rem' }}>{room?.name ?? '房间'}</div>
+            <div style={{ fontWeight: 600, fontSize: '1rem' }}>{room?.name ?? t.room.join}</div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', letterSpacing: '1px' }}>
               {room?.id}
             </div>
@@ -105,10 +107,10 @@ export default function ChatView() {
               />
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                 {status === 'connected'
-                  ? `${roomManager.room?.peers.length ?? 0} 在线`
+                  ? `${roomManager.room?.peers.length ?? 0} ${t.room.online}`
                   : status === 'reconnecting'
-                    ? '重连中...'
-                    : '已断开'}
+                    ? t.room.reconnecting
+                    : t.room.disconnected}
               </span>
             </div>
             <button
@@ -121,7 +123,7 @@ export default function ChatView() {
                 fontSize: '0.8rem',
               }}
             >
-              退出
+              {t.room.leave}
             </button>
           </div>
         </div>
@@ -149,7 +151,7 @@ export default function ChatView() {
               fontSize: '0.9rem',
             }}
           >
-            还没有消息，说点什么吧
+            {t.room.empty}
           </div>
         )}
         {messages.map((msg) => (
@@ -171,9 +173,9 @@ export default function ChatView() {
             }}
           >
             {[
-              { mode: BurnMode.PERSIST, label: '永久' },
-              { mode: BurnMode.READ_ONCE, label: '阅后即焚' },
-              { mode: BurnMode.TIMED, label: '定时' },
+              { mode: BurnMode.PERSIST, label: t.burn.persist },
+              { mode: BurnMode.READ_ONCE, label: t.burn.readOnce },
+              { mode: BurnMode.TIMED, label: t.burn.timed },
             ].map(({ mode, label }) => (
               <button
                 key={mode}
@@ -208,11 +210,11 @@ export default function ChatView() {
                   fontSize: '0.7rem',
                 }}
               >
-                <option value={10}>10秒</option>
-                <option value={30}>30秒</option>
-                <option value={60}>1分钟</option>
-                <option value={300}>5分钟</option>
-                <option value={600}>10分钟</option>
+                <option value={10}>{t.burn.timer10s}</option>
+                <option value={30}>{t.burn.timer30s}</option>
+                <option value={60}>{t.burn.timer1m}</option>
+                <option value={300}>{t.burn.timer5m}</option>
+                <option value={600}>{t.burn.timer10m}</option>
               </select>
             )}
           </div>
@@ -223,7 +225,7 @@ export default function ChatView() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="说点什么..."
+              placeholder={t.message.placeholder}
               rows={1}
               style={{
                 flex: 1,
@@ -253,7 +255,7 @@ export default function ChatView() {
                 transition: 'all 0.2s',
               }}
             >
-              发送
+              {t.message.send}
             </button>
           </div>
         </div>
