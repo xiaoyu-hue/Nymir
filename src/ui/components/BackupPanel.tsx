@@ -54,7 +54,6 @@ export default function BackupPanel({ onClose }: Props) {
       try {
         const text = await file.text()
 
-        // 验证密码
         setStatus(t.backup.verifying)
         const valid = await verifyBackupPassword(text, password)
         if (!valid) {
@@ -63,7 +62,6 @@ export default function BackupPanel({ onClose }: Props) {
           return
         }
 
-        // 导入
         setStatus(t.backup.importing)
         const result = await importBackup(text, password)
         setStatus(`${t.backup.importSuccess} ${result.rooms} ${t.backup.rooms}, ${result.messages} ${t.backup.messages}`)
@@ -79,6 +77,7 @@ export default function BackupPanel({ onClose }: Props) {
 
   return (
     <div
+      className="overlay-enter"
       style={{
         position: 'fixed',
         top: 0,
@@ -96,10 +95,10 @@ export default function BackupPanel({ onClose }: Props) {
     >
       <GlassCard
         variant="strong"
-        className="backup-panel"
+        className="backup-panel modal-enter"
         onClick={(e) => e?.stopPropagation()}
       >
-        <div style={{ padding: '24px', minWidth: '320px' }}>
+        <div style={{ padding: '24px', minWidth: 'min(320px, 90vw)' }}>
           <h2
             style={{
               fontSize: '1.2rem',
@@ -150,6 +149,7 @@ export default function BackupPanel({ onClose }: Props) {
           {/* 密码输入 */}
           <div style={{ marginBottom: '16px' }}>
             <label
+              htmlFor="backup-password"
               style={{
                 display: 'block',
                 fontSize: '0.8rem',
@@ -160,6 +160,7 @@ export default function BackupPanel({ onClose }: Props) {
               {t.backup.backupPassword}
             </label>
             <input
+              id="backup-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -218,6 +219,7 @@ export default function BackupPanel({ onClose }: Props) {
 
             {status && (
               <p
+                className="pop-in"
                 style={{
                   textAlign: 'center',
                   color: status.includes('failed') || status.includes('失败') || status.includes('Wrong')

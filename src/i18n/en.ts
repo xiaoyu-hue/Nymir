@@ -2,15 +2,22 @@ import type { Translations } from './zh'
 
 const en: Translations = {
   app: {
+    title: 'Nymir Tree-Hole',
     subtitle: 'Anonymous Tree-Hole · Read-and-Burn · Your Data, Your Sovereignty',
   },
   room: {
     create: 'Create Room',
     join: 'Join Room',
+    createTitle: 'Create',
+    joinTitle: 'Join',
     createName: 'Room Name',
     joinPlaceholder: 'Enter 9-digit room code',
     createBtn: 'Create & Enter',
     joinBtn: 'Join Room',
+    nameLabel: 'Give your room a name',
+    namePlaceholder: 'e.g. Midnight Confessions',
+    codeLabel: 'Enter room code',
+    codePlaceholder: 'XXXX-XXXX',
     online: 'online',
     leave: 'Leave',
     reconnecting: 'Reconnecting...',

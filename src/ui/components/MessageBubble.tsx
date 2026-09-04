@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import { memo, useState, useEffect } from 'react'
 import type { Message } from '../../core/types'
 import { peerManager } from '../../communication/peer'
 import { formatTime } from '../../utils/time'
@@ -17,13 +17,26 @@ function MessageBubbleInner({ message, roomId, onDestroy }: Props) {
   const { t } = useI18n()
   const isSelf = message.sender === peerManager.id
   const [showRecall, setShowRecall] = useState(false)
+  const [exiting, setExiting] = useState(false)
+  const [visible, setVisible] = useState(!message.destroyed)
 
   // 获取显示名称
   const displayName = getRoomDisplayName(roomId, message.sender, isSelf)
 
+  // 销毁淡出动画
+  useEffect(() => {
+    if (message.destroyed && visible) {
+      setExiting(true)
+      const timer = setTimeout(() => setVisible(false), 300)
+      return () => clearTimeout(timer)
+    }
+  }, [message.destroyed, visible])
+
+  if (!visible) return null
+
   if (message.destroyed) {
     return (
-      <div className={`message-bubble destroyed ${isSelf ? 'self' : 'other'}`}>
+      <div className={`message-bubble destroyed ${isSelf ? 'self' : 'other'} ${exiting ? 'msg-exit' : ''}`}>
         <div className="message-ghost">{t.message.destroyed}</div>
       </div>
     )
@@ -39,7 +52,7 @@ function MessageBubbleInner({ message, roomId, onDestroy }: Props) {
 
   return (
     <div
-      className={`message-bubble ${isSelf ? 'self' : 'other'}`}
+      className={`message-bubble ${isSelf ? 'self' : 'other'} msg-enter`}
       onClick={() => {
         if (message.burnMode === 'read_once' && !isSelf) {
           onDestroy?.()
@@ -52,7 +65,7 @@ function MessageBubbleInner({ message, roomId, onDestroy }: Props) {
         flexDirection: 'column',
         alignItems: isSelf ? 'flex-end' : 'flex-start',
         margin: '8px 16px',
-        maxWidth: '75%',
+        maxWidth: 'min(75%, 500px)',
         alignSelf: isSelf ? 'flex-end' : 'flex-start',
       }}
     >
@@ -101,7 +114,7 @@ function MessageBubbleInner({ message, roomId, onDestroy }: Props) {
             </span>
           )}
           {isSelf && readCount > 0 && (
-            <span style={{ color: 'var(--accent)', opacity: 0.8 }}>
+            <span className="pop-in" style={{ color: 'var(--accent)', opacity: 0.8 }}>
               ✓✓ {readCount}
             </span>
           )}

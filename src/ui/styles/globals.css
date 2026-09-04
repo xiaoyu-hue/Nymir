@@ -16,6 +16,31 @@
   --star-color: rgba(255, 255, 255, 0.7);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
+
+  /* 统一圆角系统 */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 50%;
+
+  /* 统一间距系统 */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* 统一字号系统 */
+  --text-xs: 0.7rem;
+  --text-sm: 0.8rem;
+  --text-base: 0.9rem;
+  --text-md: 0.95rem;
+  --text-lg: 1.1rem;
+  --text-xl: 1.3rem;
 }
 
 * {
@@ -39,6 +64,7 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ========== 按钮基础 + 按压反馈 ========== */
 button {
   cursor: pointer;
   border: none;
@@ -47,6 +73,12 @@ button {
   -webkit-tap-highlight-color: transparent;
   min-height: 44px;
   min-width: 44px;
+  transition: transform 0.12s ease, opacity 0.12s ease, background 0.2s ease, color 0.2s ease;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.96);
+  opacity: 0.85;
 }
 
 button:focus-visible {
@@ -54,11 +86,17 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* ========== 输入框 ========== */
 input, textarea {
   font-family: inherit;
   outline: none;
   -webkit-appearance: none;
   border-radius: 0;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 input:focus-visible, textarea:focus-visible {
@@ -72,6 +110,7 @@ textarea {
   font-size: 16px !important;
 }
 
+/* ========== 动画关键帧 ========== */
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
@@ -81,10 +120,138 @@ textarea {
   to { transform: rotate(360deg); }
 }
 
+/* 消息入场 - 从下方滑入 + 淡入 */
+@keyframes msgSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 消息销毁 - 淡出 + 上移 */
+@keyframes msgFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(-8px);
+  }
+}
+
+/* 弹窗入场 - 缩放 + 淡入 */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 弹窗背景淡入 */
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 错误抖动 */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+/* 复制成功弹出 */
+@keyframes popIn {
+  0% { transform: scale(0.5); opacity: 0; }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* 页面切换淡入 */
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 空状态呼吸 */
+@keyframes breathe {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+/* ========== 动画类 ========== */
+.msg-enter {
+  animation: msgSlideIn 0.3s ease-out;
+}
+
+.msg-exit {
+  animation: msgFadeOut 0.3s ease-out forwards;
+}
+
+.modal-enter {
+  animation: modalFadeIn 0.25s ease-out;
+}
+
+.overlay-enter {
+  animation: overlayFadeIn 0.2s ease-out;
+}
+
+.shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+.pop-in {
+  animation: popIn 0.25s ease-out;
+}
+
+.page-enter {
+  animation: pageFadeIn 0.3s ease-out;
+}
+
+/* ========== 自定义滚动条 ========== */
+.chat-messages::-webkit-scrollbar {
+  width: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ========== 输入框暗色 select 适配 ========== */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 28px !important;
+}
+
+/* ========== 安全区 ========== */
 .chat-input-area {
   padding-bottom: var(--safe-bottom) !important;
 }
 
+/* ========== 响应式 ========== */
 .room-panel-card {
   width: 100%;
   max-width: 400px;
@@ -126,5 +293,47 @@ textarea {
   .room-panel-card {
     max-width: 460px;
     margin: 0 auto;
+  }
+
+  .chat-view {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .chat-messages {
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .chat-input-inner {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .room-code-bar {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  /* 桌面端消息气泡限制宽度 */
+  .message-bubble {
+    max-width: min(75%, 500px) !important;
+  }
+}
+
+/* 超宽屏 (1440px+) */
+@media (min-width: 1440px) {
+  .chat-view {
+    max-width: 960px;
+  }
+
+  .chat-messages {
+    max-width: 860px;
+  }
+
+  .chat-input-inner {
+    max-width: 860px;
   }
 }

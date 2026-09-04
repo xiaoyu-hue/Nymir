@@ -23,19 +23,17 @@ function AppContent() {
       .then(async () => {
         setLocked(securityManager.isLocked)
         setSecurityReady(true)
-        // 初始化 E2EE
         await e2eeManager.init()
       })
       .catch((err) => {
         console.error('[App] Security init failed:', err)
-        setSecurityReady(true) // 仍然显示界面，但标记为未锁定
+        setSecurityReady(true)
       })
 
     const unsub = securityManager.onLockChange((isLocked) => {
       setLocked(isLocked)
     })
 
-    // 监听用户交互，重置锁屏计时器
     const resetTimer = () => securityManager.resetLockTimer()
     document.addEventListener('click', resetTimer)
     document.addEventListener('keydown', resetTimer)
@@ -59,12 +57,13 @@ function AppContent() {
     setLocked(false)
   }
 
-  // 安全模块未就绪，显示加载
+  // 安全模块未就绪
   if (!securityReady) {
     return (
       <div
         role="status"
         aria-live="polite"
+        className="overlay-enter"
         style={{
           width: '100dvw',
           height: '100dvh',
@@ -92,7 +91,6 @@ function AppContent() {
     )
   }
 
-  // 锁定状态，显示密码界面
   if (locked) {
     return (
       <>
@@ -172,7 +170,7 @@ function AppContent() {
         onClick={() => setShowBackup(true)}
         style={{
           position: 'fixed',
-          bottom: '20px',
+          bottom: 'calc(20px + var(--safe-bottom))',
           right: '20px',
           width: '44px',
           height: '44px',
@@ -186,7 +184,6 @@ function AppContent() {
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 50,
-          transition: 'all 0.2s',
         }}
         title={t.backup.title}
       >
