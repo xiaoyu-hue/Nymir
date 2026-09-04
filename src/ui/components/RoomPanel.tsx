@@ -41,6 +41,7 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
         justifyContent: 'center',
         height: '100%',
         padding: '20px',
+        paddingBottom: '80px',
       }}
     >
       <GlassCard variant="strong" className="room-panel-card" onClick={(e) => e?.stopPropagation()}>
