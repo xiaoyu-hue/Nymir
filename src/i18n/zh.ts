@@ -50,6 +50,11 @@ const zh = {
     close: '关闭',
     rooms: '个房间',
     messages: '条消息',
+    backupPassword: '备份密码',
+    passwordPlaceholder: '设置备份密码（至少6位）',
+    passwordRequired: '请输入备份密码',
+    verifying: '验证中...',
+    wrongPassword: '密码错误',
   },
   nav: {
     switchLang: 'English',
