@@ -19,6 +19,10 @@ const en: Translations = {
     reconnecting: 'Reconnecting...',
     disconnected: 'Disconnected',
     empty: 'No messages yet, say something',
+    roomCode: 'Room Code',
+    copy: 'Copy',
+    copied: 'Copied',
+    copyHint: 'Click to copy room code',
   },
   message: {
     placeholder: 'Say something...',

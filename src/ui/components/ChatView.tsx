@@ -18,6 +18,7 @@ export default function ChatView() {
   const [input, setInput] = useState('')
   const [burnMode, setBurnMode] = useState<BurnMode>(BurnMode.PERSIST)
   const [burnAfter, setBurnAfter] = useState(60)
+  const [copied, setCopied] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -67,6 +68,25 @@ export default function ChatView() {
     roomManager.leaveRoom()
   }, [])
 
+  const handleCopyCode = useCallback(async () => {
+    const roomId = roomManager.room?.id
+    if (!roomId) return
+    try {
+      await navigator.clipboard.writeText(roomId)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      const input = document.createElement('input')
+      input.value = roomId
+      document.body.appendChild(input)
+      input.select()
+      document.execCommand('copy')
+      document.body.removeChild(input)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }, [])
+
   const handleDestroy = useCallback(() => {
     setMessages(messageManager.getMessages())
   }, [])
@@ -95,8 +115,24 @@ export default function ChatView() {
         >
           <div>
             <div style={{ fontWeight: 600, fontSize: '1rem' }}>{room?.name ?? t.room.join}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', letterSpacing: '1px' }}>
+            <div
+              onClick={handleCopyCode}
+              style={{
+                fontSize: '0.85rem',
+                color: 'var(--accent)',
+                letterSpacing: '2px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                marginTop: '2px',
+              }}
+            >
               {room?.id}
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                {copied ? '✓' : '📋'}
+              </span>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -138,6 +174,46 @@ export default function ChatView() {
           </div>
         </div>
       </GlassCard>
+
+      {/* Room code - prominent display */}
+      {room?.id && (
+        <div
+          onClick={handleCopyCode}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            margin: '0 16px',
+            borderRadius: '10px',
+            background: 'rgba(124,106,239,0.12)',
+            border: '1px solid rgba(124,106,239,0.25)',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            userSelect: 'none',
+          }}
+          title={t.room.copyHint}
+        >
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+            {t.room.roomCode}
+          </span>
+          <span
+            style={{
+              color: 'var(--accent)',
+              fontSize: '1.1rem',
+              fontWeight: 700,
+              letterSpacing: '3px',
+              fontFamily: 'monospace',
+            }}
+          >
+            {room.id}
+          </span>
+          <span style={{ color: copied ? 'var(--success)' : 'var(--text-muted)', fontSize: '0.75rem' }}>
+            {copied ? t.room.copied : t.room.copy}
+          </span>
+        </div>
+      )}
 
       {/* Messages */}
       <div

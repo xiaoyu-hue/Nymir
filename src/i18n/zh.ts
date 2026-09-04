@@ -17,6 +17,10 @@ const zh = {
     reconnecting: '重连中...',
     disconnected: '已断开',
     empty: '还没有消息，说点什么吧',
+    roomCode: '房间代码',
+    copy: '复制',
+    copied: '已复制',
+    copyHint: '点击复制房间代码',
   },
   message: {
     placeholder: '说点什么...',
