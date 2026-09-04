@@ -7,7 +7,7 @@ export const BurnMode = {
 
 export type BurnMode = (typeof BurnMode)[keyof typeof BurnMode]
 
-export interface Message {
+export type Message = {
   id: string
   content: string
   sender: string
@@ -19,14 +19,14 @@ export interface Message {
   destroyed: boolean
 }
 
-export interface RoomInfo {
+export type RoomInfo = {
   id: string
   name: string
   createdAt: number
   peers: string[]
 }
 
-export interface BurnConfig {
+export type BurnConfig = {
   mode: BurnMode
   burnAfter?: number
   burnAt?: number
