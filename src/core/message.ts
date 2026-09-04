@@ -6,12 +6,14 @@ import { shouldDestroy } from './burn'
 
 export type MessageListener = (msg: Message) => void
 type ReadReceipt = { type: 'read'; msgId: string; peerId: string }
+type RecallEvent = { type: 'recall'; msgId: string }
 
 const READ_ONCE_AUTO_DESTROY_MS = 30 * 60 * 1000 // 30 minutes safety net
 
 export class MessageManager {
   private channel: Channel<Message> | null = null
   private readChannel: Channel<ReadReceipt> | null = null
+  private recallChannel: Channel<RecallEvent> | null = null
   private listeners: MessageListener[] = []
   private messageStore = new Map<string, Message>()
   private burnTimers = new Map<string, ReturnType<typeof setTimeout>>()
@@ -21,6 +23,7 @@ export class MessageManager {
     this.roomId = roomId
     this.channel = peerManager.makeChannel<Message>('messages')
     this.readChannel = peerManager.makeChannel<ReadReceipt>('read-receipts')
+    this.recallChannel = peerManager.makeChannel<RecallEvent>('recall')
 
     this.channel.onMessage(async (data, { peerId }) => {
       const msg: Message = {
@@ -40,6 +43,15 @@ export class MessageManager {
           msg.readBy.push(data.peerId)
           await markMessageRead(data.msgId, data.peerId)
           this.notifyListeners(msg)
+        }
+      }
+    })
+
+    this.recallChannel.onMessage(async (data) => {
+      if (data.type === 'recall') {
+        const msg = this.messageStore.get(data.msgId)
+        if (msg) {
+          await this.burn(msg)
         }
       }
     })
@@ -66,6 +78,18 @@ export class MessageManager {
     this.scheduleBurn(msg)
     this.notifyListeners(msg)
     return msg
+  }
+
+  async recall(msgId: string): Promise<boolean> {
+    const msg = this.messageStore.get(msgId)
+    if (!msg || msg.sender !== peerManager.id) return false
+
+    // Broadcast recall to peers
+    this.recallChannel?.send({ type: 'recall', msgId })
+
+    // Destroy locally
+    await this.burn(msg)
+    return true
   }
 
   async markRead(msgId: string): Promise<void> {
@@ -193,6 +217,7 @@ export class MessageManager {
     this.listeners = []
     this.channel = null
     this.readChannel = null
+    this.recallChannel = null
   }
 }
 
