@@ -2,7 +2,7 @@ import { peerManager, type Channel } from '../communication/peer'
 import { saveMessage, markMessageRead, destroyMessage } from '../persistence/db'
 import { generateMessageId } from '../utils/id'
 import type { Message, BurnConfig } from './types'
-import { shouldDestroy } from './burn'
+import { shouldDestroy, getRemainingMs } from './burn'
 
 export type MessageListener = (msg: Message) => void
 type ReadReceipt = { type: 'read'; msgId: string; peerId: string }
@@ -137,7 +137,7 @@ export class MessageManager {
       return
     }
 
-    const remaining = this.getRemainingMs(msg)
+    const remaining = getRemainingMs(msg)
     if (remaining <= 0) {
       this.burn(msg)
       return
@@ -148,16 +148,6 @@ export class MessageManager {
     }, remaining)
 
     this.burnTimers.set(msg.id, timer)
-  }
-
-  private getRemainingMs(msg: Message): number {
-    if (msg.burnMode === 'timed' && msg.burnAfter) {
-      return Math.max(0, msg.burnAfter * 1000 - (Date.now() - msg.timestamp))
-    }
-    if (msg.burnMode === 'scheduled' && msg.burnAt) {
-      return Math.max(0, msg.burnAt - Date.now())
-    }
-    return Infinity
   }
 
   private clearBurnTimer(msgId: string): void {
