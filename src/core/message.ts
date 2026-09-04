@@ -6,6 +6,8 @@ import { shouldDestroy } from './burn'
 
 export type MessageListener = (msg: Message) => void
 
+const READ_ONCE_AUTO_DESTROY_MS = 30 * 60 * 1000 // 30 minutes safety net
+
 export class MessageManager {
   private channel: Channel<Message> | null = null
   private listeners: MessageListener[] = []
@@ -24,8 +26,8 @@ export class MessageManager {
       }
       this.messageStore.set(msg.id, msg)
       await saveMessage({ ...msg, roomId: this.roomId })
-      this.notifyListeners(msg)
       this.scheduleBurn(msg)
+      this.notifyListeners(msg)
     })
   }
 
@@ -47,8 +49,8 @@ export class MessageManager {
     this.messageStore.set(msg.id, msg)
     await saveMessage({ ...msg, roomId: this.roomId })
     this.channel.send(msg)
-    this.notifyListeners(msg)
     this.scheduleBurn(msg)
+    this.notifyListeners(msg)
     return msg
   }
 
@@ -62,25 +64,39 @@ export class MessageManager {
 
       if (shouldDestroy(msg)) {
         await this.burn(msg)
+      } else {
+        this.notifyListeners(msg)
       }
-
-      this.notifyListeners(msg)
     }
   }
 
   private async burn(msg: Message): Promise<void> {
     msg.destroyed = true
-    await destroyMessage(msg.id)
-    this.messageStore.delete(msg.id)
     this.clearBurnTimer(msg.id)
+    this.messageStore.delete(msg.id)
+    await destroyMessage(msg.id)
     this.notifyListeners(msg)
   }
 
   private scheduleBurn(msg: Message): void {
-    if (msg.destroyed || msg.burnMode === 'persist' || msg.burnMode === 'read_once') return
+    if (msg.destroyed || msg.burnMode === 'persist') return
+
+    // read_once: schedule a safety-net auto-destroy after 30 min
+    if (msg.burnMode === 'read_once') {
+      const timer = setTimeout(() => {
+        if (this.messageStore.has(msg.id) && msg.readBy.length === 0) {
+          this.burn(msg)
+        }
+      }, READ_ONCE_AUTO_DESTROY_MS)
+      this.burnTimers.set(msg.id, timer)
+      return
+    }
 
     const remaining = this.getRemainingMs(msg)
-    if (remaining === Infinity || remaining <= 0) return
+    if (remaining <= 0) {
+      this.burn(msg)
+      return
+    }
 
     const timer = setTimeout(() => {
       this.burn(msg)
@@ -125,15 +141,27 @@ export class MessageManager {
   }
 
   async loadFromStorage(messages: Message[]): Promise<void> {
+    // Collect messages to destroy to avoid mutating map during iteration
+    const toDestroy: Message[] = []
+    const toKeep: Message[] = []
+
     for (const msg of messages) {
-      this.messageStore.set(msg.id, msg)
-      if (!shouldDestroy(msg)) {
-        this.scheduleBurn(msg)
+      if (shouldDestroy(msg)) {
+        toDestroy.push(msg)
       } else {
-        await this.burn(msg)
+        toKeep.push(msg)
+        this.messageStore.set(msg.id, msg)
+        this.scheduleBurn(msg)
       }
     }
-    for (const msg of this.messageStore.values()) {
+
+    // Destroy expired messages
+    for (const msg of toDestroy) {
+      await this.burn(msg)
+    }
+
+    // Notify listeners of all surviving messages
+    for (const msg of toKeep) {
       this.notifyListeners(msg)
     }
   }
