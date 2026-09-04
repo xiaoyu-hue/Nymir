@@ -77,6 +77,10 @@ textarea {
   50% { opacity: 0.4; }
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .chat-input-area {
   padding-bottom: var(--safe-bottom) !important;
 }

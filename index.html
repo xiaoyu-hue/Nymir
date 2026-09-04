@@ -12,10 +12,27 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Nymir" />
     <meta name="mobile-web-app-capable" content="yes" />
+    <!-- Open Graph -->
+    <meta property="og:title" content="Nymir · 树洞" />
+    <meta property="og:description" content="匿名树洞阅读即焚应用 — 无后端、无服务器、无数据记录" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="./icon-512.png" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Nymir · 树洞" />
+    <meta name="twitter:description" content="匿名树洞阅读即焚应用 — 无后端、无服务器、无数据记录" />
     <title>Nymir · 树洞</title>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0a1a;color:rgba(255,255,255,0.7);font-family:system-ui,sans-serif;text-align:center;padding:20px;">
+        <div>
+          <h1 style="font-size:1.5rem;margin-bottom:12px;">Nymir</h1>
+          <p>请启用 JavaScript 以使用此应用</p>
+        </div>
+      </div>
+    </noscript>
     <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>
