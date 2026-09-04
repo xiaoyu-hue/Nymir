@@ -12,7 +12,6 @@ import { encrypt, decrypt, verifyPassword } from './crypto'
 
 const LOCK_TIMEOUT_MS = 5 * 60 * 1000 // 5分钟自动锁定
 const STORAGE_KEY_PASSWORD_HASH = 'nymir_pwd_hash'
-const STORAGE_KEY_SALT = 'nymir_salt'
 
 export type LockListener = (locked: boolean) => void
 
@@ -106,9 +105,19 @@ class SecurityManager {
   /**
    * 重置所有数据（忘记密码）
    */
-  reset(): void {
-    localStorage.removeItem(STORAGE_KEY_PASSWORD_HASH)
-    localStorage.removeItem(STORAGE_KEY_SALT)
+  async reset(): Promise<void> {
+    // 安全清除 localStorage
+    const keys = Object.keys(localStorage).filter(
+      (k) => k.startsWith('nymir_') || k === STORAGE_KEY_PASSWORD_HASH,
+    )
+    for (const key of keys) {
+      // 用随机数据覆写
+      const randomValue = crypto.getRandomValues(new Uint8Array(32))
+      const fakeValue = btoa(String.fromCharCode(...randomValue))
+      localStorage.setItem(key, fakeValue)
+      localStorage.removeItem(key)
+    }
+
     this.password = null
     this.locked = true
     this.clearLockTimer()
