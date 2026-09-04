@@ -3,7 +3,7 @@ import type { Translations } from './zh'
 const en: Translations = {
   app: {
     title: 'Nymir Tree-Hole',
-    subtitle: 'Anonymous Tree-Hole · Read-and-Burn · Your Data, Your Sovereignty',
+    subtitle: 'P2P Anonymous Chat · Read-and-Burn · Data Stays Local',
   },
   room: {
     create: 'Create Room',

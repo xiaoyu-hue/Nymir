@@ -1,7 +1,7 @@
 const zh = {
   app: {
     title: 'Nymir 树洞',
-    subtitle: '匿名树洞 · 阅读即焚 · 数据主权归你',
+    subtitle: 'P2P 匿名聊天 · 阅读即焚 · 数据仅存本地',
   },
   room: {
     create: '创建房间',
