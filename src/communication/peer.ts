@@ -1,5 +1,5 @@
-import { joinRoom as joinTorrent } from '@trystero-p2p/torrent'
-import { joinRoom as joinMqtt } from '@trystero-p2p/mqtt'
+import { joinRoom as joinTorrent, selfId as selfIdTorrent } from '@trystero-p2p/torrent'
+import { joinRoom as joinMqtt, selfId as selfIdMqtt } from '@trystero-p2p/mqtt'
 import type { Room, DataPayload } from '@trystero-p2p/core'
 
 const APP_ID = 'nymir_treehole_v1'
@@ -24,9 +24,7 @@ export class PeerManager {
   private strategyFallbackTimer: ReturnType<typeof setTimeout> | null = null
 
   get id(): string {
-    return this.currentStrategy === 'torrent'
-      ? (joinTorrent as unknown as { selfId: string }).selfId
-      : (joinMqtt as unknown as { selfId: string }).selfId
+    return this.currentStrategy === 'torrent' ? selfIdTorrent : selfIdMqtt
   }
 
   get peerList(): string[] {
