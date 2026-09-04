@@ -21,6 +21,21 @@ export default function ChatView() {
   const [copied, setCopied] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const readMsgIdsRef = useRef<Set<string>>(new Set())
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
+
+  // 虚拟键盘检测
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+
+    const handleResize = () => {
+      // 如果视口高度小于屏幕高度的 70%，认为键盘已弹出
+      setKeyboardOpen(vv.height < window.innerHeight * 0.7)
+    }
+
+    vv.addEventListener('resize', handleResize)
+    return () => vv.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     const unsub = messageManager.onMessage(() => {
@@ -250,8 +265,9 @@ export default function ChatView() {
 
       {/* Input */}
       <GlassCard variant="strong" className="chat-input-area">
-        <div style={{ padding: '12px 16px' }}>
-          {/* Burn mode selector */}
+        <div style={{ padding: keyboardOpen ? '8px 12px' : '12px 16px' }}>
+          {/* Burn mode selector - hidden when keyboard is open */}
+          {!keyboardOpen && (
           <div
             style={{
               display: 'flex',
@@ -306,6 +322,7 @@ export default function ChatView() {
               </select>
             )}
           </div>
+          )}
 
           {/* Input row */}
           <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
