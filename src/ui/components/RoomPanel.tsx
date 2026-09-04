@@ -62,12 +62,15 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
 
       <GlassCard variant="strong" className="room-panel-card">
         <div
+          role="tablist"
           style={{
             display: 'flex',
             borderBottom: '1px solid var(--glass-border)',
           }}
         >
           <button
+            role="tab"
+            aria-selected={tab === 'create'}
             onClick={() => setTab('create')}
             style={{
               flex: 1,
@@ -82,6 +85,8 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
             {t.room.create}
           </button>
           <button
+            role="tab"
+            aria-selected={tab === 'join'}
             onClick={() => setTab('join')}
             style={{
               flex: 1,
