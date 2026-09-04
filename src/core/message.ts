@@ -30,8 +30,8 @@ export class MessageManager {
       // 解密消息内容
       let content = ''
       if (data.encrypted) {
-        // 尝试解密
-        const decrypted = await e2eeManager.decrypt(data.content, peerId)
+        // 尝试解密（带前向保密）
+        const decrypted = await e2eeManager.decrypt(data.content, peerId, data.id)
         content = decrypted ?? data.content // 解密失败则使用原始内容（兼容）
       } else {
         content = data.content
@@ -105,9 +105,9 @@ export class MessageManager {
     const peerList = peerManager.peerList
 
     if (peerList.length > 0) {
-      // 加密给所有 peer 的消息
+      // 加密给所有 peer 的消息（带前向保密）
       const firstPeer = peerList[0]
-      const encrypted = await e2eeManager.encrypt(content, firstPeer)
+      const encrypted = await e2eeManager.encrypt(content, firstPeer, msg.id)
       if (encrypted) {
         sendPayload = {
           ...msg,
