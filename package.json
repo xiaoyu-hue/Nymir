@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "idb": "^8.0.3",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "trystero": "^0.25.4"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
