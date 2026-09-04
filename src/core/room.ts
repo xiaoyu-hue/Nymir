@@ -2,7 +2,8 @@ import { peerManager } from '../communication/peer'
 import { saveRoom, getAllRooms, deleteRoom as dbDeleteRoom, getMessagesByRoom } from '../persistence/db'
 import { generateRoomId } from '../utils/id'
 import { messageManager } from './message'
-import type { Message, RoomInfo } from './types'
+import { clearLocalStorage } from '../security/secureDelete'
+import type { RoomInfo, BurnMode } from './types'
 import type { StoredMessage } from '../persistence/types'
 
 export type RoomListener = (event: string, data?: unknown) => void
@@ -99,15 +100,14 @@ export class RoomManager {
 
     // Load saved messages
     const saved = await getMessagesByRoom(roomId)
-    const messages: Message[] = saved.map((s: StoredMessage) => ({
+    // 转换为应用内 Message 类型
+    const messages = saved.map((s: StoredMessage) => ({
       id: s.id,
       content: s.content,
       sender: s.sender,
       timestamp: s.timestamp,
-      burnMode: s.burnMode as Message['burnMode'],
-      burnAfter: s.burnAfter,
-      burnAt: s.burnAt,
-      readBy: s.readBy,
+      burnMode: s.burnMode as BurnMode,
+      readBy: s.readBy ?? [],
       destroyed: s.destroyed,
     }))
     await messageManager.loadFromStorage(messages)
@@ -178,6 +178,14 @@ export class RoomManager {
 
   async deleteSavedRoom(id: string): Promise<void> {
     await dbDeleteRoom(id)
+  }
+
+  /**
+   * 安全重置所有数据
+   */
+  async secureReset(): Promise<void> {
+    this.leaveRoom()
+    clearLocalStorage('nymir')
   }
 }
 
