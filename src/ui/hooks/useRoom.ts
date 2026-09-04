@@ -1,23 +1,38 @@
 import { useState, useEffect } from 'react'
 import { roomManager, type ConnectionStatus } from '../../core/room'
+import type { RoomInfo } from '../../core/types'
+
+interface RoomState {
+  inRoom: boolean
+  room: RoomInfo | null
+  status: ConnectionStatus
+}
 
 export function useRoom() {
-  const [inRoom, setInRoom] = useState(() => roomManager.inRoom)
-  const [room, setRoom] = useState(() => roomManager.room)
-  const [status, setStatus] = useState<ConnectionStatus>(() => roomManager.status)
+  const [state, setState] = useState<RoomState>(() => ({
+    inRoom: roomManager.inRoom,
+    room: roomManager.room,
+    status: roomManager.status,
+  }))
 
   useEffect(() => {
     const unsub = roomManager.onEvent((event, data) => {
       if (event === 'room:joined' || event === 'room:left') {
-        setInRoom(roomManager.inRoom)
-        setRoom(roomManager.room)
+        setState((prev) => ({
+          ...prev,
+          inRoom: roomManager.inRoom,
+          room: roomManager.room,
+        }))
       }
       if (event === 'status:change') {
-        setStatus(data as ConnectionStatus)
+        setState((prev) => ({
+          ...prev,
+          status: data as ConnectionStatus,
+        }))
       }
     })
     return unsub
   }, [])
 
-  return { inRoom, room, status }
+  return state
 }
