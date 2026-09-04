@@ -1,7 +1,9 @@
 {
   "name": "nymir",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "匿名树洞阅读即焚应用 — 无后端、无服务器、无数据记录",
+  "license": "AGPL-3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

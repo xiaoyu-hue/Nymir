@@ -248,7 +248,49 @@ src/
 
 ## ✦ 开源协议
 
-[MIT License](./LICENSE)
+本项目采用 [GNU Affero General Public License v3.0](./LICENSE) 开源协议。
+
+选择 AGPL-3.0 的原因：Nymir 是一款具有明确意识形态属性的隐私工具（数据主权、去中心化、匿名性），AGPL 确保任何基于本项目的衍生作品（包括网络服务部署）都必须开源，防止闭源商用对用户自由的侵蚀。
+
+---
+
+## ✦ 致谢与技术引用
+
+本项目站在以下优秀开源项目的肩膀上，特此致谢：
+
+### 核心依赖
+
+| 项目 | 许可证 | 用途 |
+|---|---|---|
+| [Trystero](https://github.com/dmotz/trystero) | MIT | 无服务器 WebRTC P2P 通信引擎 |
+| [React](https://react.dev) | MIT | 前端 UI 框架 |
+| [Vite](https://vite.dev) | MIT | 构建工具与开发服务器 |
+| [TypeScript](https://www.typescriptlang.org) | Apache-2.0 | 类型安全的 JavaScript 超集 |
+| [idb](https://github.com/nicedoc/idb) | ISC | IndexedDB Promise 封装 |
+
+### 灵感来源
+
+| 项目 | 说明 |
+|---|---|
+| [Chitchatter](https://github.com/jeremyckahn/chitchatter) | 基于 Trystero 的 P2P 聊天应用，架构参考 |
+| [n2-mesh](https://github.com/BartoszOsiej/n2-mesh) | WebRTC + MQTT 零依赖 P2P 网络 |
+
+### 信令基础设施
+
+| 服务 | 说明 |
+|---|---|
+| [BitTorrent Trackers](https://github.com/nicedoc/idb) | 全球分布式信令通道 |
+| [MQTT Brokers](https://www.hivemq.com/public-mqtt-broker/) | 信令降级备用通道 |
+
+### 社区
+
+感谢所有为开源隐私工具做出贡献的开发者。
+
+---
+
+## ✦ 行为准则
+
+本项目遵循 [贡献者行为准则](./CODE_OF_CONDUCT.md)。参与本项目即表示你同意遵守其条款。
 
 ---
 
