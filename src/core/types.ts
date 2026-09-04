@@ -17,6 +17,10 @@ export type Message = {
   burnAt?: number
   readBy: string[]
   destroyed: boolean
+  /** 解密失败时为 true，content 为空占位 */
+  decryptFailed?: boolean
+  /** 签名验证结果：true=通过, false=失败, undefined=无签名或未验证 */
+  verified?: boolean
 }
 
 export type RoomInfo = {

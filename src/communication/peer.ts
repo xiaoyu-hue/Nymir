@@ -32,6 +32,7 @@ export class PeerManager {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private strategyFallbackTimer: ReturnType<typeof setTimeout> | null = null
   private e2eeChannel: Channel<E2EEPayload> | null = null
+  private isSwitchingStrategy = false
 
   get id(): string {
     return this.currentStrategy === 'torrent'
@@ -117,6 +118,18 @@ export class PeerManager {
     this.e2eeChannel.send({ type: 'e2ee_key', publicKey, signPublicKey })
   }
 
+  /**
+   * 设置 E2EE 密钥交换通道
+   */
+  private setupE2EEChannel(): void {
+    this.e2eeChannel = this.makeChannel<E2EEPayload>('e2ee-exchange')
+    this.e2eeChannel.onMessage(async (data, { peerId }) => {
+      if (data.type === 'e2ee_key') {
+        await e2eeManager.handlePeerPublicKey(peerId, data.publicKey, data.signPublicKey)
+      }
+    })
+  }
+
   join(roomId: string): void {
     if (this.room) this.leave()
 
@@ -124,12 +137,7 @@ export class PeerManager {
     this.room = this.joinWithStrategy(roomId, 'torrent')
 
     // 设置 E2EE 密钥交换通道
-    this.e2eeChannel = this.makeChannel<E2EEPayload>('e2ee-exchange')
-    this.e2eeChannel.onMessage(async (data, { peerId }) => {
-      if (data.type === 'e2ee_key') {
-        await e2eeManager.handlePeerPublicKey(peerId, data.publicKey, data.signPublicKey)
-      }
-    })
+    this.setupE2EEChannel()
 
     // 广播自己的公钥
     setTimeout(() => this.broadcastE2EEKey(), 100)
@@ -137,21 +145,52 @@ export class PeerManager {
     // Fallback to MQTT if no peers found within 5 seconds
     this.strategyFallbackTimer = setTimeout(() => {
       if (this.peers.size === 0 && this.room) {
-        console.log('[Nymir] BitTorrent signaling slow, falling back to MQTT')
-        this.room.leave()
-        this.currentStrategy = 'mqtt'
-        this.room = this.joinWithStrategy(roomId, 'mqtt')
-
-        // 重新设置 E2EE 通道
-        this.e2eeChannel = this.makeChannel<E2EEPayload>('e2ee-exchange')
-        this.e2eeChannel.onMessage(async (data, { peerId }) => {
-          if (data.type === 'e2ee_key') {
-            await e2eeManager.handlePeerPublicKey(peerId, data.publicKey, data.signPublicKey)
-          }
-        })
-        setTimeout(() => this.broadcastE2EEKey(), 100)
+        this.switchStrategy(roomId, 'mqtt')
       }
     }, 5000)
+  }
+
+  /**
+   * 安全切换传输策略（清理旧状态后重建）
+   */
+  private switchStrategy(roomId: string, newStrategy: Strategy): void {
+    if (this.isSwitchingStrategy) return
+    this.isSwitchingStrategy = true
+
+    try {
+      console.log(`[Nymir] Switching from ${this.currentStrategy} to ${newStrategy}`)
+
+      // 1. 清理旧定时器
+      if (this.strategyFallbackTimer) {
+        clearTimeout(this.strategyFallbackTimer)
+        this.strategyFallbackTimer = null
+      }
+      if (this.reconnectTimer) {
+        clearTimeout(this.reconnectTimer)
+        this.reconnectTimer = null
+      }
+
+      // 2. 离开旧 room（清理 onPeerJoin/onPeerLeave 回调、peers、e2eeChannel）
+      if (this.room) {
+        this.room.leave()
+        this.room = null
+      }
+      this.peers.clear()
+      this.e2eeChannel = null
+      e2eeManager.clearAll()
+
+      // 3. 切换策略并建立新连接
+      this.currentStrategy = newStrategy
+      this.room = this.joinWithStrategy(roomId, newStrategy)
+
+      // 4. 重新设置 E2EE 通道
+      this.setupE2EEChannel()
+
+      // 5. 广播公钥
+      setTimeout(() => this.broadcastE2EEKey(), 100)
+    } finally {
+      this.isSwitchingStrategy = false
+    }
   }
 
   reconnect(roomId: string): void {

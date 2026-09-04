@@ -109,6 +109,8 @@ export class RoomManager {
       burnMode: s.burnMode as BurnMode,
       readBy: s.readBy ?? [],
       destroyed: s.destroyed,
+      decryptFailed: s.decryptFailed,
+      verified: s.verified,
     }))
     await messageManager.loadFromStorage(messages)
 
