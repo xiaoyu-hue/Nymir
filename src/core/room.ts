@@ -1,6 +1,6 @@
 import { peerManager } from '../communication/peer'
-import { saveRoom, getAllRooms, deleteRoom as dbDeleteRoom, getMessagesByRoom } from '../persistence/db'
-import { generateRoomId } from '../utils/id'
+import { saveRoom, getAllRooms, deleteRoom as dbDeleteRoom, getMessagesByRoom, getRoom } from '../persistence/db'
+import { generateRoomId, isValidRoomId } from '../utils/id'
 import { messageManager } from './message'
 import { clearLocalStorage } from '../security/secureDelete'
 import type { RoomInfo, BurnMode } from './types'
@@ -45,8 +45,23 @@ export class RoomManager {
     this.emit('status:change', s)
   }
 
+  /**
+   * 创建房间，自动防碰撞（最多重试 5 次）
+   */
   async createRoom(name: string): Promise<RoomInfo> {
-    const id = generateRoomId()
+    const maxRetries = 5
+    let id = ''
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      id = generateRoomId()
+      const existing = await getRoom(id)
+      if (!existing) break
+      // 碰撞，重试
+      if (attempt === maxRetries - 1) {
+        throw new Error('Failed to generate unique room ID')
+      }
+    }
+
     const room: RoomInfo = {
       id,
       name,
@@ -59,7 +74,15 @@ export class RoomManager {
     return room
   }
 
+  /**
+   * 加入房间，验证 ID 格式
+   */
   async joinRoom(roomId: string, roomName?: string): Promise<void> {
+    // 格式校验
+    if (!isValidRoomId(roomId)) {
+      throw new Error('Invalid room code format')
+    }
+
     if (this.currentRoom) this.leaveRoom()
 
     peerManager.join(roomId)
@@ -98,7 +121,6 @@ export class RoomManager {
 
     // Load saved messages
     const saved = await getMessagesByRoom(roomId)
-    // 转换为应用内 Message 类型
     const messages = saved.map((s: StoredMessage) => ({
       id: s.id,
       content: s.content,
@@ -145,7 +167,6 @@ export class RoomManager {
         tryReconnect()
       }, 3000)
 
-      // Store interval for cleanup
       this.unsubs.push(() => clearInterval(interval))
     }, 2000)
   }

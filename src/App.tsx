@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, createContext, useContext } from 'react'
 import { roomManager } from './core/room'
 import { securityManager, e2eeManager } from './security'
 import { useRoom } from './ui/hooks/useRoom'
@@ -10,12 +10,17 @@ import BackupPanel from './ui/components/BackupPanel'
 import LockScreen from './ui/components/LockScreen'
 import './ui/styles/globals.css'
 
+type KeyboardCtx = { keyboardOpen: boolean; setKeyboardOpen: (v: boolean) => void }
+const KeyboardContext = createContext<KeyboardCtx>({ keyboardOpen: false, setKeyboardOpen: () => {} })
+export const useKeyboard = () => useContext(KeyboardContext)
+
 function AppContent() {
   const { inRoom } = useRoom()
   const { t, toggleLang } = useI18n()
   const [showBackup, setShowBackup] = useState(false)
   const [locked, setLocked] = useState(true)
   const [securityReady, setSecurityReady] = useState(false)
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
 
   useEffect(() => {
     securityManager
@@ -43,6 +48,17 @@ function AppContent() {
       document.removeEventListener('click', resetTimer)
       document.removeEventListener('keydown', resetTimer)
     }
+  }, [])
+
+  // 虚拟键盘检测
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const handleResize = () => {
+      setKeyboardOpen(vv.height < window.innerHeight * 0.7)
+    }
+    vv.addEventListener('resize', handleResize)
+    return () => vv.removeEventListener('resize', handleResize)
   }, [])
 
   const handleCreateRoom = async (name: string) => {
@@ -101,110 +117,82 @@ function AppContent() {
   }
 
   return (
-    <div
-      style={{
-        width: '100dvw',
-        height: '100dvh',
-        background: 'linear-gradient(180deg, #0a0a1a 0%, #12122a 50%, #0a0a1a 100%)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      <Starfield />
-
-      {!inRoom ? (
-        <RoomPanel onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} />
-      ) : (
-        <ChatView />
-      )}
-
-      {/* Action bar - top right */}
+    <KeyboardContext.Provider value={{ keyboardOpen, setKeyboardOpen }}>
       <div
         style={{
-          position: 'fixed',
-          top: '16px',
-          right: '16px',
-          display: 'flex',
-          gap: '8px',
-          zIndex: 50,
+          width: '100dvw',
+          height: '100dvh',
+          background: 'linear-gradient(180deg, #0a0a1a 0%, #12122a 50%, #0a0a1a 100%)',
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
-        {/* Lock button */}
-        <button
-          onClick={() => securityManager.lock()}
-          aria-label={t.security.locked}
-          style={{
-            padding: '6px 12px',
-            borderRadius: '8px',
-            background: 'rgba(255,255,255,0.08)',
-            backdropFilter: 'blur(12px)',
-            border: '1px solid var(--glass-border)',
-            color: 'var(--text-secondary)',
-            fontSize: '0.8rem',
-          }}
-          title={t.security.locked}
-        >
-          🔒
-        </button>
+        <Starfield />
 
-        {/* Language toggle */}
-        <button
-          onClick={toggleLang}
-          aria-label={t.nav.switchLang}
-          style={{
-            padding: '6px 12px',
-            borderRadius: '8px',
-            background: 'rgba(255,255,255,0.08)',
-            backdropFilter: 'blur(12px)',
-            border: '1px solid var(--glass-border)',
-            color: 'var(--text-secondary)',
-            fontSize: '0.8rem',
-          }}
-        >
-          {t.nav.switchLang}
-        </button>
+        {!inRoom ? (
+          <RoomPanel onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} />
+        ) : (
+          <ChatView />
+        )}
+
+        {/* Action bar - top right, safe area aware */}
+        {!keyboardOpen && (
+          <div
+            className="app-action-bar"
+            style={{
+              position: 'fixed',
+              top: 'calc(var(--safe-top) + 12px)',
+              right: '12px',
+              display: 'flex',
+              gap: '6px',
+              zIndex: 50,
+            }}
+          >
+            <button
+              onClick={() => securityManager.lock()}
+              aria-label={t.security.locked}
+              className="app-icon-btn"
+              title={t.security.locked}
+            >
+              🔒
+            </button>
+            <button
+              onClick={toggleLang}
+              aria-label={t.nav.switchLang}
+              className="app-icon-btn"
+            >
+              {t.nav.switchLang}
+            </button>
+          </div>
+        )}
+
+        {/* Backup button - hidden when keyboard open or in room */}
+        {!keyboardOpen && !inRoom && (
+          <button
+            onClick={() => setShowBackup(true)}
+            className="app-backup-btn"
+            title={t.backup.title}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </button>
+        )}
+
+        {showBackup && <BackupPanel onClose={() => setShowBackup(false)} />}
       </div>
-
-      {/* Backup button */}
-      <button
-        onClick={() => setShowBackup(true)}
-        style={{
-          position: 'fixed',
-          bottom: 'calc(20px + var(--safe-bottom))',
-          right: '20px',
-          width: '44px',
-          height: '44px',
-          borderRadius: '50%',
-          background: 'rgba(255,255,255,0.08)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid var(--glass-border)',
-          color: 'var(--text-secondary)',
-          fontSize: '1.2rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 50,
-        }}
-        title={t.backup.title}
-      >
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-          <polyline points="7 10 12 15 17 10" />
-          <line x1="12" y1="15" x2="12" y2="3" />
-        </svg>
-      </button>
-
-      {showBackup && <BackupPanel onClose={() => setShowBackup(false)} />}
-    </div>
+    </KeyboardContext.Provider>
   )
 }
 

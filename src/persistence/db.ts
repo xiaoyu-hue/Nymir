@@ -93,6 +93,12 @@ export async function saveRoom(room: StoredRoom): Promise<void> {
   await db.put('rooms', encrypted)
 }
 
+export async function getRoom(id: string): Promise<StoredRoom | undefined> {
+  const db = await getDB()
+  const room = await db.get('rooms', id)
+  return room ? decryptRoom(room) : undefined
+}
+
 export async function getAllRooms(): Promise<StoredRoom[]> {
   const db = await getDB()
   const rooms = await db.getAll('rooms')
