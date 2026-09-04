@@ -3,10 +3,12 @@ import type { Message, BurnConfig } from '../../core/types'
 import { BurnMode } from '../../core/types'
 import { messageManager } from '../../core/message'
 import { roomManager } from '../../core/room'
+import { useRoom } from '../hooks/useRoom'
 import GlassCard from './GlassCard'
 import MessageBubble from './MessageBubble'
 
 export default function ChatView() {
+  const { status } = useRoom()
   const [messages, setMessages] = useState<Message[]>(() =>
     messageManager.getMessages(),
   )
@@ -79,9 +81,29 @@ export default function ChatView() {
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              {roomManager.room?.peers.length ?? 0} 在线
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background:
+                    status === 'connected'
+                      ? 'var(--success)'
+                      : status === 'reconnecting'
+                        ? 'var(--warning)'
+                        : 'var(--danger)',
+                  animation: status === 'reconnecting' ? 'pulse 1.5s infinite' : 'none',
+                }}
+              />
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                {status === 'connected'
+                  ? `${roomManager.room?.peers.length ?? 0} 在线`
+                  : status === 'reconnecting'
+                    ? '重连中...'
+                    : '已断开'}
+              </span>
+            </div>
             <button
               onClick={handleLeave}
               style={{
