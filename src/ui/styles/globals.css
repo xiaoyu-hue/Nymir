@@ -14,6 +14,7 @@
   --success: #22c55e;
   --warning: #f59e0b;
   --star-color: rgba(255, 255, 255, 0.7);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 * {
@@ -26,6 +27,7 @@ html, body, #root {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  touch-action: manipulation;
 }
 
 body {
@@ -33,6 +35,7 @@ body {
   background: var(--bg-primary);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button {
@@ -40,14 +43,48 @@ button {
   border: none;
   outline: none;
   font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 input, textarea {
   font-family: inherit;
   outline: none;
+  -webkit-appearance: none;
+  border-radius: 0;
+}
+
+input[type="text"],
+input[type="search"],
+textarea {
+  font-size: 16px !important;
 }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
+}
+
+.chat-input-area {
+  padding-bottom: var(--safe-bottom) !important;
+}
+
+.room-panel-card {
+  width: 100%;
+  max-width: 400px;
+}
+
+@media (max-width: 480px) {
+  .room-panel-card {
+    margin: 0 16px;
+  }
+
+  .chat-header > div {
+    padding: 10px 14px !important;
+  }
+
+  .chat-input-area > div {
+    padding: 10px 12px !important;
+  }
 }
