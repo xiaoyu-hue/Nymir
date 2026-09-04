@@ -34,7 +34,7 @@ export async function exportBackup(password: string): Promise<string> {
   }
 
   const data: BackupData = {
-    version: 1,
+    version: BACKUP_VERSION,
     exportedAt: Date.now(),
     rooms,
     messages: allMessages,
