@@ -3,7 +3,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: '/Nymir/',
+  base: process.env.BASE_PATH || '/',
   plugins: [
     react(),
     VitePWA({
@@ -21,17 +21,17 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/Nymir/icon-192.png',
+            src: '/icon-192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: '/Nymir/icon-512.png',
+            src: '/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
           },
           {
-            src: '/Nymir/icon-512.png',
+            src: '/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
