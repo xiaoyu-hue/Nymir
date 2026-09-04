@@ -13,7 +13,7 @@
 
 <br>
 
-**[🔗 Try it online](https://xiaoyu-hue.github.io/Nymir/)**
+**[🔗 Try it online](https://nymir.xyyovo520.workers.dev/) · [GitHub Pages](https://xiaoyu-hue.github.io/Nymir/)**
 
 [![React](https://img.shields.io/badge/React_19-61DAFB?logo=react&logoColor=white&style=flat-square)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript_6-3178C6?logo=typescript&logoColor=white&style=flat-square)](https://www.typescriptlang.org)
