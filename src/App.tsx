@@ -18,12 +18,18 @@ function AppContent() {
   const [securityReady, setSecurityReady] = useState(false)
 
   useEffect(() => {
-    securityManager.init().then(async () => {
-      setLocked(securityManager.isLocked)
-      setSecurityReady(true)
-      // 初始化 E2EE
-      await e2eeManager.init()
-    })
+    securityManager
+      .init()
+      .then(async () => {
+        setLocked(securityManager.isLocked)
+        setSecurityReady(true)
+        // 初始化 E2EE
+        await e2eeManager.init()
+      })
+      .catch((err) => {
+        console.error('[App] Security init failed:', err)
+        setSecurityReady(true) // 仍然显示界面，但标记为未锁定
+      })
 
     const unsub = securityManager.onLockChange((isLocked) => {
       setLocked(isLocked)
