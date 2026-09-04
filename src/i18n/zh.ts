@@ -23,6 +23,7 @@ const zh = {
     send: '发送',
     destroyed: '已焚毁',
     burned: '已焚',
+    recall: '撤回',
   },
   burn: {
     persist: '永久',

@@ -25,6 +25,7 @@ const en: Translations = {
     send: 'Send',
     destroyed: 'Burned',
     burned: 'Burned',
+    recall: 'Recall',
   },
   burn: {
     persist: 'Persistent',

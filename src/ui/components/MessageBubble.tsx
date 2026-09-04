@@ -1,9 +1,10 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import type { Message } from '../../core/types'
 import { peerManager } from '../../communication/peer'
 import { formatTime } from '../../utils/time'
 import { getBurnModeLabel } from '../../core/burn'
 import { useI18n } from '../../i18n'
+import { messageManager } from '../../core/message'
 import BurnTimer from './BurnTimer'
 
 type Props = {
@@ -14,6 +15,7 @@ type Props = {
 function MessageBubbleInner({ message, onDestroy }: Props) {
   const { t } = useI18n()
   const isSelf = message.sender === peerManager.id
+  const [showRecall, setShowRecall] = useState(false)
 
   if (message.destroyed) {
     return (
@@ -25,12 +27,20 @@ function MessageBubbleInner({ message, onDestroy }: Props) {
 
   const readCount = message.readBy.length
 
+  const handleRecall = async () => {
+    await messageManager.recall(message.id)
+    setShowRecall(false)
+    onDestroy?.()
+  }
+
   return (
     <div
       className={`message-bubble ${isSelf ? 'self' : 'other'}`}
       onClick={() => {
         if (message.burnMode === 'read_once' && !isSelf) {
           onDestroy?.()
+        } else if (isSelf) {
+          setShowRecall(!showRecall)
         }
       }}
       style={{
@@ -80,6 +90,27 @@ function MessageBubbleInner({ message, onDestroy }: Props) {
           <BurnTimer message={message} onExpired={onDestroy} />
         </div>
       </div>
+
+      {/* Recall button */}
+      {isSelf && showRecall && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            handleRecall()
+          }}
+          style={{
+            marginTop: '4px',
+            padding: '4px 10px',
+            borderRadius: '6px',
+            background: 'rgba(239,68,68,0.2)',
+            color: 'var(--danger)',
+            fontSize: '0.7rem',
+            border: '1px solid rgba(239,68,68,0.3)',
+          }}
+        >
+          {t.message.recall}
+        </button>
+      )}
     </div>
   )
 }
