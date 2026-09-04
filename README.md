@@ -13,6 +13,8 @@
 
 <br>
 
+**[🔗 在线体验](https://xiaoyu-hue.github.io/Nymir/)**
+
 [![React](https://img.shields.io/badge/React_19-61DAFB?logo=react&logoColor=white&style=flat-square)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript_6-3178C6?logo=typescript&logoColor=white&style=flat-square)](https://www.typescriptlang.org)
 [![Vite](https://img.shields.io/badge/Vite_8-646CFF?logo=vite&logoColor=white&style=flat-square)](https://vite.dev)
@@ -330,6 +332,8 @@ src/
 - [x] MQTT 信号降级
 - [x] 断线自动重连
 - [x] 移动端适配
+- [x] 消息撤回
+- [x] 多语言支持
 
 ### 计划中 🚀
 
@@ -339,9 +343,7 @@ src/
 - [ ] 消息已读回执
 - [ ] PWA 支持（离线可用）
 - [ ] App 打包（Capacitor / Tauri）
-- [ ] 消息撤回
 - [ ] 群组管理增强
-- [ ] 多语言支持
 
 ---
 

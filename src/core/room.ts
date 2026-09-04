@@ -55,11 +55,11 @@ export class RoomManager {
     }
 
     await saveRoom({ id, name, createdAt: room.createdAt })
-    await this.joinRoom(id)
+    await this.joinRoom(id, name)
     return room
   }
 
-  async joinRoom(roomId: string): Promise<void> {
+  async joinRoom(roomId: string, roomName?: string): Promise<void> {
     if (this.currentRoom) this.leaveRoom()
 
     this.roomId = roomId
@@ -68,7 +68,7 @@ export class RoomManager {
 
     this.currentRoom = {
       id: roomId,
-      name: roomId,
+      name: roomName ?? roomId,
       createdAt: Date.now(),
       peers: [],
     }
