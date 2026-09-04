@@ -7,14 +7,15 @@ import GlassCard from './GlassCard'
 import MessageBubble from './MessageBubble'
 
 export default function ChatView() {
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<Message[]>(() =>
+    messageManager.getMessages(),
+  )
   const [input, setInput] = useState('')
   const [burnMode, setBurnMode] = useState<BurnMode>(BurnMode.PERSIST)
   const [burnAfter, setBurnAfter] = useState(60)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    setMessages(messageManager.getMessages())
     const unsub = messageManager.onMessage(() => {
       setMessages(messageManager.getMessages())
     })
