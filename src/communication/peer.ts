@@ -83,7 +83,6 @@ export class PeerManager {
     // Fallback to MQTT if no peers found within 5 seconds
     this.strategyFallbackTimer = setTimeout(() => {
       if (this.peers.size === 0 && this.room) {
-        console.log('[Nymir] BitTorrent signaling slow, falling back to MQTT')
         this.room.leave()
         this.currentStrategy = 'mqtt'
         this.room = this.joinWithStrategy(roomId, 'mqtt')
@@ -96,7 +95,6 @@ export class PeerManager {
       clearTimeout(this.reconnectTimer)
     }
     this.reconnectTimer = setTimeout(() => {
-      console.log('[Nymir] Reconnecting...')
       this.join(roomId)
     }, 2000)
   }
