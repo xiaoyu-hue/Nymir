@@ -64,8 +64,8 @@ function AppContent() {
     return (
       <div
         style={{
-          width: '100vw',
-          height: '100vh',
+          width: '100dvw',
+          height: '100dvh',
           background: 'linear-gradient(180deg, #0a0a1a 0%, #12122a 50%, #0a0a1a 100%)',
           display: 'flex',
           alignItems: 'center',
@@ -91,8 +91,8 @@ function AppContent() {
   return (
     <div
       style={{
-        width: '100vw',
-        height: '100vh',
+        width: '100dvw',
+        height: '100dvh',
         background: 'linear-gradient(180deg, #0a0a1a 0%, #12122a 50%, #0a0a1a 100%)',
         position: 'relative',
         overflow: 'hidden',
