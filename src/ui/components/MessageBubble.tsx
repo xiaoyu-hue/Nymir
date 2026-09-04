@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { Message } from '../../core/types'
 import { peerManager } from '../../communication/peer'
 import { formatTime } from '../../utils/time'
@@ -9,7 +10,7 @@ type Props = {
   onDestroy?: () => void
 }
 
-export default function MessageBubble({ message, onDestroy }: Props) {
+function MessageBubbleInner({ message, onDestroy }: Props) {
   const isSelf = message.sender === peerManager.id
 
   if (message.destroyed) {
@@ -73,3 +74,14 @@ export default function MessageBubble({ message, onDestroy }: Props) {
     </div>
   )
 }
+
+const MessageBubble = memo(MessageBubbleInner, (prev, next) => {
+  return (
+    prev.message.id === next.message.id &&
+    prev.message.destroyed === next.message.destroyed &&
+    prev.message.readBy.length === next.message.readBy.length &&
+    prev.message.content === next.message.content
+  )
+})
+
+export default MessageBubble

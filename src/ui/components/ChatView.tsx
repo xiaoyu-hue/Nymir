@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import type { Message, BurnConfig } from '../../core/types'
 import { BurnMode } from '../../core/types'
 import { messageManager } from '../../core/message'
@@ -28,7 +28,7 @@ export default function ChatView() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleSend = async () => {
+  const handleSend = useCallback(async () => {
     if (!input.trim()) return
 
     const config: BurnConfig = {
@@ -39,18 +39,25 @@ export default function ChatView() {
 
     await messageManager.send(input.trim(), config)
     setInput('')
-  }
+  }, [input, burnMode, burnAfter])
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault()
+        handleSend()
+      }
+    },
+    [handleSend],
+  )
 
-  const handleLeave = () => {
+  const handleLeave = useCallback(() => {
     roomManager.leaveRoom()
-  }
+  }, [])
+
+  const handleDestroy = useCallback(() => {
+    setMessages(messageManager.getMessages())
+  }, [])
 
   const room = roomManager.room
 
@@ -146,11 +153,7 @@ export default function ChatView() {
           </div>
         )}
         {messages.map((msg) => (
-          <MessageBubble
-            key={msg.id}
-            message={msg}
-            onDestroy={() => setMessages(messageManager.getMessages())}
-          />
+          <MessageBubble key={msg.id} message={msg} onDestroy={handleDestroy} />
         ))}
         <div ref={messagesEndRef} />
       </div>
