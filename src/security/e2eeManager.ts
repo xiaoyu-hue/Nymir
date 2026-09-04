@@ -115,15 +115,21 @@ class E2EEManager {
   }
 
   /**
-   * 加密发送给指定 peer 的消息
+   * 加密发送给指定 peer 的消息（带前向保密）
    */
-  async encrypt(plaintext: string, peerId: string): Promise<string | null> {
+  async encrypt(plaintext: string, peerId: string, messageId: string): Promise<string | null> {
     if (!this.keyPair) return null
     const peerKey = this.peerPublicKeys.get(peerId)
     if (!peerKey) return null
 
     try {
-      const payload = await encryptMessage(plaintext, peerId, this.keyPair.privateKey, peerKey)
+      const payload = await encryptMessage(
+        plaintext,
+        peerId,
+        this.keyPair.privateKey,
+        peerKey,
+        messageId,
+      )
       return JSON.stringify(payload)
     } catch (e) {
       console.error(`[E2EE] Encrypt failed for ${peerId}:`, e)
@@ -132,16 +138,16 @@ class E2EEManager {
   }
 
   /**
-   * 解密来自指定 peer 的消息
+   * 解密来自指定 peer 的消息（带前向保密）
    */
-  async decrypt(ciphertext: string, peerId: string): Promise<string | null> {
+  async decrypt(ciphertext: string, peerId: string, messageId: string): Promise<string | null> {
     if (!this.keyPair) return null
     const peerKey = this.peerPublicKeys.get(peerId)
     if (!peerKey) return null
 
     try {
       const payload = JSON.parse(ciphertext)
-      return await decryptMessage(payload, peerId, this.keyPair.privateKey, peerKey)
+      return await decryptMessage(payload, peerId, this.keyPair.privateKey, peerKey, messageId)
     } catch (e) {
       console.error(`[E2EE] Decrypt failed from ${peerId}:`, e)
       return null

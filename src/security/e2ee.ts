@@ -1,19 +1,21 @@
 /**
  * Nymir 端到端加密模块
  * 
- * 使用 X25519 密钥交换 + AES-256-GCM
+ * 使用 X25519 密钥交换 + AES-256-GCM + HKDF 前向保密
  * 
  * 流程：
  * 1. 每个 peer 生成临时 X25519 密钥对
  * 2. 连接时交换公钥
  * 3. ECDH 计算共享密钥
- * 4. 用共享密钥加密消息
+ * 4. 使用 HKDF 为每条消息派生独立密钥
+ * 5. 用消息密钥加密消息
  */
 
 const KEY_TYPE = 'X25519'
 const AES_ALGO = 'AES-GCM'
 const AES_KEY_LENGTH = 256
 const IV_LENGTH = 12
+const HKDF_HASH = 'SHA-256'
 
 export interface KeyPair {
   publicKey: CryptoKey
@@ -96,21 +98,47 @@ async function getSharedKey(
 }
 
 /**
- * 加密消息
+ * 为特定消息派生密钥（前向保密）
+ */
+async function deriveMessageKey(
+  sharedKey: CryptoKey,
+  messageId: string,
+): Promise<CryptoKey> {
+  const encoder = new TextEncoder()
+  const salt = encoder.encode(messageId)
+
+  return crypto.subtle.deriveKey(
+    {
+      name: 'HKDF',
+      salt,
+      hash: HKDF_HASH,
+      info: encoder.encode('nymir-message-key'),
+    },
+    sharedKey,
+    { name: AES_ALGO, length: AES_KEY_LENGTH },
+    false,
+    ['encrypt', 'decrypt'],
+  )
+}
+
+/**
+ * 加密消息（带前向保密）
  */
 export async function encryptMessage(
   plaintext: string,
   peerId: string,
   privateKey: CryptoKey,
   peerPublicKey: CryptoKey,
+  messageId: string,
 ): Promise<EncryptedPayload> {
-  const key = await getSharedKey(peerId, privateKey, peerPublicKey)
+  const sharedKey = await getSharedKey(peerId, privateKey, peerPublicKey)
+  const messageKey = await deriveMessageKey(sharedKey, messageId)
   const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH))
   const encoder = new TextEncoder()
 
   const ciphertext = await crypto.subtle.encrypt(
     { name: AES_ALGO, iv },
-    key,
+    messageKey,
     encoder.encode(plaintext),
   )
 
@@ -121,22 +149,24 @@ export async function encryptMessage(
 }
 
 /**
- * 解密消息
+ * 解密消息（带前向保密）
  */
 export async function decryptMessage(
   payload: EncryptedPayload,
   peerId: string,
   privateKey: CryptoKey,
   peerPublicKey: CryptoKey,
+  messageId: string,
 ): Promise<string> {
-  const key = await getSharedKey(peerId, privateKey, peerPublicKey)
+  const sharedKey = await getSharedKey(peerId, privateKey, peerPublicKey)
+  const messageKey = await deriveMessageKey(sharedKey, messageId)
   const iv = Uint8Array.from(atob(payload.iv), (c) => c.charCodeAt(0))
   const data = Uint8Array.from(atob(payload.data), (c) => c.charCodeAt(0))
   const decoder = new TextDecoder()
 
   const plaintext = await crypto.subtle.decrypt(
     { name: AES_ALGO, iv },
-    key,
+    messageKey,
     data,
   )
 
