@@ -20,6 +20,7 @@ export default function ChatView() {
   const [burnAfter, setBurnAfter] = useState(60)
   const [copied, setCopied] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const readMsgIdsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     const unsub = messageManager.onMessage(() => {
@@ -32,10 +33,11 @@ export default function ChatView() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Mark messages as read when they appear
+  // Mark messages as read when they appear (deduplicated)
   useEffect(() => {
     for (const msg of messages) {
-      if (msg.sender !== peerManager.id) {
+      if (msg.sender !== peerManager.id && !readMsgIdsRef.current.has(msg.id)) {
+        readMsgIdsRef.current.add(msg.id)
         messageManager.markRead(msg.id)
       }
     }
