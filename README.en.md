@@ -294,20 +294,31 @@ Build output is in the `dist/` directory, ready for static hosting:
 - [x] Auto-reconnection
 - [x] Mobile optimization
 - [x] Message recall
-- [x] Multi-language support
+- [x] Multi-language support (Chinese / English)
 - [x] PWA support (offline capable)
 - [x] Read receipts
 - [x] E2E encryption (X25519 + AES-256-GCM)
 - [x] Message digital signatures (Ed25519)
 - [x] Forward secrecy (HKDF per-message keys)
+- [x] Local password lock screen (PBKDF2 + AES-256-GCM)
+- [x] Pseudonym system (per-user/per-room anonymous nicknames)
+- [x] Traffic obfuscation (random noise messages, no identifiable markers)
+- [x] Secure deletion (localStorage overwrite)
+- [x] Encrypted backup (AES-256-GCM, .nymir files)
+- [x] Accessibility (ARIA roles, focus-visible, label associations)
+- [x] SEO (Open Graph, Twitter Card, noscript fallback)
+- [x] UI/UX micro-interaction system + responsive adaptation
 
 ### Planned 🚀
 
 - [ ] Image/file sharing
+- [ ] Message search
 - [ ] Voice messages
+- [ ] Multi-device sync (WebRTC direct transfer)
+- [ ] Custom themes (light mode / custom color schemes)
 - [ ] App packaging (Capacitor / Tauri)
-- [ ] Enhanced group management
-- [ ] Decentralized identity (no public signaling dependency)
+- [ ] Decentralized identity (eliminate signaling dependency)
+- [ ] Enhanced group management (admin/kick/mute)
 
 ---
 
