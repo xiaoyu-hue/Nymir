@@ -1,19 +1,20 @@
 import { peerManager, type Channel } from '../communication/peer'
 import { saveMessage, markMessageRead, destroyMessage } from '../persistence/db'
+import { e2eeManager } from '../security/e2eeManager'
 import { generateMessageId } from '../utils/id'
 import type { Message, BurnConfig } from './types'
 import { shouldDestroy, getRemainingMs } from './burn'
 
 export type MessageListener = (msg: Message) => void
-type ReadReceipt = { type: 'read'; msgId: string; peerId: string }
-type RecallEvent = { type: 'recall'; msgId: string }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyPayload = Record<string, any>
 
 const READ_ONCE_AUTO_DESTROY_MS = 30 * 60 * 1000 // 30 minutes safety net
 
 export class MessageManager {
-  private channel: Channel<Message> | null = null
-  private readChannel: Channel<ReadReceipt> | null = null
-  private recallChannel: Channel<RecallEvent> | null = null
+  private channel: Channel<AnyPayload> | null = null
+  private readChannel: Channel<AnyPayload> | null = null
+  private recallChannel: Channel<AnyPayload> | null = null
   private listeners: MessageListener[] = []
   private messageStore = new Map<string, Message>()
   private burnTimers = new Map<string, ReturnType<typeof setTimeout>>()
@@ -21,15 +22,33 @@ export class MessageManager {
 
   init(roomId: string): void {
     this.roomId = roomId
-    this.channel = peerManager.makeChannel<Message>('messages')
-    this.readChannel = peerManager.makeChannel<ReadReceipt>('read-receipts')
-    this.recallChannel = peerManager.makeChannel<RecallEvent>('recall')
+    this.channel = peerManager.makeChannel<AnyPayload>('messages')
+    this.readChannel = peerManager.makeChannel<AnyPayload>('read-receipts')
+    this.recallChannel = peerManager.makeChannel<AnyPayload>('recall')
 
     this.channel.onMessage(async (data, { peerId }) => {
-      const msg: Message = {
-        ...data,
-        sender: peerId,
+      // 解密消息内容
+      let content = ''
+      if (data.encrypted) {
+        // 尝试解密
+        const decrypted = await e2eeManager.decrypt(data.content, peerId)
+        content = decrypted ?? data.content // 解密失败则使用原始内容（兼容）
+      } else {
+        content = data.content
       }
+
+      const msg: Message = {
+        id: data.id,
+        content,
+        sender: peerId,
+        timestamp: data.timestamp,
+        burnMode: data.burnMode,
+        burnAfter: data.burnAfter,
+        burnAt: data.burnAt,
+        readBy: data.readBy ?? [],
+        destroyed: data.destroyed ?? false,
+      }
+
       this.messageStore.set(msg.id, msg)
       await saveMessage({ ...msg, roomId: this.roomId })
       this.scheduleBurn(msg)
@@ -72,9 +91,27 @@ export class MessageManager {
       destroyed: false,
     }
 
+    // 尝试加密消息
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let sendPayload: AnyPayload = { ...msg }
+    const peerList = peerManager.peerList
+
+    if (peerList.length > 0) {
+      // 加密给所有 peer 的消息
+      const firstPeer = peerList[0]
+      const encrypted = await e2eeManager.encrypt(content, firstPeer)
+      if (encrypted) {
+        sendPayload = {
+          ...msg,
+          content: encrypted,
+          encrypted: true,
+        }
+      }
+    }
+
     this.messageStore.set(msg.id, msg)
     await saveMessage({ ...msg, roomId: this.roomId })
-    this.channel.send(msg)
+    this.channel.send(sendPayload)
     this.scheduleBurn(msg)
     this.notifyListeners(msg)
     return msg
