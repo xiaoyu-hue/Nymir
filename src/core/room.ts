@@ -16,7 +16,6 @@ export class RoomManager {
   private unsubs: (() => void)[] = []
   private connectionStatus: ConnectionStatus = 'disconnected'
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
-  private roomId: string = ''
 
   get room(): RoomInfo | null {
     return this.currentRoom
@@ -63,7 +62,6 @@ export class RoomManager {
   async joinRoom(roomId: string, roomName?: string): Promise<void> {
     if (this.currentRoom) this.leaveRoom()
 
-    this.roomId = roomId
     peerManager.join(roomId)
     messageManager.init(roomId)
 
@@ -132,7 +130,7 @@ export class RoomManager {
         return
       }
 
-      peerManager.join(this.roomId)
+      peerManager.join(this.currentRoom!.id)
     }
 
     this.reconnectTimer = setTimeout(() => {

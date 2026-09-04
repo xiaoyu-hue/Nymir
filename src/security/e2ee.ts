@@ -186,17 +186,3 @@ export function clearSharedKey(peerId: string): void {
 export function clearAllSharedKeys(): void {
   sharedKeys.clear()
 }
-
-/**
- * 编码公钥为可传输格式
- */
-export async function encodePublicKey(keyPair: KeyPair): Promise<string> {
-  return exportPublicKey(keyPair)
-}
-
-/**
- * 解码对端公钥
- */
-export async function decodePublicKey(encoded: string): Promise<CryptoKey> {
-  return importPeerPublicKey(encoded)
-}
