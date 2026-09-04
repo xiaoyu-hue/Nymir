@@ -106,46 +106,52 @@ function AppContent() {
         <ChatView />
       )}
 
-      {/* Language toggle */}
-      <button
-        onClick={toggleLang}
+      {/* Action bar - top right */}
+      <div
         style={{
           position: 'fixed',
           top: '16px',
           right: '16px',
-          padding: '6px 12px',
-          borderRadius: '8px',
-          background: 'rgba(255,255,255,0.08)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid var(--glass-border)',
-          color: 'var(--text-secondary)',
-          fontSize: '0.8rem',
+          display: 'flex',
+          gap: '8px',
           zIndex: 50,
         }}
       >
-        {t.nav.switchLang}
-      </button>
+        {/* Lock button */}
+        <button
+          onClick={() => securityManager.lock()}
+          aria-label={t.security.locked}
+          style={{
+            padding: '6px 12px',
+            borderRadius: '8px',
+            background: 'rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid var(--glass-border)',
+            color: 'var(--text-secondary)',
+            fontSize: '0.8rem',
+          }}
+          title={t.security.locked}
+        >
+          🔒
+        </button>
 
-      {/* Lock button */}
-      <button
-        onClick={() => securityManager.lock()}
-        style={{
-          position: 'fixed',
-          top: '16px',
-          right: '80px',
-          padding: '6px 12px',
-          borderRadius: '8px',
-          background: 'rgba(255,255,255,0.08)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid var(--glass-border)',
-          color: 'var(--text-secondary)',
-          fontSize: '0.8rem',
-          zIndex: 50,
-        }}
-        title={t.security.locked}
-      >
-        🔒
-      </button>
+        {/* Language toggle */}
+        <button
+          onClick={toggleLang}
+          aria-label={t.nav.switchLang}
+          style={{
+            padding: '6px 12px',
+            borderRadius: '8px',
+            background: 'rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid var(--glass-border)',
+            color: 'var(--text-secondary)',
+            fontSize: '0.8rem',
+          }}
+        >
+          {t.nav.switchLang}
+        </button>
+      </div>
 
       {/* Backup button */}
       <button
