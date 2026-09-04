@@ -23,6 +23,8 @@ function MessageBubbleInner({ message, onDestroy }: Props) {
     )
   }
 
+  const readCount = message.readBy.length
+
   return (
     <div
       className={`message-bubble ${isSelf ? 'self' : 'other'}`}
@@ -68,6 +70,11 @@ function MessageBubbleInner({ message, onDestroy }: Props) {
           {message.burnMode !== 'persist' && (
             <span style={{ color: 'var(--warning)', opacity: 0.7 }}>
               {getBurnModeLabel(message.burnMode)}
+            </span>
+          )}
+          {isSelf && readCount > 0 && (
+            <span style={{ color: 'var(--accent)', opacity: 0.8 }}>
+              ✓✓ {readCount}
             </span>
           )}
           <BurnTimer message={message} onExpired={onDestroy} />

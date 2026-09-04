@@ -5,11 +5,13 @@ import type { Message, BurnConfig } from './types'
 import { shouldDestroy } from './burn'
 
 export type MessageListener = (msg: Message) => void
+type ReadReceipt = { type: 'read'; msgId: string; peerId: string }
 
 const READ_ONCE_AUTO_DESTROY_MS = 30 * 60 * 1000 // 30 minutes safety net
 
 export class MessageManager {
   private channel: Channel<Message> | null = null
+  private readChannel: Channel<ReadReceipt> | null = null
   private listeners: MessageListener[] = []
   private messageStore = new Map<string, Message>()
   private burnTimers = new Map<string, ReturnType<typeof setTimeout>>()
@@ -18,6 +20,7 @@ export class MessageManager {
   init(roomId: string): void {
     this.roomId = roomId
     this.channel = peerManager.makeChannel<Message>('messages')
+    this.readChannel = peerManager.makeChannel<ReadReceipt>('read-receipts')
 
     this.channel.onMessage(async (data, { peerId }) => {
       const msg: Message = {
@@ -28,6 +31,17 @@ export class MessageManager {
       await saveMessage({ ...msg, roomId: this.roomId })
       this.scheduleBurn(msg)
       this.notifyListeners(msg)
+    })
+
+    this.readChannel.onMessage(async (data) => {
+      if (data.type === 'read') {
+        const msg = this.messageStore.get(data.msgId)
+        if (msg && !msg.readBy.includes(data.peerId)) {
+          msg.readBy.push(data.peerId)
+          await markMessageRead(data.msgId, data.peerId)
+          this.notifyListeners(msg)
+        }
+      }
     })
   }
 
@@ -61,6 +75,13 @@ export class MessageManager {
     if (!msg.readBy.includes(peerManager.id)) {
       msg.readBy.push(peerManager.id)
       await markMessageRead(msgId, peerManager.id)
+
+      // Broadcast read receipt
+      this.readChannel?.send({
+        type: 'read',
+        msgId,
+        peerId: peerManager.id,
+      })
 
       if (shouldDestroy(msg)) {
         await this.burn(msg)
@@ -141,7 +162,6 @@ export class MessageManager {
   }
 
   async loadFromStorage(messages: Message[]): Promise<void> {
-    // Collect messages to destroy to avoid mutating map during iteration
     const toDestroy: Message[] = []
     const toKeep: Message[] = []
 
@@ -155,12 +175,10 @@ export class MessageManager {
       }
     }
 
-    // Destroy expired messages
     for (const msg of toDestroy) {
       await this.burn(msg)
     }
 
-    // Notify listeners of all surviving messages
     for (const msg of toKeep) {
       this.notifyListeners(msg)
     }
@@ -174,6 +192,7 @@ export class MessageManager {
     this.messageStore.clear()
     this.listeners = []
     this.channel = null
+    this.readChannel = null
   }
 }
 

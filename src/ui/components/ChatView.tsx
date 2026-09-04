@@ -3,6 +3,7 @@ import type { Message, BurnConfig } from '../../core/types'
 import { BurnMode } from '../../core/types'
 import { messageManager } from '../../core/message'
 import { roomManager } from '../../core/room'
+import { peerManager } from '../../communication/peer'
 import { useRoom } from '../hooks/useRoom'
 import { useI18n } from '../../i18n'
 import GlassCard from './GlassCard'
@@ -28,6 +29,15 @@ export default function ChatView() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  // Mark messages as read when they appear
+  useEffect(() => {
+    for (const msg of messages) {
+      if (msg.sender !== peerManager.id) {
+        messageManager.markRead(msg.id)
+      }
+    }
   }, [messages])
 
   const handleSend = useCallback(async () => {
