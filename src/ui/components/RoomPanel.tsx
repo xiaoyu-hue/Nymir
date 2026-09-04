@@ -1,0 +1,159 @@
+import { useState } from 'react'
+import GlassCard from './GlassCard'
+
+type Props = {
+  onCreateRoom: (name: string) => void
+  onJoinRoom: (roomId: string) => void
+}
+
+export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
+  const [tab, setTab] = useState<'create' | 'join'>('create')
+  const [name, setName] = useState('')
+  const [roomId, setRoomId] = useState('')
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        gap: '24px',
+        padding: '24px',
+        position: 'relative',
+        zIndex: 1,
+      }}
+    >
+      <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+        <h1
+          style={{
+            fontSize: '2.5rem',
+            fontWeight: 700,
+            background: 'linear-gradient(135deg, #fff, var(--accent))',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            marginBottom: '8px',
+          }}
+        >
+          Nymir
+        </h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>
+          匿名树洞 · 阅读即焚
+        </p>
+      </div>
+
+      <GlassCard variant="strong" className="room-panel-card">
+        <div
+          style={{
+            display: 'flex',
+            borderBottom: '1px solid var(--glass-border)',
+          }}
+        >
+          <button
+            onClick={() => setTab('create')}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: tab === 'create' ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: tab === 'create' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              fontSize: '0.9rem',
+              borderBottom: tab === 'create' ? '2px solid var(--accent)' : '2px solid transparent',
+              transition: 'all 0.2s',
+            }}
+          >
+            创建房间
+          </button>
+          <button
+            onClick={() => setTab('join')}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: tab === 'join' ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: tab === 'join' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              fontSize: '0.9rem',
+              borderBottom: tab === 'join' ? '2px solid var(--accent)' : '2px solid transparent',
+              transition: 'all 0.2s',
+            }}
+          >
+            加入房间
+          </button>
+        </div>
+
+        <div style={{ padding: '24px' }}>
+          {tab === 'create' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <input
+                type="text"
+                placeholder="房间名称"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  border: '1px solid var(--glass-border)',
+                  background: 'rgba(255,255,255,0.05)',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.95rem',
+                }}
+              />
+              <button
+                onClick={() => name.trim() && onCreateRoom(name.trim())}
+                disabled={!name.trim()}
+                style={{
+                  padding: '12px',
+                  borderRadius: '12px',
+                  background: name.trim()
+                    ? 'linear-gradient(135deg, var(--accent), #5b4bc9)'
+                    : 'rgba(255,255,255,0.05)',
+                  color: name.trim() ? 'white' : 'var(--text-muted)',
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  transition: 'all 0.2s',
+                }}
+              >
+                创建并进入
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <input
+                type="text"
+                placeholder="输入房间代码 (如 A3B7K9)"
+                value={roomId}
+                onChange={(e) => setRoomId(e.target.value.toUpperCase())}
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  border: '1px solid var(--glass-border)',
+                  background: 'rgba(255,255,255,0.05)',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.95rem',
+                  letterSpacing: '2px',
+                  textAlign: 'center',
+                }}
+              />
+              <button
+                onClick={() => roomId.trim() && onJoinRoom(roomId.trim())}
+                disabled={!roomId.trim()}
+                style={{
+                  padding: '12px',
+                  borderRadius: '12px',
+                  background: roomId.trim()
+                    ? 'linear-gradient(135deg, var(--accent), #5b4bc9)'
+                    : 'rgba(255,255,255,0.05)',
+                  color: roomId.trim() ? 'white' : 'var(--text-muted)',
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  transition: 'all 0.2s',
+                }}
+              >
+                加入房间
+              </button>
+            </div>
+          )}
+        </div>
+      </GlassCard>
+    </div>
+  )
+}
