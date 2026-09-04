@@ -64,6 +64,9 @@ export default function LockScreen({ onUnlocked }: Props) {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={isSetup ? t.security.unlock : t.security.setupTitle}
       style={{
         position: 'fixed',
         top: 0,
@@ -102,6 +105,7 @@ export default function LockScreen({ onUnlocked }: Props) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
               <label
+                htmlFor="lock-password"
                 style={{
                   display: 'block',
                   fontSize: '0.8rem',
@@ -112,6 +116,7 @@ export default function LockScreen({ onUnlocked }: Props) {
                 {t.security.password}
               </label>
               <input
+                id="lock-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -134,6 +139,7 @@ export default function LockScreen({ onUnlocked }: Props) {
             {!isSetup && (
               <div>
                 <label
+                  htmlFor="lock-confirm-password"
                   style={{
                     display: 'block',
                     fontSize: '0.8rem',
@@ -144,6 +150,7 @@ export default function LockScreen({ onUnlocked }: Props) {
                   {t.security.confirmPassword}
                 </label>
                 <input
+                  id="lock-confirm-password"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
