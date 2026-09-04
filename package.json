@@ -17,7 +17,9 @@
     "idb": "^8.0.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "trystero": "^0.25.4"
+    "trystero": "^0.25.4",
+    "vite-plugin-pwa": "^1.3.0",
+    "workbox-window": "^7.4.1"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
