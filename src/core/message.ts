@@ -12,6 +12,12 @@ type AnyPayload = Record<string, any>
 
 const READ_ONCE_AUTO_DESTROY_MS = 30 * 60 * 1000 // 30 minutes safety net
 
+function logError(context: string, err: unknown, extra?: Record<string, unknown>): void {
+  const msg = err instanceof Error ? err.message : String(err)
+  const stack = err instanceof Error ? err.stack : undefined
+  console.error(`[Message] ${context}: ${msg}`, { ...extra, stack })
+}
+
 export class MessageManager {
   private channel: Channel<AnyPayload> | null = null
   private readChannel: Channel<AnyPayload> | null = null
@@ -28,64 +34,48 @@ export class MessageManager {
     this.recallChannel = peerManager.makeChannel<AnyPayload>('recall')
 
     this.channel.onMessage(async (data, { peerId }) => {
-      // 过滤噪声消息
-      if (isNoiseMessage(data)) {
-        return
+      try {
+        await this.handleIncomingMessage(data, peerId)
+      } catch (err) {
+        logError('onMessage handler error', err, {
+          roomId: this.roomId,
+          peerId,
+          msgId: data?.id,
+        })
       }
-
-      // 解密消息内容
-      let content = ''
-      if (data.encrypted) {
-        // 尝试解密（带前向保密）
-        const decrypted = await e2eeManager.decrypt(data.content, peerId, data.id)
-        content = decrypted ?? data.content // 解密失败则使用原始内容（兼容）
-      } else {
-        content = data.content
-      }
-
-      // 验证签名（如果有）
-      if (data.signature) {
-        const valid = await e2eeManager.verify(content, data.signature, peerId)
-        if (!valid) {
-          console.warn(`[Message] Invalid signature from ${peerId}, message may be tampered`)
-        }
-      }
-
-      const msg: Message = {
-        id: data.id,
-        content,
-        sender: peerId,
-        timestamp: data.timestamp,
-        burnMode: data.burnMode,
-        burnAfter: data.burnAfter,
-        burnAt: data.burnAt,
-        readBy: data.readBy ?? [],
-        destroyed: data.destroyed ?? false,
-      }
-
-      this.messageStore.set(msg.id, msg)
-      await saveMessage({ ...msg, roomId: this.roomId })
-      this.scheduleBurn(msg)
-      this.notifyListeners(msg)
     })
 
     this.readChannel.onMessage(async (data) => {
-      if (data.type === 'read') {
-        const msg = this.messageStore.get(data.msgId)
-        if (msg && !msg.readBy.includes(data.peerId)) {
-          msg.readBy.push(data.peerId)
-          await markMessageRead(data.msgId, data.peerId)
-          this.notifyListeners(msg)
+      try {
+        if (data.type === 'read') {
+          const msg = this.messageStore.get(data.msgId)
+          if (msg && !msg.readBy.includes(data.peerId)) {
+            msg.readBy.push(data.peerId)
+            await markMessageRead(data.msgId, data.peerId)
+            this.notifyListeners(msg)
+          }
         }
+      } catch (err) {
+        logError('readChannel handler error', err, {
+          roomId: this.roomId,
+          msgId: data?.msgId,
+        })
       }
     })
 
     this.recallChannel.onMessage(async (data) => {
-      if (data.type === 'recall') {
-        const msg = this.messageStore.get(data.msgId)
-        if (msg) {
-          await this.burn(msg)
+      try {
+        if (data.type === 'recall') {
+          const msg = this.messageStore.get(data.msgId)
+          if (msg) {
+            await this.burn(msg)
+          }
         }
+      } catch (err) {
+        logError('recallChannel handler error', err, {
+          roomId: this.roomId,
+          msgId: data?.msgId,
+        })
       }
     })
 
@@ -95,6 +85,133 @@ export class MessageManager {
     })
   }
 
+  /**
+   * 处理接收到的消息（解密 + 验证 + 持久化）
+   */
+  private async handleIncomingMessage(data: AnyPayload, peerId: string): Promise<void> {
+    // 过滤噪声消息
+    if (isNoiseMessage(data)) return
+
+    // 验证 payload 必要字段
+    if (!data.id || !data.timestamp || !data.burnMode) {
+      console.warn('[Message] Ignoring malformed payload:', {
+        peerId,
+        hasId: !!data.id,
+        hasTimestamp: !!data.timestamp,
+        hasBurnMode: !!data.burnMode,
+      })
+      return
+    }
+
+    let content = ''
+    let decryptFailed = false
+    let verified: boolean | undefined = undefined
+
+    // 解密处理
+    if (data.encrypted) {
+      try {
+        const decrypted = await e2eeManager.decrypt(data.content, peerId, data.id)
+        if (decrypted) {
+          content = decrypted
+        } else {
+          // 解密失败 — 不使用明文回退
+          decryptFailed = true
+          content = '[encrypted message]'
+          console.warn('[Message] Decrypt failed, not saving as readable:', {
+            roomId: this.roomId,
+            msgId: data.id,
+            peerId,
+          })
+        }
+      } catch (err) {
+        decryptFailed = true
+        content = '[encrypted message]'
+        logError('Decrypt error', err, {
+          roomId: this.roomId,
+          msgId: data.id,
+          peerId,
+        })
+      }
+    } else {
+      content = data.content
+    }
+
+    // 签名验证
+    if (data.signature && !decryptFailed) {
+      try {
+        const valid = await e2eeManager.verify(content, data.signature, peerId)
+        verified = valid
+        if (!valid) {
+          console.warn('[Message] Signature verification failed:', {
+            roomId: this.roomId,
+            msgId: data.id,
+            peerId,
+          })
+        }
+      } catch (err) {
+        verified = false
+        logError('Verify error', err, {
+          roomId: this.roomId,
+          msgId: data.id,
+          peerId,
+        })
+      }
+    }
+
+    // 如果解密失败，不保存为正常可读消息
+    if (decryptFailed) {
+      const failedMsg: Message = {
+        id: data.id,
+        content: '',
+        sender: peerId,
+        timestamp: data.timestamp,
+        burnMode: data.burnMode,
+        burnAfter: data.burnAfter,
+        burnAt: data.burnAt,
+        readBy: [],
+        destroyed: false,
+        decryptFailed: true,
+        verified: false,
+      }
+      this.messageStore.set(failedMsg.id, failedMsg)
+      try {
+        await saveMessage({ ...failedMsg, roomId: this.roomId })
+      } catch (err) {
+        logError('saveMessage (decryptFailed) error', err, {
+          roomId: this.roomId,
+          msgId: data.id,
+        })
+      }
+      this.notifyListeners(failedMsg)
+      return
+    }
+
+    const msg: Message = {
+      id: data.id,
+      content,
+      sender: peerId,
+      timestamp: data.timestamp,
+      burnMode: data.burnMode,
+      burnAfter: data.burnAfter,
+      burnAt: data.burnAt,
+      readBy: data.readBy ?? [],
+      destroyed: data.destroyed ?? false,
+      verified,
+    }
+
+    this.messageStore.set(msg.id, msg)
+    try {
+      await saveMessage({ ...msg, roomId: this.roomId })
+    } catch (err) {
+      logError('saveMessage error', err, { roomId: this.roomId, msgId: msg.id })
+    }
+    this.scheduleBurn(msg)
+    this.notifyListeners(msg)
+  }
+
+  /**
+   * 发送消息：为每个 peer 单独加密并单播发送
+   */
   async send(content: string, burn: BurnConfig): Promise<Message> {
     if (!this.channel) throw new Error('MessageManager not initialized')
 
@@ -110,36 +227,65 @@ export class MessageManager {
       destroyed: false,
     }
 
-    // 尝试加密消息
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let sendPayload: AnyPayload = { ...msg }
-    const peerList = peerManager.peerList
+    try {
+      // 计算签名（对原始明文签名）
+      const signature = await e2eeManager.sign(content)
 
-    if (peerList.length > 0) {
-      // 加密给所有 peer 的消息（带前向保密）
-      const firstPeer = peerList[0]
-      const encrypted = await e2eeManager.encrypt(content, firstPeer, msg.id)
-      if (encrypted) {
-        sendPayload = {
-          ...msg,
-          content: encrypted,
-          encrypted: true,
+      const peerList = peerManager.peerList
+
+      if (peerList.length > 0) {
+        // 为每个 peer 单独加密并发送
+        for (const peerId of peerList) {
+          try {
+            const encrypted = await e2eeManager.encrypt(content, peerId, msg.id)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const payload: AnyPayload = {
+              ...msg,
+              content: encrypted ?? content,
+              encrypted: !!encrypted,
+            }
+            if (signature) {
+              payload.signature = signature
+            }
+            this.channel.send(payload, peerId)
+          } catch (err) {
+            logError('Per-peer encrypt/send failed', err, {
+              roomId: this.roomId,
+              msgId: msg.id,
+              peerId,
+            })
+            // 跳过该 peer，不影响其他 peer
+          }
+        }
+      } else {
+        // 没有 peer，仅本地保存
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const payload: AnyPayload = { ...msg }
+        if (signature) {
+          payload.signature = signature
         }
       }
 
-      // 签名消息
-      const signature = await e2eeManager.sign(content)
-      if (signature) {
-        sendPayload.signature = signature
+      // 本地存储
+      this.messageStore.set(msg.id, msg)
+      try {
+        await saveMessage({ ...msg, roomId: this.roomId })
+      } catch (err) {
+        logError('saveMessage (send) error', err, {
+          roomId: this.roomId,
+          msgId: msg.id,
+        })
       }
+      this.scheduleBurn(msg)
+      this.notifyListeners(msg)
+      return msg
+    } catch (err) {
+      logError('send() unrecoverable error', err, {
+        roomId: this.roomId,
+        msgId: msg.id,
+      })
+      throw err
     }
-
-    this.messageStore.set(msg.id, msg)
-    await saveMessage({ ...msg, roomId: this.roomId })
-    this.channel.send(sendPayload)
-    this.scheduleBurn(msg)
-    this.notifyListeners(msg)
-    return msg
   }
 
   async recall(msgId: string): Promise<boolean> {
@@ -160,7 +306,11 @@ export class MessageManager {
 
     if (!msg.readBy.includes(peerManager.id)) {
       msg.readBy.push(peerManager.id)
-      await markMessageRead(msgId, peerManager.id)
+      try {
+        await markMessageRead(msgId, peerManager.id)
+      } catch (err) {
+        logError('markMessageRead error', err, { roomId: this.roomId, msgId })
+      }
 
       // Broadcast read receipt
       this.readChannel?.send({
@@ -181,7 +331,15 @@ export class MessageManager {
     msg.destroyed = true
     this.clearBurnTimer(msg.id)
     this.messageStore.delete(msg.id)
-    await destroyMessage(msg.id)
+    try {
+      await destroyMessage(msg.id)
+    } catch (err) {
+      // destroyMessage 幂等：如果 id 不存在，不应抛出
+      logError('destroyMessage error (idempotent)', err, {
+        roomId: this.roomId,
+        msgId: msg.id,
+      })
+    }
     this.notifyListeners(msg)
   }
 
