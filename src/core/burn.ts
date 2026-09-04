@@ -1,4 +1,4 @@
-import type { Message } from '../core/types'
+import type { Message } from './types'
 
 export function shouldDestroy(msg: Message): boolean {
   if (msg.destroyed) return true
