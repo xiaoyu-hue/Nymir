@@ -127,18 +127,6 @@ export default function ChatView() {
         <div className="chat-header-inner">
           <div className="chat-header-left">
             <div className="chat-header-name">{room?.name ?? t.room.join}</div>
-            <div
-              onClick={handleCopyCode}
-              className="chat-header-code"
-            >
-              {room?.id}
-              <span
-                className={copied ? 'pop-in' : ''}
-                style={{ color: copied ? 'var(--success)' : 'var(--text-muted)' }}
-              >
-                {copied ? '✓' : '📋'}
-              </span>
-            </div>
           </div>
           <div className="chat-header-right">
             <div className="chat-header-status">
