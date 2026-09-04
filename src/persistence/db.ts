@@ -118,11 +118,8 @@ export async function getMessagesByRoom(roomId: string): Promise<StoredMessage[]
 
 export async function destroyMessage(id: string): Promise<void> {
   const db = await getDB()
-  const msg = await db.get('messages', id)
-  if (msg) {
-    msg.destroyed = true
-    await db.put('messages', msg)
-  }
+  // 幂等：如果 id 不存在，不抛出异常
+  await db.delete('messages', id).catch(() => {})
 }
 
 export async function markMessageRead(id: string, peerId: string): Promise<void> {
