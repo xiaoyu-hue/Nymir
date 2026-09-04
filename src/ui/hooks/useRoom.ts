@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { roomManager } from '../../core/room'
 
 export function useRoom() {
-  const [inRoom, setInRoom] = useState(roomManager.inRoom)
-  const [room, setRoom] = useState(roomManager.room)
+  const [inRoom, setInRoom] = useState(() => roomManager.inRoom)
+  const [room, setRoom] = useState(() => roomManager.room)
 
   useEffect(() => {
     const unsub = roomManager.onEvent((event) => {
@@ -12,10 +12,6 @@ export function useRoom() {
         setRoom(roomManager.room)
       }
     })
-
-    setInRoom(roomManager.inRoom)
-    setRoom(roomManager.room)
-
     return unsub
   }, [])
 
