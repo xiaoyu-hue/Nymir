@@ -1,3 +1,6 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyPayload = Record<string, any>
+
 export const BurnMode = {
   READ_ONCE: 'read_once',
   TIMED: 'timed',

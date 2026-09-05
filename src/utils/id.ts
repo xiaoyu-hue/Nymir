@@ -2,17 +2,10 @@
  * ID 生成工具
  */
 
+import { secureRandomInt } from './random'
+
 const ROOM_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // 去除 I/O/0/1 避免混淆
 const ROOM_ID_LENGTH = 8
-
-/**
- * 加密安全随机整数 [0, max)
- */
-function secureRandomInt(max: number): number {
-  const array = new Uint32Array(1)
-  crypto.getRandomValues(array)
-  return array[0] % max
-}
 
 /**
  * 生成房间 ID（8位 + 1位校验码）

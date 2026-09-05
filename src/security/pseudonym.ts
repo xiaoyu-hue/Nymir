@@ -8,6 +8,8 @@
  * - 使用 crypto.getRandomValues 保证密码学安全随机
  */
 
+import { secureRandomInt } from '../utils/random'
+
 const STORAGE_KEY = 'nymir_anonymous_id'
 const ROOM_NAMES_KEY = 'nymir_room_names'
 
@@ -42,15 +44,6 @@ const ANIMALS = [
   'fox', 'rabbit', 'deer', 'owl', 'dolphin',
   'butterfly', 'bee', 'squirrel', 'seagull', 'swan',
 ]
-
-/**
- * 安全随机整数 [0, max)
- */
-function secureRandomInt(max: number): number {
-  const arr = new Uint32Array(1)
-  crypto.getRandomValues(arr)
-  return arr[0] % max
-}
 
 /**
  * 生成随机假名

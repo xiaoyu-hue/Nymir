@@ -14,6 +14,7 @@ import { e2eeManager } from '../security/e2eeManager'
 import { generateMessageId } from '../utils/id'
 import { log, warn, error } from '../utils/logger'
 import { uint8ToBase64 } from '../utils/base64'
+import type { AnyPayload } from '../core/types'
 
 const CHUNK_SIZE = 16 * 1024 // 16KB per chunk
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
@@ -43,9 +44,6 @@ export interface FileTransfer {
 }
 
 export type TransferListener = (transfer: FileTransfer) => void
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyPayload = Record<string, any>
 
 class FileTransferManager {
   private channel: Channel<AnyPayload> | null = null

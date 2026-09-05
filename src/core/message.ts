@@ -5,13 +5,11 @@ import { e2eeManager } from '../security/e2eeManager'
 import { isNoiseMessage, startNoiseGeneration, stopNoiseGeneration } from '../security/noise'
 import { generateMessageId } from '../utils/id'
 import { log, warn, error } from '../utils/logger'
-import type { Message, BurnConfig } from './types'
+import type { Message, BurnConfig, AnyPayload } from './types'
 import { shouldDestroy, getRemainingMs } from './burn'
 import { READ_ONCE_AUTO_DESTROY_MS } from '../constants'
 
 export type MessageListener = (msg: Message) => void
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyPayload = Record<string, any>
 
 function logError(context: string, err: unknown, extra?: Record<string, unknown>): void {
   const msg = err instanceof Error ? err.message : String(err)
