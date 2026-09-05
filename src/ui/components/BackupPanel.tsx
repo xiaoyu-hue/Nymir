@@ -15,6 +15,9 @@ export default function BackupPanel({ onClose }: Props) {
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState<'export' | 'import'>('export')
 
+  const isBusy = loading || importing
+  const hasError = status.includes('failed') || status.includes('失败') || status.includes('Wrong')
+
   const handleExport = async () => {
     if (!password || password.length < 6) {
       setStatus(t.backup.passwordRequired)
@@ -76,87 +79,32 @@ export default function BackupPanel({ onClose }: Props) {
   }
 
   return (
-    <div
-      className="overlay-enter"
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(8px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 100,
-      }}
-      onClick={onClose}
-    >
+    <div className="overlay-enter backup-overlay" onClick={onClose}>
       <GlassCard
         variant="strong"
         className="backup-panel modal-enter"
         onClick={(e) => e?.stopPropagation()}
       >
-        <div style={{ padding: '24px', minWidth: 'min(320px, 90vw)', maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto' }}>
-          <h2
-            style={{
-              fontSize: '1.2rem',
-              fontWeight: 600,
-              marginBottom: '20px',
-              textAlign: 'center',
-            }}
-          >
-            {t.backup.title}
-          </h2>
+        <div className="backup-card">
+          <h2 className="backup-heading">{t.backup.title}</h2>
 
-          {/* 模式切换 */}
-          <div
-            style={{
-              display: 'flex',
-              borderBottom: '1px solid var(--glass-border)',
-              marginBottom: '16px',
-            }}
-          >
+          <div className="backup-mode-tabs">
             <button
               onClick={() => setMode('export')}
-              style={{
-                flex: 1,
-                padding: '10px',
-                background: mode === 'export' ? 'rgba(255,255,255,0.08)' : 'transparent',
-                color: mode === 'export' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                fontSize: '0.85rem',
-                borderBottom: mode === 'export' ? '2px solid var(--accent)' : '2px solid transparent',
-              }}
+              className={`backup-mode-tab ${mode === 'export' ? 'active' : ''}`}
             >
               {t.backup.export}
             </button>
             <button
               onClick={() => setMode('import')}
-              style={{
-                flex: 1,
-                padding: '10px',
-                background: mode === 'import' ? 'rgba(255,255,255,0.08)' : 'transparent',
-                color: mode === 'import' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                fontSize: '0.85rem',
-                borderBottom: mode === 'import' ? '2px solid var(--accent)' : '2px solid transparent',
-              }}
+              className={`backup-mode-tab ${mode === 'import' ? 'active' : ''}`}
             >
               {t.backup.import}
             </button>
           </div>
 
-          {/* 密码输入 */}
-          <div style={{ marginBottom: '16px' }}>
-            <label
-              htmlFor="backup-password"
-              style={{
-                display: 'block',
-                fontSize: '0.8rem',
-                color: 'var(--text-secondary)',
-                marginBottom: '6px',
-              }}
-            >
+          <div className="backup-password-group">
+            <label htmlFor="backup-password" className="backup-label">
               {t.backup.backupPassword}
             </label>
             <input
@@ -165,86 +113,39 @@ export default function BackupPanel({ onClose }: Props) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={t.backup.passwordPlaceholder}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '12px',
-                border: '1px solid var(--glass-border)',
-                background: 'rgba(255,255,255,0.05)',
-                color: 'var(--text-primary)',
-                fontSize: '0.9rem',
-                boxSizing: 'border-box',
-              }}
+              className="backup-input"
             />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="backup-actions">
             {mode === 'export' ? (
               <button
                 onClick={handleExport}
-                disabled={loading || !password}
-                style={{
-                  padding: '14px',
-                  borderRadius: '12px',
-                  background: password
-                    ? 'linear-gradient(135deg, var(--accent), #5b4bc9)'
-                    : 'rgba(255,255,255,0.05)',
-                  color: password ? 'white' : 'var(--text-muted)',
-                  fontWeight: 600,
-                  fontSize: '0.95rem',
-                  opacity: loading ? 0.7 : 1,
-                }}
+                disabled={isBusy || !password}
+                className={`backup-submit ${password ? 'ready' : ''}`}
+                style={{ opacity: loading ? 0.7 : 1 }}
               >
                 {loading ? t.backup.exporting : t.backup.export}
               </button>
             ) : (
               <button
                 onClick={handleImport}
-                disabled={importing || !password}
-                style={{
-                  padding: '14px',
-                  borderRadius: '12px',
-                  background: password
-                    ? 'linear-gradient(135deg, var(--accent), #5b4bc9)'
-                    : 'rgba(255,255,255,0.05)',
-                  color: password ? 'white' : 'var(--text-muted)',
-                  fontWeight: 600,
-                  fontSize: '0.95rem',
-                  opacity: importing ? 0.7 : 1,
-                }}
+                disabled={isBusy || !password}
+                className={`backup-submit ${password ? 'ready' : ''}`}
+                style={{ opacity: importing ? 0.7 : 1 }}
               >
                 {importing ? t.backup.importing : t.backup.import}
               </button>
             )}
 
             {status && (
-              <p
-                className="pop-in"
-                style={{
-                  textAlign: 'center',
-                  color: status.includes('failed') || status.includes('失败') || status.includes('Wrong')
-                    ? 'var(--danger)' : 'var(--success)',
-                  fontSize: '0.85rem',
-                  marginTop: '4px',
-                }}
-              >
+              <p className={`pop-in backup-status ${hasError ? 'error' : 'success'}`}>
                 {status}
               </p>
             )}
           </div>
 
-          <button
-            onClick={onClose}
-            style={{
-              width: '100%',
-              marginTop: '16px',
-              padding: '10px',
-              borderRadius: '8px',
-              background: 'transparent',
-              color: 'var(--text-secondary)',
-              fontSize: '0.85rem',
-            }}
-          >
+          <button onClick={onClose} className="backup-close">
             {t.backup.close}
           </button>
         </div>

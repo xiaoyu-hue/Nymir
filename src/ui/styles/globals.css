@@ -859,3 +859,120 @@ select {
   font-size: 0.8rem;
   margin: 0;
 }
+
+/* ========== BackupPanel ========== */
+.backup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.backup-card {
+  padding: 24px;
+  min-width: min(320px, 90vw);
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.backup-heading {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.backup-mode-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--glass-border);
+  margin-bottom: 16px;
+}
+
+.backup-mode-tab {
+  flex: 1;
+  padding: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  border-bottom: 2px solid transparent;
+}
+
+.backup-mode-tab.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border-bottom-color: var(--accent);
+}
+
+.backup-password-group {
+  margin-bottom: 16px;
+}
+
+.backup-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.backup-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+.backup-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.backup-submit {
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+}
+
+.backup-submit.ready {
+  background: linear-gradient(135deg, var(--accent), #5b4bc9);
+  color: white;
+}
+
+.backup-status {
+  text-align: center;
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+.backup-status.success {
+  color: var(--success);
+}
+
+.backup-status.error {
+  color: var(--danger);
+}
+
+.backup-close {
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
