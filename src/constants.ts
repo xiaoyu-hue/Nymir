@@ -15,8 +15,15 @@ export const FAKE_ID_LENGTH = 20
 export const BROADCAST_DELAY_MS = 100
 export const STRATEGY_FALLBACK_MS = 5000
 export const RECONNECT_INTERVAL_MS = 3000
-export const RECONNECT_DELAY_MS = 2000
-export const RECONNECT_MAX_ATTEMPTS = 5
+export const RECONNECT_BASE_DELAY_MS = 1000
+export const RECONNECT_MAX_DELAY_MS = 30_000
+export const RECONNECT_MAX_ATTEMPTS = 10
+
+// Connection Monitor
+export const MONITOR_PING_INTERVAL_MS = 5000
+export const QUALITY_EXCELLENT_MS = 100
+export const QUALITY_GOOD_MS = 300
+export const QUALITY_FAIR_MS = 800
 
 // UI
 export const STAR_COUNT_LOW = 40

@@ -1,10 +1,13 @@
 import { peerManager } from '../communication/peer'
+import { connectionMonitor } from '../communication/monitor'
 import { saveRoom, getAllRooms, deleteRoom as dbDeleteRoom, getMessagesByRoom, getRoom } from '../persistence/db'
 import { generateRoomId, isValidRoomId } from '../utils/id'
 import { messageManager } from './message'
 import { clearLocalStorage } from '../security/secureDelete'
 import type { RoomInfo, BurnMode } from './types'
 import type { StoredMessage } from '../persistence/types'
+import { log } from '../utils/logger'
+import { RECONNECT_BASE_DELAY_MS, RECONNECT_MAX_DELAY_MS, RECONNECT_MAX_ATTEMPTS } from '../constants'
 
 export type RoomListener = (event: string, data?: unknown) => void
 
@@ -16,6 +19,7 @@ export class RoomManager {
   private unsubs: (() => void)[] = []
   private connectionStatus: ConnectionStatus = 'disconnected'
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  private reconnectAttempts = 0
 
   get room(): RoomInfo | null {
     return this.currentRoom
@@ -45,9 +49,6 @@ export class RoomManager {
     this.emit('status:change', s)
   }
 
-  /**
-   * 创建房间，自动防碰撞（最多重试 5 次）
-   */
   async createRoom(name: string): Promise<RoomInfo> {
     const maxRetries = 5
     let id = ''
@@ -56,7 +57,6 @@ export class RoomManager {
       id = generateRoomId()
       const existing = await getRoom(id)
       if (!existing) break
-      // 碰撞，重试
       if (attempt === maxRetries - 1) {
         throw new Error('Failed to generate unique room ID')
       }
@@ -74,11 +74,7 @@ export class RoomManager {
     return room
   }
 
-  /**
-   * 加入房间，验证 ID 格式
-   */
   async joinRoom(roomId: string, roomName?: string): Promise<void> {
-    // 格式校验
     if (!isValidRoomId(roomId)) {
       throw new Error('Invalid room code format')
     }
@@ -92,14 +88,17 @@ export class RoomManager {
       peers: [],
     }
 
+    this.reconnectAttempts = 0
     peerManager.join(roomId)
     messageManager.init(roomId)
+    connectionMonitor.start()
 
     this.setStatus('connected')
 
     const unsubJoin = peerManager.onPeerJoin((peerId) => {
       if (this.currentRoom) {
         this.currentRoom.peers = peerManager.peerList
+        this.reconnectAttempts = 0
         this.setStatus('connected')
         this.emit('peer:join', peerId)
       }
@@ -110,7 +109,6 @@ export class RoomManager {
         this.currentRoom.peers = peerManager.peerList
         this.emit('peer:leave', peerId)
 
-        // If all peers left, start reconnecting
         if (this.currentRoom.peers.length === 0) {
           this.attemptReconnect()
         }
@@ -119,7 +117,6 @@ export class RoomManager {
 
     this.unsubs.push(unsubJoin, unsubLeave)
 
-    // Load saved messages
     const saved = await getMessagesByRoom(roomId)
     const messages = saved.map((s: StoredMessage) => ({
       id: s.id,
@@ -138,37 +135,30 @@ export class RoomManager {
   }
 
   private attemptReconnect(): void {
-    if (this.reconnectTimer) return
+    if (this.reconnectTimer || !this.currentRoom) return
+
+    this.reconnectAttempts++
+    if (this.reconnectAttempts > RECONNECT_MAX_ATTEMPTS) {
+      this.setStatus('disconnected')
+      this.emit('reconnect:failed')
+      return
+    }
 
     this.setStatus('reconnecting')
-    let attempts = 0
-    const maxAttempts = 5
 
-    const tryReconnect = () => {
-      attempts++
-      if (attempts > maxAttempts || !this.currentRoom) {
-        this.setStatus('disconnected')
-        this.emit('reconnect:failed')
-        return
-      }
+    const delay = Math.min(
+      RECONNECT_BASE_DELAY_MS * Math.pow(2, this.reconnectAttempts - 1),
+      RECONNECT_MAX_DELAY_MS,
+    )
 
-      peerManager.join(this.currentRoom!.id)
-    }
+    log(`[Room] Reconnect attempt ${this.reconnectAttempts}/${RECONNECT_MAX_ATTEMPTS} in ${delay}ms`)
 
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null
-      tryReconnect()
-
-      const interval = setInterval(() => {
-        if (peerManager.peerList.length > 0 || !this.currentRoom) {
-          clearInterval(interval)
-          return
-        }
-        tryReconnect()
-      }, 3000)
-
-      this.unsubs.push(() => clearInterval(interval))
-    }, 2000)
+      if (this.currentRoom) {
+        peerManager.join(this.currentRoom.id)
+      }
+    }, delay)
   }
 
   leaveRoom(): void {
@@ -182,7 +172,9 @@ export class RoomManager {
 
     messageManager.destroy()
     peerManager.leave()
+    connectionMonitor.stop()
     this.currentRoom = null
+    this.reconnectAttempts = 0
     this.setStatus('disconnected')
     this.emit('room:left')
   }
@@ -201,9 +193,6 @@ export class RoomManager {
     await dbDeleteRoom(id)
   }
 
-  /**
-   * 安全重置所有数据
-   */
   async secureReset(): Promise<void> {
     this.leaveRoom()
     clearLocalStorage('nymir')

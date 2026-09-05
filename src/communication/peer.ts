@@ -2,6 +2,7 @@ import { joinRoom as joinTorrent } from '@trystero-p2p/torrent'
 import { joinRoom as joinMqtt } from '@trystero-p2p/mqtt'
 import type { Room, DataPayload } from '@trystero-p2p/core'
 import { e2eeManager } from '../security/e2eeManager'
+import { connectionMonitor } from './monitor'
 import { log } from '../utils/logger'
 
 const APP_ID = 'nymir_treehole_v1'
@@ -73,14 +74,13 @@ export class PeerManager {
 
     room.onPeerJoin = (peerId: string) => {
       this.peers.add(peerId)
+      connectionMonitor.setPeerCount(this.peers.size)
 
-      // Cancel fallback timer if we got a peer
       if (this.strategyFallbackTimer) {
         clearTimeout(this.strategyFallbackTimer)
         this.strategyFallbackTimer = null
       }
 
-      // 发送 E2EE 公钥给新 peer
       this.sendE2EEKey(peerId)
 
       for (const cb of this.peerJoinCallbacks) cb(peerId)
@@ -88,6 +88,7 @@ export class PeerManager {
 
     room.onPeerLeave = (peerId: string) => {
       this.peers.delete(peerId)
+      connectionMonitor.setPeerCount(this.peers.size)
       e2eeManager.removePeerKey(peerId)
       for (const cb of this.peerLeaveCallbacks) cb(peerId)
     }
@@ -137,13 +138,12 @@ export class PeerManager {
     this.currentStrategy = 'torrent'
     this.room = this.joinWithStrategy(roomId, 'torrent')
 
-    // 设置 E2EE 密钥交换通道
     this.setupE2EEChannel()
+    connectionMonitor.start()
+    connectionMonitor.setPeerCount(this.peers.size)
 
-    // 广播自己的公钥
     setTimeout(() => this.broadcastE2EEKey(), 100)
 
-    // Fallback to MQTT if no peers found within 5 seconds
     this.strategyFallbackTimer = setTimeout(() => {
       if (this.peers.size === 0 && this.room) {
         this.switchStrategy(roomId, 'mqtt')
@@ -234,6 +234,7 @@ export class PeerManager {
       this.peers.clear()
     }
     this.e2eeChannel = null
+    connectionMonitor.stop()
     e2eeManager.clearAll()
   }
 }
