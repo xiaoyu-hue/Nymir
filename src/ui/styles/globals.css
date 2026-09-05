@@ -1095,3 +1095,37 @@ select {
   font-size: 0.7rem;
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
+
+/* ========== App 根容器 ========== */
+.app-root {
+  width: 100dvw;
+  height: 100dvh;
+  background: linear-gradient(180deg, #0a0a1a 0%, #12122a 50%, #0a0a1a 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.app-loading {
+  width: 100dvw;
+  height: 100dvh;
+  background: linear-gradient(180deg, #0a0a1a 0%, #12122a 50%, #0a0a1a 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--text-muted);
+}
+
+.app-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(124, 106, 239, 0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.app-loading-text {
+  font-size: 0.9rem;
+}
