@@ -1,6 +1,7 @@
 import { openDB, type IDBPDatabase } from 'idb'
 import { securityManager } from '../security'
 import type { StoredMessage, StoredRoom } from './types'
+import { warn } from '../utils/logger'
 
 const DB_NAME = 'nymir-treehole'
 const DB_VERSION = 1
@@ -50,8 +51,8 @@ async function decryptField(value: string): Promise<string> {
     }
     return value
   } catch {
-    // 解密失败，返回原始数据
-    return value
+    warn('[DB] Decryption failed, returning placeholder')
+    return '[encrypted]'
   }
 }
 
