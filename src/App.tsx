@@ -141,8 +141,8 @@ function AppContent() {
           <ChatView />
         )}
 
-        {/* Action bar - top right, safe area aware */}
-        {!keyboardOpen && (
+        {/* Action bar - top right, safe area aware, hidden when in room */}
+        {!keyboardOpen && !inRoom && (
           <div
             className="app-action-bar"
             style={{
