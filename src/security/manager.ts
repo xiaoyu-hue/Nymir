@@ -14,6 +14,8 @@ import { clearAllData } from '../persistence/db'
 import { LOCK_TIMEOUT_MS } from '../constants'
 
 const STORAGE_KEY_PASSWORD_HASH = 'nymir_pwd_hash'
+const STORAGE_KEY_FAILED_ATTEMPTS = 'nymir_failed_attempts'
+const STORAGE_KEY_LOCK_UNTIL = 'nymir_lock_until'
 
 export type LockListener = (locked: boolean) => void
 
@@ -32,8 +34,30 @@ class SecurityManager {
   private lockTimer: ReturnType<typeof setTimeout> | null = null
   private lockListeners: LockListener[] = []
   private initialized = false
-  private failedAttempts = 0
-  private lockUntil = 0
+
+  get failedAttempts(): number {
+    return parseInt(sessionStorage.getItem(STORAGE_KEY_FAILED_ATTEMPTS) || '0', 10)
+  }
+
+  set failedAttempts(val: number) {
+    if (val <= 0) {
+      sessionStorage.removeItem(STORAGE_KEY_FAILED_ATTEMPTS)
+    } else {
+      sessionStorage.setItem(STORAGE_KEY_FAILED_ATTEMPTS, String(val))
+    }
+  }
+
+  get lockUntil(): number {
+    return parseInt(sessionStorage.getItem(STORAGE_KEY_LOCK_UNTIL) || '0', 10)
+  }
+
+  set lockUntil(val: number) {
+    if (val <= 0) {
+      sessionStorage.removeItem(STORAGE_KEY_LOCK_UNTIL)
+    } else {
+      sessionStorage.setItem(STORAGE_KEY_LOCK_UNTIL, String(val))
+    }
+  }
 
   get isLocked(): boolean {
     return this.locked
