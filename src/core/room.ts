@@ -101,6 +101,9 @@ export class RoomManager {
         this.reconnectAttempts = 0
         this.setStatus('connected')
         this.emit('peer:join', peerId)
+
+        // 重发离线队列中的消息
+        messageManager.retryOfflineMessages()
       }
     })
 
