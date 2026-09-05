@@ -175,6 +175,7 @@ Visual design inspired by glassmorphism:
 │                                                             │
 │  Trystero · WebRTC P2P · BitTorrent / MQTT Dual Signaling   │
 │  E2E Encryption · Auto-reconnect · Strategy Fallback        │
+│  File Transfer · Offline Queue · NAT Detection · Monitoring  │
 ├─────────────────────────────────────────────────────────────┤
 │                    ✦  Persistence  ✦                        │
 │                                                             │
@@ -186,15 +187,18 @@ Visual design inspired by glassmorphism:
 
 | Layer | Technology | Version | Description |
 |---|---|---|---|
-| Frontend | React | 19 | Component-based UI, Hook-driven |
-| Type System | TypeScript | 6 | Compile-time type checking |
-| Build Tool | Vite | 8 | Fast HMR and build |
-| Communication | Trystero | 0.25 | Serverless WebRTC P2P |
+| Frontend | React | 19.2.8 | Component-based UI, Hook-driven |
+| Type System | TypeScript | 6.0.2 | Compile-time type checking |
+| Build Tool | Vite | 8.2.2 | Fast HMR and build |
+| Communication | Trystero | 0.25.4 | Serverless WebRTC P2P |
 | Signaling | BitTorrent + MQTT | — | Dual channel auto-fallback |
-| Storage | idb (IndexedDB) | 8 | Browser local persistence |
+| Storage | idb (IndexedDB) | 8.0.3 | Browser local persistence |
 | E2E Encryption | X25519 + AES-256-GCM | — | Key exchange + symmetric encryption |
 | Digital Signature | Ed25519 | — | Message integrity verification |
 | Styling | CSS Variables + Glassmorphism | — | Liquid glass effect |
+| PWA Support | vite-plugin-pwa | 1.3.0 | Progressive Web App |
+| Linting | oxlint | 1.79.0 | Fast JavaScript/TypeScript linter |
+| Testing | vitest | 5.0.0 | Vite-native test framework |
 
 ---
 
@@ -308,10 +312,12 @@ Build output is in the `dist/` directory, ready for static hosting:
 - [x] Accessibility (ARIA roles, focus-visible, label associations)
 - [x] SEO (Open Graph, Twitter Card, noscript fallback)
 - [x] UI/UX micro-interaction system + responsive adaptation
+- [x] File transfer (image/file E2EE transfer, chunked transfer, progress callback)
+- [x] Offline message queue (failed message caching, auto-resend when peer comes online)
+- [x] NAT type detection (WebRTC ICE candidate type detection, optimized P2P connections)
+- [x] Connection quality monitoring (latency, uptime, message statistics, quality rating)
 
 ### Planned 🚀
-
-- [ ] Image/file sharing
 - [ ] Message search
 - [ ] Voice messages
 - [ ] Multi-device sync (WebRTC direct transfer)
@@ -383,6 +389,9 @@ This project builds on the shoulders of these excellent open source projects:
 | [Vite](https://vite.dev) | MIT | Build tool and dev server |
 | [TypeScript](https://www.typescriptlang.org) | Apache-2.0 | Type-safe JavaScript superset |
 | [idb](https://github.com/nicedoc/idb) | ISC | IndexedDB Promise wrapper |
+| [vite-plugin-pwa](https://github.com/vite-pwa/vite-plugin-pwa) | MIT | Vite PWA support plugin |
+| [vitest](https://vitest.dev) | MIT | Vite-native test framework |
+| [oxlint](https://oxc-project.github.io) | MIT | Fast JavaScript/TypeScript linter |
 
 ### Inspiration
 
