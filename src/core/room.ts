@@ -81,11 +81,20 @@ export class RoomManager {
 
     if (this.currentRoom) this.leaveRoom()
 
+    const existing = await getRoom(roomId)
     this.currentRoom = {
       id: roomId,
-      name: roomName ?? roomId,
-      createdAt: Date.now(),
+      name: roomName || existing?.name || roomId,
+      createdAt: existing?.createdAt || Date.now(),
       peers: [],
+    }
+
+    if (!existing) {
+      await saveRoom({
+        id: roomId,
+        name: this.currentRoom.name,
+        createdAt: this.currentRoom.createdAt,
+      })
     }
 
     this.reconnectAttempts = 0
@@ -118,7 +127,12 @@ export class RoomManager {
       }
     })
 
-    this.unsubs.push(unsubJoin, unsubLeave)
+    // 对端公钥到达后重试因缺密钥而入队的消息
+    const unsubPeerKey = peerManager.onPeerKey(() => {
+      messageManager.retryOfflineMessages()
+    })
+
+    this.unsubs.push(unsubJoin, unsubLeave, unsubPeerKey)
 
     const saved = await getMessagesByRoom(roomId)
     const messages = saved.map((s: StoredMessage) => ({
