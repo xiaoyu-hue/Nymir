@@ -85,15 +85,15 @@ export class RoomManager {
 
     if (this.currentRoom) this.leaveRoom()
 
-    peerManager.join(roomId)
-    messageManager.init(roomId)
-
     this.currentRoom = {
       id: roomId,
       name: roomName ?? roomId,
       createdAt: Date.now(),
       peers: [],
     }
+
+    peerManager.join(roomId)
+    messageManager.init(roomId)
 
     this.setStatus('connected')
 
