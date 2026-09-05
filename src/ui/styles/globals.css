@@ -64,6 +64,20 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+::selection {
+  background: rgba(124, 106, 239, 0.4);
+  color: white;
+}
+
+/* ========== 减少动画（无障碍） ========== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* ========== 按钮基础 + 按压反馈 ========== */
 button {
   cursor: pointer;
