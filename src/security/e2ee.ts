@@ -29,8 +29,22 @@ export interface EncryptedPayload {
   data: string // base64
 }
 
-// 缓存每个 peer 的共享密钥
+// 缓存每个 peer 的共享密钥（带 LRU 淘汰）
+const MAX_SHARED_KEYS = 100
 const sharedKeys = new Map<string, CryptoKey>()
+const sharedKeysOrder: string[] = [] // LRU 顺序：最近访问的在末尾
+
+function touchSharedKey(peerId: string): void {
+  const idx = sharedKeysOrder.indexOf(peerId)
+  if (idx !== -1) sharedKeysOrder.splice(idx, 1)
+  sharedKeysOrder.push(peerId)
+}
+
+function evictOldestSharedKey(): void {
+  if (sharedKeysOrder.length <= MAX_SHARED_KEYS) return
+  const oldest = sharedKeysOrder.shift()!
+  sharedKeys.delete(oldest)
+}
 
 /**
  * 生成临时密钥对
@@ -90,12 +104,15 @@ async function getSharedKey(
   privateKey: CryptoKey,
   peerPublicKey: CryptoKey,
 ): Promise<CryptoKey> {
-  const cacheKey = `${peerId}`
-  let key = sharedKeys.get(cacheKey)
-  if (!key) {
-    key = await deriveSharedKey(privateKey, peerPublicKey)
-    sharedKeys.set(cacheKey, key)
+  let key = sharedKeys.get(peerId)
+  if (key) {
+    touchSharedKey(peerId)
+    return key
   }
+  key = await deriveSharedKey(privateKey, peerPublicKey)
+  evictOldestSharedKey()
+  sharedKeys.set(peerId, key)
+  touchSharedKey(peerId)
   return key
 }
 
@@ -180,6 +197,8 @@ export async function decryptMessage(
  */
 export function clearSharedKey(peerId: string): void {
   sharedKeys.delete(peerId)
+  const idx = sharedKeysOrder.indexOf(peerId)
+  if (idx !== -1) sharedKeysOrder.splice(idx, 1)
 }
 
 /**
@@ -187,6 +206,7 @@ export function clearSharedKey(peerId: string): void {
  */
 export function clearAllSharedKeys(): void {
   sharedKeys.clear()
+  sharedKeysOrder.length = 0
 }
 
 /**
