@@ -9,7 +9,8 @@ import { shouldDestroy, getRemainingMs } from './burn'
 import { READ_ONCE_AUTO_DESTROY_MS } from '../constants'
 
 export type MessageListener = (msg: Message) => void
-type AnyPayload = Record<string, unknown>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyPayload = Record<string, any>
 
 function logError(context: string, err: unknown, extra?: Record<string, unknown>): void {
   const msg = err instanceof Error ? err.message : String(err)
