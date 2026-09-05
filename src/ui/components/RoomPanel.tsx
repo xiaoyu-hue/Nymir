@@ -39,11 +39,13 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
             <p className="room-panel-subtitle">{t.app.subtitle}</p>
           </div>
 
-          <div className="room-panel-tabs">
+          <div className="room-panel-tabs" role="tablist">
             {(['create', 'join'] as const).map((key) => (
               <button
                 key={key}
                 onClick={() => setTab(key)}
+                role="tab"
+                aria-selected={tab === key}
                 className={`room-panel-tab ${tab === key ? 'active' : ''}`}
               >
                 {key === 'join' ? t.room.joinTitle : t.room.createTitle}
@@ -51,7 +53,7 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
             ))}
           </div>
 
-          <div className="room-panel-form">
+          <div className="room-panel-form" role="tabpanel">
             {tab === 'join' ? (
               <div key="join" className="page-enter room-panel-fields">
                 <label htmlFor="room-code" className="room-panel-label">

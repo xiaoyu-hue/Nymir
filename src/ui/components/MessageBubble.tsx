@@ -51,9 +51,20 @@ function MessageBubbleInner({ message, roomId, onDestroy }: Props) {
   return (
     <div
       className={`message-wrapper ${isSelf ? 'self' : 'other'} msg-enter`}
+      tabIndex={0}
+      role="button"
+      aria-label={isSelf ? t.message.recall : message.content}
       onClick={() => {
         if (isSelf) {
           setShowRecall(!showRecall)
+        }
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          if (isSelf) {
+            setShowRecall(!showRecall)
+          }
         }
       }}
     >
