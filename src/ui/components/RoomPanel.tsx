@@ -31,77 +31,30 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
   }
 
   return (
-    <div
-      className="page-enter"
-      style={{
-        position: 'relative',
-        zIndex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100%',
-        padding: '60px 20px 80px',
-      }}
-    >
+    <div className="page-enter room-panel-container">
       <GlassCard variant="strong" className="room-panel-card" onClick={(e) => e?.stopPropagation()}>
-        <div style={{ padding: '24px' }}>
-          {/* Logo / Title */}
-          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <h1
-              style={{
-                fontSize: '1.6rem',
-                fontWeight: 700,
-                background: 'linear-gradient(135deg, var(--accent), #a78bfa)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                marginBottom: '4px',
-              }}
-            >
-              {t.app.title}
-            </h1>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              {t.app.subtitle}
-            </p>
+        <div className="room-panel-inner">
+          <div className="room-panel-title">
+            <h1 className="room-panel-heading">{t.app.title}</h1>
+            <p className="room-panel-subtitle">{t.app.subtitle}</p>
           </div>
 
-          {/* Tab buttons */}
-          <div
-            style={{
-              display: 'flex',
-              gap: '4px',
-              background: 'rgba(255,255,255,0.04)',
-              borderRadius: '10px',
-              padding: '4px',
-              marginBottom: '20px',
-            }}
-          >
+          <div className="room-panel-tabs">
             {(['create', 'join'] as const).map((key) => (
               <button
                 key={key}
                 onClick={() => setTab(key)}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  borderRadius: '8px',
-                  fontSize: '0.85rem',
-                  fontWeight: 500,
-                  background: tab === key ? 'rgba(124,106,239,0.25)' : 'transparent',
-                  color: tab === key ? 'var(--accent)' : 'var(--text-secondary)',
-                }}
+                className={`room-panel-tab ${tab === key ? 'active' : ''}`}
               >
                 {key === 'join' ? t.room.joinTitle : t.room.createTitle}
               </button>
             ))}
           </div>
 
-          {/* Tab content with animation */}
-          <div style={{ position: 'relative', minHeight: '140px' }}>
+          <div className="room-panel-form">
             {tab === 'join' ? (
-              <div key="join" className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <label
-                  htmlFor="room-code"
-                  style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}
-                >
+              <div key="join" className="page-enter room-panel-fields">
+                <label htmlFor="room-code" className="room-panel-label">
                   {t.room.codeLabel}
                 </label>
                 <input
@@ -112,45 +65,19 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
                   onKeyDown={handleKeyDown}
                   placeholder={t.room.codePlaceholder}
                   maxLength={9}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: '12px',
-                    border: '1px solid var(--glass-border)',
-                    background: 'rgba(255,255,255,0.05)',
-                    color: 'var(--text-primary)',
-                    fontSize: '1.1rem',
-                    letterSpacing: '3px',
-                    textAlign: 'center',
-                    fontFamily: 'monospace',
-                    fontWeight: 600,
-                    boxSizing: 'border-box',
-                    width: '100%',
-                  }}
+                  className="room-panel-input room-panel-input-code"
                 />
                 <button
                   onClick={handleJoin}
                   disabled={!code.trim()}
-                  style={{
-                    padding: '14px',
-                    borderRadius: '12px',
-                    background: code.trim()
-                      ? 'linear-gradient(135deg, var(--accent), #5b4bc9)'
-                      : 'rgba(255,255,255,0.05)',
-                    color: code.trim() ? 'white' : 'var(--text-muted)',
-                    fontWeight: 600,
-                    fontSize: '0.95rem',
-                    marginTop: '8px',
-                  }}
+                  className={`room-panel-submit ${code.trim() ? 'ready' : ''}`}
                 >
                   {t.room.join}
                 </button>
               </div>
             ) : (
-              <div key="create" className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <label
-                  htmlFor="room-name"
-                  style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}
-                >
+              <div key="create" className="page-enter room-panel-fields">
+                <label htmlFor="room-name" className="room-panel-label">
                   {t.room.nameLabel}
                 </label>
                 <input
@@ -160,31 +87,12 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
                   onChange={(e) => setName(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder={t.room.namePlaceholder}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: '12px',
-                    border: '1px solid var(--glass-border)',
-                    background: 'rgba(255,255,255,0.05)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.9rem',
-                    boxSizing: 'border-box',
-                    width: '100%',
-                  }}
+                  className="room-panel-input room-panel-input-name"
                 />
                 <button
                   onClick={handleCreate}
                   disabled={!name.trim()}
-                  style={{
-                    padding: '14px',
-                    borderRadius: '12px',
-                    background: name.trim()
-                      ? 'linear-gradient(135deg, var(--accent), #5b4bc9)'
-                      : 'rgba(255,255,255,0.05)',
-                    color: name.trim() ? 'white' : 'var(--text-muted)',
-                    fontWeight: 600,
-                    fontSize: '0.95rem',
-                    marginTop: '8px',
-                  }}
+                  className={`room-panel-submit ${name.trim() ? 'ready' : ''}`}
                 >
                   {t.room.create}
                 </button>
