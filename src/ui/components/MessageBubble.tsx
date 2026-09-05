@@ -74,8 +74,24 @@ function MessageBubbleInner({ message, roomId, onDestroy }: Props) {
         {isSelf ? '' : displayName}
       </div>
 
-      <div className={`message-content-box ${isSelf ? 'self' : 'other'}`}>
-        <div className="message-text">{message.content}</div>
+      <div
+        className={`message-content-box ${isSelf ? 'self' : 'other'}${
+          message.verified === false ? ' message-untrusted' : ''
+        }${message.decryptFailed ? ' message-decrypt-failed' : ''}`}
+      >
+        {message.verified === false ? (
+          <div className="message-security-alert">
+            <div className="message-security-title">{t.message.signatureFailed}</div>
+            <div className="message-security-hint">{t.message.signatureFailedHint}</div>
+          </div>
+        ) : message.decryptFailed ? (
+          <div className="message-security-alert">
+            <div className="message-security-title">{t.message.decryptFailed}</div>
+            <div className="message-security-hint">{t.message.decryptFailedHint}</div>
+          </div>
+        ) : (
+          <div className="message-text">{message.content}</div>
+        )}
         <div className="message-meta">
           <span>{formatTime(message.timestamp)}</span>
           {message.burnMode !== 'persist' && (
@@ -112,7 +128,9 @@ const MessageBubble = memo(MessageBubbleInner, (prev, next) => {
     prev.message.id === next.message.id &&
     prev.message.destroyed === next.message.destroyed &&
     prev.message.readBy.length === next.message.readBy.length &&
-    prev.message.content === next.message.content
+    prev.message.content === next.message.content &&
+    prev.message.verified === next.message.verified &&
+    prev.message.decryptFailed === next.message.decryptFailed
   )
 })
 
