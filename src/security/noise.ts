@@ -20,13 +20,22 @@ let noiseTimer: ReturnType<typeof setInterval> | null = null
 let noiseCount = 0
 
 /**
+ * 生成安全随机整数 [0, max)
+ */
+function secureRandomInt(max: number): number {
+  const array = new Uint32Array(1)
+  crypto.getRandomValues(array)
+  return array[0] % max
+}
+
+/**
  * 生成随机 ID（模拟真实消息 ID 格式）
  */
 function generateFakeId(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
   let result = ''
   for (let i = 0; i < FAKE_ID_LENGTH; i++) {
-    result += chars[Math.floor(Math.random() * chars.length)]
+    result += chars[secureRandomInt(chars.length)]
   }
   return result
 }
