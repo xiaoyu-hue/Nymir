@@ -190,31 +190,74 @@ export function clearAllSharedKeys(): void {
 }
 
 /**
- * 加密文件（使用 AES-256-GCM）
+ * 为文件加密派生包装密钥（使用共享密钥 + HKDF）
  */
-export async function encryptFile(data: ArrayBuffer): Promise<ArrayBuffer | null> {
+async function deriveFileWrapKey(sharedKey: CryptoKey): Promise<CryptoKey> {
+  const encoder = new TextEncoder()
+  return crypto.subtle.deriveKey(
+    {
+      name: 'HKDF',
+      salt: encoder.encode('nymir-file-wrap'),
+      hash: HKDF_HASH,
+      info: encoder.encode('nymir-file-key'),
+    },
+    sharedKey,
+    { name: AES_ALGO, length: AES_KEY_LENGTH },
+    false,
+    ['encrypt', 'decrypt'],
+  )
+}
+
+/**
+ * 加密文件（使用 AES-256-GCM + E2EE 共享密钥保护文件密钥）
+ *
+ * 输出格式: [encryptedKeyLen:4][encryptedKey][iv:12][ciphertext]
+ * AES 密钥由 E2EE 共享密钥加密，只有持有对应私钥的 peer 可以解密
+ */
+export async function encryptFile(
+  data: ArrayBuffer,
+  peerId: string,
+  privateKey: CryptoKey,
+  peerPublicKey: CryptoKey,
+): Promise<ArrayBuffer | null> {
   try {
-    const key = await crypto.subtle.generateKey(
+    // 1. 生成随机 AES 文件密钥
+    const fileKey = await crypto.subtle.generateKey(
       { name: AES_ALGO, length: AES_KEY_LENGTH },
       true,
       ['encrypt', 'decrypt'],
     )
     const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH))
 
+    // 2. 用 AES 密钥加密文件内容
     const ciphertext = await crypto.subtle.encrypt(
       { name: AES_ALGO, iv },
-      key,
+      fileKey,
       data,
     )
 
-    // 导出密钥以便解密
-    const rawKey = await crypto.subtle.exportKey('raw', key)
+    // 3. 用 E2EE 共享密钥加密 AES 文件密钥
+    const sharedKey = await getSharedKey(peerId, privateKey, peerPublicKey)
+    const wrapKey = await deriveFileWrapKey(sharedKey)
+    const rawFileKey = await crypto.subtle.exportKey('raw', fileKey)
+    const encryptedKeyIv = crypto.getRandomValues(new Uint8Array(IV_LENGTH))
+    const encryptedKey = await crypto.subtle.encrypt(
+      { name: AES_ALGO, iv: encryptedKeyIv },
+      wrapKey,
+      rawFileKey,
+    )
 
-    // 合并 key + iv + ciphertext
-    const combined = new Uint8Array(rawKey.byteLength + iv.length + ciphertext.byteLength)
-    combined.set(new Uint8Array(rawKey), 0)
-    combined.set(iv, rawKey.byteLength)
-    combined.set(new Uint8Array(ciphertext), rawKey.byteLength + iv.length)
+    // 4. 组合: [encryptedKeyLen:4][encryptedKeyIv:12][encryptedKey][fileIv:12][ciphertext]
+    const encKeyLen = encryptedKey.byteLength
+    const combined = new Uint8Array(
+      4 + IV_LENGTH + encKeyLen + IV_LENGTH + ciphertext.byteLength,
+    )
+    const view = new DataView(combined.buffer)
+    view.setUint32(0, encKeyLen, false) // big-endian
+    combined.set(encryptedKeyIv, 4)
+    combined.set(new Uint8Array(encryptedKey), 4 + IV_LENGTH)
+    combined.set(iv, 4 + IV_LENGTH + encKeyLen)
+    combined.set(new Uint8Array(ciphertext), 4 + IV_LENGTH + encKeyLen + IV_LENGTH)
 
     return combined.buffer
   } catch {
@@ -223,28 +266,46 @@ export async function encryptFile(data: ArrayBuffer): Promise<ArrayBuffer | null
 }
 
 /**
- * 解密文件
+ * 解密文件（使用 E2EE 共享密钥解密文件密钥）
  */
-export async function decryptFile(data: ArrayBuffer): Promise<ArrayBuffer | null> {
+export async function decryptFile(
+  data: ArrayBuffer,
+  peerId: string,
+  privateKey: CryptoKey,
+  peerPublicKey: CryptoKey,
+): Promise<ArrayBuffer | null> {
   try {
     const combined = new Uint8Array(data)
+    const view = new DataView(combined.buffer)
 
-    // 提取 key (32 bytes) + iv (12 bytes) + ciphertext
-    const rawKey = combined.slice(0, 32)
-    const iv = combined.slice(32, 32 + IV_LENGTH)
-    const ciphertext = combined.slice(32 + IV_LENGTH)
+    // 1. 读取加密密钥长度和加密密钥
+    const encKeyLen = view.getUint32(0, false)
+    const encryptedKeyIv = combined.slice(4, 4 + IV_LENGTH)
+    const encryptedKey = combined.slice(4 + IV_LENGTH, 4 + IV_LENGTH + encKeyLen)
+    const fileIv = combined.slice(4 + IV_LENGTH + encKeyLen, 4 + IV_LENGTH + encKeyLen + IV_LENGTH)
+    const ciphertext = combined.slice(4 + IV_LENGTH + encKeyLen + IV_LENGTH)
 
-    const key = await crypto.subtle.importKey(
+    // 2. 用 E2EE 共享密钥解密 AES 文件密钥
+    const sharedKey = await getSharedKey(peerId, privateKey, peerPublicKey)
+    const wrapKey = await deriveFileWrapKey(sharedKey)
+    const rawFileKey = await crypto.subtle.decrypt(
+      { name: AES_ALGO, iv: encryptedKeyIv },
+      wrapKey,
+      encryptedKey,
+    )
+
+    // 3. 导入 AES 文件密钥并解密内容
+    const fileKey = await crypto.subtle.importKey(
       'raw',
-      rawKey,
+      rawFileKey,
       { name: AES_ALGO, length: AES_KEY_LENGTH },
       false,
       ['decrypt'],
     )
 
     return crypto.subtle.decrypt(
-      { name: AES_ALGO, iv },
-      key,
+      { name: AES_ALGO, iv: fileIv },
+      fileKey,
       ciphertext,
     )
   } catch {
