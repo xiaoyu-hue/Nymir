@@ -20,10 +20,8 @@ function MessageBubbleInner({ message, roomId, onDestroy }: Props) {
   const [exiting, setExiting] = useState(false)
   const [visible, setVisible] = useState(!message.destroyed)
 
-  // 获取显示名称
   const displayName = getRoomDisplayName(roomId, message.sender, isSelf)
 
-  // 销毁淡出动画
   useEffect(() => {
     if (message.destroyed && visible) {
       setExiting(true)
@@ -52,67 +50,28 @@ function MessageBubbleInner({ message, roomId, onDestroy }: Props) {
 
   return (
     <div
-      className={`message-bubble ${isSelf ? 'self' : 'other'} msg-enter`}
+      className={`message-wrapper ${isSelf ? 'self' : 'other'} msg-enter`}
       onClick={() => {
         if (isSelf) {
           setShowRecall(!showRecall)
         }
       }}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: isSelf ? 'flex-end' : 'flex-start',
-        margin: '8px 16px',
-        maxWidth: 'min(75%, 500px)',
-        alignSelf: isSelf ? 'flex-end' : 'flex-start',
-      }}
     >
-      {/* 发送者名称 */}
-      <div
-        style={{
-          fontSize: '0.7rem',
-          color: 'var(--text-muted)',
-          marginBottom: '2px',
-          paddingLeft: isSelf ? 0 : '4px',
-          paddingRight: isSelf ? '4px' : 0,
-          textAlign: isSelf ? 'right' : 'left',
-        }}
-      >
+      <div className={`message-sender ${isSelf ? 'self' : 'other'}`}>
         {isSelf ? '' : displayName}
       </div>
 
-      <div
-        style={{
-          padding: '10px 14px',
-          borderRadius: isSelf ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-          background: isSelf
-            ? 'linear-gradient(135deg, var(--accent), #5b4bc9)'
-            : 'var(--glass-bg)',
-          border: isSelf ? 'none' : '1px solid var(--glass-border)',
-          backdropFilter: 'blur(12px)',
-          wordBreak: 'break-word',
-          position: 'relative',
-        }}
-      >
-        <div style={{ fontSize: '0.9rem', lineHeight: 1.5 }}>{message.content}</div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            marginTop: '4px',
-            fontSize: '0.7rem',
-            color: 'var(--text-muted)',
-          }}
-        >
+      <div className={`message-content-box ${isSelf ? 'self' : 'other'}`}>
+        <div className="message-text">{message.content}</div>
+        <div className="message-meta">
           <span>{formatTime(message.timestamp)}</span>
           {message.burnMode !== 'persist' && (
-            <span style={{ color: 'var(--warning)', opacity: 0.7 }}>
+            <span className="message-burn-label">
               {message.burnMode === 'read_once' ? t.burn.readOnce : t.burn.timed}
             </span>
           )}
           {isSelf && readCount > 0 && (
-            <span className="pop-in" style={{ color: 'var(--accent)', opacity: 0.8 }}>
+            <span className="pop-in message-read-count">
               ✓✓ {readCount}
             </span>
           )}
@@ -120,22 +79,13 @@ function MessageBubbleInner({ message, roomId, onDestroy }: Props) {
         </div>
       </div>
 
-      {/* Recall button */}
       {isSelf && showRecall && (
         <button
           onClick={(e) => {
             e.stopPropagation()
             handleRecall()
           }}
-          style={{
-            marginTop: '4px',
-            padding: '4px 10px',
-            borderRadius: '6px',
-            background: 'rgba(239,68,68,0.2)',
-            color: 'var(--danger)',
-            fontSize: '0.7rem',
-            border: '1px solid rgba(239,68,68,0.3)',
-          }}
+          className="message-recall-btn"
         >
           {t.message.recall}
         </button>
