@@ -8,7 +8,7 @@
  * - 自动锁屏计时
  */
 
-import { encrypt, decrypt, verifyPassword } from './crypto'
+import { encrypt, decrypt, verifyPassword, needsMigration } from './crypto'
 import { uint8ToBase64 } from '../utils/base64'
 import { clearAllData } from '../persistence/db'
 
@@ -91,6 +91,13 @@ class SecurityManager {
     this.locked = false
     this.startLockTimer()
     this.notifyListeners(false)
+
+    // 自动迁移：v1(100K) → v2(600K)
+    if (needsMigration(storedHash)) {
+      const reEncrypted = await encrypt('nymir_verify', password)
+      localStorage.setItem(STORAGE_KEY_PASSWORD_HASH, reEncrypted)
+    }
+
     return true
   }
 
