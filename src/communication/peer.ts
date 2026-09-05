@@ -2,6 +2,7 @@ import { joinRoom as joinTorrent } from '@trystero-p2p/torrent'
 import { joinRoom as joinMqtt } from '@trystero-p2p/mqtt'
 import type { Room, DataPayload } from '@trystero-p2p/core'
 import { e2eeManager } from '../security/e2eeManager'
+import { log } from '../utils/logger'
 
 const APP_ID = 'nymir_treehole_v1'
 
@@ -158,7 +159,7 @@ export class PeerManager {
     this.isSwitchingStrategy = true
 
     try {
-      console.log(`[Nymir] Switching from ${this.currentStrategy} to ${newStrategy}`)
+      log(`[Nymir] Switching from ${this.currentStrategy} to ${newStrategy}`)
 
       // 1. 清理旧定时器
       if (this.strategyFallbackTimer) {
@@ -198,7 +199,7 @@ export class PeerManager {
       clearTimeout(this.reconnectTimer)
     }
     this.reconnectTimer = setTimeout(() => {
-      console.log('[Nymir] Reconnecting...')
+      log('[Nymir] Reconnecting...')
       this.join(roomId)
     }, 2000)
   }
