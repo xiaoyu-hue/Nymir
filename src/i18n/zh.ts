@@ -33,6 +33,10 @@ const zh = {
     destroyed: '已焚毁',
     burned: '已焚',
     recall: '撤回',
+    signatureFailed: '签名验证失败',
+    signatureFailedHint: '这条消息无法确认来源，可能被篡改或不是对方发出的，内容未显示',
+    decryptFailed: '消息无法解密',
+    decryptFailedHint: '无法解开这条加密消息，可能密钥不匹配',
   },
   burn: {
     persist: '永久',
@@ -78,25 +82,20 @@ const zh = {
     passwordPlaceholder: '请输入密码（至少6位）',
     confirmPassword: '确认密码',
     confirmPasswordPlaceholder: '请再次输入密码',
-    processing: '处理中...',
-    wrongPassword: '密码错误',
-    passwordTooShort: '密码至少需要6位',
     passwordMismatch: '两次输入的密码不一致',
-    forgotPassword: '忘记密码？',
-    resetWarning: '⚠️ 重置将删除所有本地数据，此操作不可恢复！',
-    locked: '已锁定',
-    warning: '忘记密码将永久丢失所有数据，请务必牢记！',
-  },
-  confirm: {
-    cancel: '取消',
-    confirm: '确认',
+    passwordTooShort: '密码至少需要6位',
+    unlockFailed: '密码错误，请重试',
+    changePassword: '修改密码',
   },
   error: {
-    title: '应用发生错误',
-    reload: '重新加载',
+    generic: '出错了',
+    retry: '重试',
   },
-  install: {
+  common: {
+    confirm: '确认',
+    cancel: '取消',
     close: '关闭',
+    loading: '加载中...',
   },
 }
 
