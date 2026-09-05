@@ -12,7 +12,7 @@ import GlassCard from './GlassCard'
 import MessageBubble from './MessageBubble'
 
 export default function ChatView() {
-  const { status } = useRoom()
+  const { status, room } = useRoom()
   const { t } = useI18n()
   const { keyboardOpen, viewportHeight } = useKeyboard()
   const [messages, setMessages] = useState<Message[]>(() =>
@@ -103,7 +103,6 @@ export default function ChatView() {
     setMessages(messageManager.getMessages())
   }, [])
 
-  const room = roomManager.room
 
   return (
     <div
@@ -121,7 +120,7 @@ export default function ChatView() {
               <div className={`chat-status-dot ${status}`} aria-hidden="true" />
               <span className="chat-status-text">
                 {status === 'connected'
-                  ? `${roomManager.room?.peers.length ?? 0} ${t.room.online}`
+                  ? `${room?.peers.length ?? 0} ${t.room.online}`
                   : status === 'reconnecting'
                     ? t.room.reconnecting
                     : t.room.disconnected}
