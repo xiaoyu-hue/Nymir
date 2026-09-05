@@ -8,7 +8,7 @@
  * - relay: 需要中继（最严格）
  */
 
-import { log } from '../utils/logger'
+import { log, error } from '../utils/logger'
 
 export type NATType = 'host' | 'srflx' | 'prflx' | 'relay' | 'unknown'
 
@@ -19,12 +19,25 @@ export interface NATInfo {
   candidates: string[]
 }
 
+const STUN_SERVERS = [
+  'stun:stun.l.google.com:19302',
+  'stun:stun1.l.google.com:19302',
+  'stun:stun2.l.google.com:19302',
+  'stun:stun3.l.google.com:19302',
+  'stun:stun4.l.google.com:19302',
+]
+
+const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
+
 class NATDetector {
   private cachedResult: NATInfo | null = null
+  private cacheTime = 0
   private detecting = false
 
   async detect(): Promise<NATInfo> {
-    if (this.cachedResult) return this.cachedResult
+    if (this.cachedResult && Date.now() - this.cacheTime < CACHE_TTL_MS) {
+      return this.cachedResult
+    }
     if (this.detecting) return { type: 'unknown', candidates: [] }
 
     this.detecting = true
@@ -32,7 +45,7 @@ class NATDetector {
 
     try {
       const pc = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+        iceServers: STUN_SERVERS.map((urls) => ({ urls })),
       })
 
       const candidates: string[] = []
@@ -93,10 +106,11 @@ class NATDetector {
 
       await pc.close()
       this.cachedResult = result
+      this.cacheTime = Date.now()
       log('[NAT] Detection complete:', result.type)
       return result
     } catch (e) {
-      log('[NAT] Detection failed:', e)
+      error('[NAT] Detection failed:', e)
       return { type: 'unknown', candidates: [] }
     } finally {
       this.detecting = false
