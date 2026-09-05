@@ -17,6 +17,8 @@ const AES_KEY_LENGTH = 256
 const IV_LENGTH = 12
 const HKDF_HASH = 'SHA-256'
 
+import { uint8ToBase64, base64ToUint8 } from '../utils/base64'
+
 export interface KeyPair {
   publicKey: CryptoKey
   privateKey: CryptoKey
@@ -47,14 +49,14 @@ export async function generateKeyPair(): Promise<KeyPair> {
  */
 export async function exportPublicKey(keyPair: KeyPair): Promise<string> {
   const raw = await crypto.subtle.exportKey('raw', keyPair.publicKey)
-  return btoa(String.fromCharCode(...new Uint8Array(raw)))
+  return uint8ToBase64(new Uint8Array(raw))
 }
 
 /**
  * 导入对端公钥
  */
 export async function importPeerPublicKey(publicKeyBase64: string): Promise<CryptoKey> {
-  const raw = Uint8Array.from(atob(publicKeyBase64), (c) => c.charCodeAt(0))
+  const raw = base64ToUint8(publicKeyBase64)
   return crypto.subtle.importKey(
     'raw',
     raw,
@@ -143,8 +145,8 @@ export async function encryptMessage(
   )
 
   return {
-    iv: btoa(String.fromCharCode(...iv)),
-    data: btoa(String.fromCharCode(...new Uint8Array(ciphertext))),
+    iv: uint8ToBase64(iv),
+    data: uint8ToBase64(new Uint8Array(ciphertext)),
   }
 }
 
@@ -160,8 +162,8 @@ export async function decryptMessage(
 ): Promise<string> {
   const sharedKey = await getSharedKey(peerId, privateKey, peerPublicKey)
   const messageKey = await deriveMessageKey(sharedKey, messageId)
-  const iv = Uint8Array.from(atob(payload.iv), (c) => c.charCodeAt(0))
-  const data = Uint8Array.from(atob(payload.data), (c) => c.charCodeAt(0))
+  const iv = base64ToUint8(payload.iv)
+  const data = base64ToUint8(payload.data)
   const decoder = new TextDecoder()
 
   const plaintext = await crypto.subtle.decrypt(

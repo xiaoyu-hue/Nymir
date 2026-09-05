@@ -19,6 +19,8 @@ const PBKDF2_ITERATIONS = 100_000
 const SALT_LENGTH = 16
 const IV_LENGTH = 12
 
+import { uint8ToBase64, base64ToUint8 } from '../utils/base64'
+
 /**
  * 从密码派生 AES-256 密钥
  */
@@ -68,7 +70,7 @@ export async function encrypt(plaintext: string, password: string): Promise<stri
   combined.set(iv, salt.length)
   combined.set(new Uint8Array(ciphertext), salt.length + iv.length)
 
-  return btoa(String.fromCharCode(...combined))
+  return uint8ToBase64(combined)
 }
 
 /**
@@ -77,7 +79,7 @@ export async function encrypt(plaintext: string, password: string): Promise<stri
  */
 export async function decrypt(ciphertext: string, password: string): Promise<string> {
   const decoder = new TextDecoder()
-  const combined = Uint8Array.from(atob(ciphertext), (c) => c.charCodeAt(0))
+  const combined = base64ToUint8(ciphertext)
 
   const salt = combined.slice(0, SALT_LENGTH)
   const iv = combined.slice(SALT_LENGTH, SALT_LENGTH + IV_LENGTH)
@@ -111,5 +113,5 @@ export async function verifyPassword(encryptedData: string, password: string): P
  */
 export function generateSalt(): string {
   const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH))
-  return btoa(String.fromCharCode(...salt))
+  return uint8ToBase64(salt)
 }
