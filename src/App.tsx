@@ -1,14 +1,20 @@
-import { useState, useEffect, createContext, useContext } from 'react'
+import { useState, useEffect, createContext, useContext, lazy, Suspense } from 'react'
 import { roomManager } from './core/room'
 import { securityManager, e2eeManager } from './security'
 import { useRoom } from './ui/hooks/useRoom'
 import { I18nProvider, useI18n } from './i18n'
 import Starfield from './ui/components/Starfield'
 import RoomPanel from './ui/components/RoomPanel'
-import ChatView from './ui/components/ChatView'
-import BackupPanel from './ui/components/BackupPanel'
-import LockScreen from './ui/components/LockScreen'
 import './ui/styles/globals.css'
+
+const ChatView = lazy(() => import('./ui/components/ChatView'))
+const BackupPanel = lazy(() => import('./ui/components/BackupPanel'))
+
+const LoadingFallback = () => (
+  <div role="status" aria-live="polite" className="app-loading">
+    <div className="app-loading-spinner" />
+  </div>
+)
 
 type KeyboardCtx = { keyboardOpen: boolean; setKeyboardOpen: (v: boolean) => void; viewportHeight: string }
 const KeyboardContext = createContext<KeyboardCtx>({ keyboardOpen: false, setKeyboardOpen: () => {}, viewportHeight: '100dvh' })
@@ -109,7 +115,9 @@ function AppContent() {
         {!inRoom ? (
           <RoomPanel onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} />
         ) : (
-          <ChatView />
+          <Suspense fallback={<LoadingFallback />}>
+            <ChatView />
+          </Suspense>
         )}
 
         {/* Action bar - top right, safe area aware, hidden when in room */}
@@ -167,7 +175,11 @@ function AppContent() {
           </button>
         )}
 
-        {showBackup && <BackupPanel onClose={() => setShowBackup(false)} />}
+        {showBackup && (
+          <Suspense fallback={<LoadingFallback />}>
+            <BackupPanel onClose={() => setShowBackup(false)} />
+          </Suspense>
+        )}
       </div>
     </KeyboardContext.Provider>
   )

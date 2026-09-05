@@ -94,14 +94,7 @@ export default function ChatView() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      const input = document.createElement('input')
-      input.value = roomId
-      document.body.appendChild(input)
-      input.select()
-      document.execCommand('copy')
-      document.body.removeChild(input)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      // Clipboard API not available (non-secure context)
     }
   }, [])
 
