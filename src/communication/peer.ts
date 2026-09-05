@@ -30,6 +30,8 @@ export class PeerManager {
   private peers = new Set<string>()
   private peerJoinCallbacks: PeerCallback[] = []
   private peerLeaveCallbacks: PeerCallback[] = []
+  private roomRebuiltCallbacks: (() => void)[] = []
+  private peerKeyCallbacks: PeerCallback[] = []
   private currentStrategy: Strategy = 'torrent'
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private strategyFallbackTimer: ReturnType<typeof setTimeout> | null = null
@@ -68,6 +70,22 @@ export class PeerManager {
     }
   }
 
+  /** 传输策略切换、底层 room 重建后触发（需重绑业务 channel） */
+  onRoomRebuilt(cb: () => void): () => void {
+    this.roomRebuiltCallbacks.push(cb)
+    return () => {
+      this.roomRebuiltCallbacks = this.roomRebuiltCallbacks.filter((fn) => fn !== cb)
+    }
+  }
+
+  /** 收到并处理完对端 E2EE 公钥后触发（可重试加密发送） */
+  onPeerKey(cb: PeerCallback): () => void {
+    this.peerKeyCallbacks.push(cb)
+    return () => {
+      this.peerKeyCallbacks = this.peerKeyCallbacks.filter((fn) => fn !== cb)
+    }
+  }
+
   private joinWithStrategy(roomId: string, strategy: Strategy): Room {
     const joinFn = strategy === 'torrent' ? joinTorrent : joinMqtt
     const room = joinFn({ appId: APP_ID }, roomId)
@@ -96,9 +114,6 @@ export class PeerManager {
     return room
   }
 
-  /**
-   * 发送 E2EE 公钥给指定 peer
-   */
   private sendE2EEKey(targetPeerId: string): void {
     if (!this.e2eeChannel) return
     const publicKey = e2eeManager.getOwnPublicKey()
@@ -108,9 +123,6 @@ export class PeerManager {
     this.e2eeChannel.send({ type: 'e2ee_key', publicKey, signPublicKey }, targetPeerId)
   }
 
-  /**
-   * 广播 E2EE 公钥
-   */
   private broadcastE2EEKey(): void {
     if (!this.e2eeChannel) return
     const publicKey = e2eeManager.getOwnPublicKey()
@@ -120,14 +132,12 @@ export class PeerManager {
     this.e2eeChannel.send({ type: 'e2ee_key', publicKey, signPublicKey })
   }
 
-  /**
-   * 设置 E2EE 密钥交换通道
-   */
   private setupE2EEChannel(): void {
     this.e2eeChannel = this.makeChannel<E2EEPayload>('e2ee-exchange')
     this.e2eeChannel.onMessage(async (data, { peerId }) => {
       if (data.type === 'e2ee_key') {
         await e2eeManager.handlePeerPublicKey(peerId, data.publicKey, data.signPublicKey)
+        for (const cb of this.peerKeyCallbacks) cb(peerId)
       }
     })
   }
@@ -152,9 +162,6 @@ export class PeerManager {
     }, 5000)
   }
 
-  /**
-   * 安全切换传输策略（清理旧状态后重建）
-   */
   private switchStrategy(roomId: string, newStrategy: Strategy): void {
     if (this.isSwitchingStrategy) return
     this.isSwitchingStrategy = true
@@ -162,7 +169,6 @@ export class PeerManager {
     try {
       log(`[Nymir] Switching from ${this.currentStrategy} to ${newStrategy}`)
 
-      // 1. 清理旧定时器
       if (this.strategyFallbackTimer) {
         clearTimeout(this.strategyFallbackTimer)
         this.strategyFallbackTimer = null
@@ -172,7 +178,6 @@ export class PeerManager {
         this.reconnectTimer = null
       }
 
-      // 2. 离开旧 room（清理 onPeerJoin/onPeerLeave 回调、peers、e2eeChannel）
       if (this.room) {
         this.room.leave()
         this.room = null
@@ -181,14 +186,15 @@ export class PeerManager {
       this.e2eeChannel = null
       e2eeManager.clearAll()
 
-      // 3. 切换策略并建立新连接
       this.currentStrategy = newStrategy
       this.room = this.joinWithStrategy(roomId, newStrategy)
 
-      // 4. 重新设置 E2EE 通道
       this.setupE2EEChannel()
+      connectionMonitor.setChannel(this.makeChannel('__monitor__'))
+      connectionMonitor.setPeerCount(this.peers.size)
 
-      // 5. 广播公钥
+      for (const cb of this.roomRebuiltCallbacks) cb()
+
       setTimeout(() => this.broadcastE2EEKey(), 100)
     } finally {
       this.isSwitchingStrategy = false
