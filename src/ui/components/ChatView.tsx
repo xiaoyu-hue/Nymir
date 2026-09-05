@@ -218,6 +218,7 @@ export default function ChatView() {
               placeholder={t.message.placeholder}
               rows={1}
               className="chat-textarea"
+              maxLength={10000}
             />
             <button
               onClick={handleSend}
