@@ -226,7 +226,6 @@ textarea {
   justify-content: space-between;
   align-items: center;
   padding: calc(var(--safe-top) + 10px) 14px 10px 14px;
-  padding-right: 90px;
   gap: 8px;
 }
 
@@ -487,7 +486,6 @@ select {
 
   .chat-header-inner {
     padding: calc(var(--safe-top) + 8px) 10px 8px 10px;
-    padding-right: 80px;
   }
 
   .chat-header-name {
