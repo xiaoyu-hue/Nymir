@@ -32,15 +32,36 @@ export default function BurnTimer({ message, onExpired }: Props) {
   const { t } = useI18n()
   const [remaining, setRemaining] = useState(() => getRemainingMs(message))
   const onExpiredRef = useRef(onExpired)
-  onExpiredRef.current = onExpired
+  const messageRef = useRef(message)
+  const hasExpiredRef = useRef(false)
+
+  // Keep refs up to date
+  useEffect(() => {
+    onExpiredRef.current = onExpired
+  }, [onExpired])
 
   useEffect(() => {
-    if (remaining <= 0 || remaining === Infinity) return
+    messageRef.current = message
+  }, [message])
 
+  // Initial check: if already expired, fire immediately
+  // eslint-disable-next-line react/set-state-in-effect
+  useEffect(() => {
+    const r = getRemainingMs(message)
+    setRemaining(r)
+    if (r <= 0 && !hasExpiredRef.current) {
+      hasExpiredRef.current = true
+      onExpiredRef.current?.()
+    }
+  }, [message])
+
+  // Set up shared tick listener
+  useEffect(() => {
     const tick = () => {
-      const r = getRemainingMs(message)
+      const r = getRemainingMs(messageRef.current)
       setRemaining(r)
-      if (r <= 0) {
+      if (r <= 0 && !hasExpiredRef.current) {
+        hasExpiredRef.current = true
         tickListeners.delete(tick)
         stopTick()
         onExpiredRef.current?.()
@@ -54,7 +75,7 @@ export default function BurnTimer({ message, onExpired }: Props) {
       tickListeners.delete(tick)
       stopTick()
     }
-  }, [message, remaining <= 0])
+  }, [])
 
   if (remaining === Infinity) return null
   if (remaining <= 0) return <span className="burn-indicator expired">{t.message.burned}</span>

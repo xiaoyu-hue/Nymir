@@ -21,6 +21,7 @@ const LoadingFallback = () => (
 
 type KeyboardCtx = { keyboardOpen: boolean; setKeyboardOpen: (v: boolean) => void; viewportHeight: string }
 const KeyboardContext = createContext<KeyboardCtx>({ keyboardOpen: false, setKeyboardOpen: () => {}, viewportHeight: '100dvh' })
+// eslint-disable-next-line react-refresh/only-export-components
 export const useKeyboard = () => useContext(KeyboardContext)
 
 function AppContent() {
