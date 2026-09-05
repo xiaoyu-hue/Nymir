@@ -23,6 +23,8 @@ class SecurityManager {
   private lockTimer: ReturnType<typeof setTimeout> | null = null
   private lockListeners: LockListener[] = []
   private initialized = false
+  private failedAttempts = 0
+  private lockUntil = 0
 
   get isLocked(): boolean {
     return this.locked
@@ -65,12 +67,26 @@ class SecurityManager {
    * 解锁（输入密码）
    */
   async unlock(password: string): Promise<boolean> {
+    // 速率限制：5次失败后锁定30秒
+    if (this.failedAttempts >= 5) {
+      const remaining = this.lockUntil - Date.now()
+      if (remaining > 0) return false
+      this.failedAttempts = 0
+    }
+
     const storedHash = localStorage.getItem(STORAGE_KEY_PASSWORD_HASH)
     if (!storedHash) return false
 
     const valid = await verifyPassword(storedHash, password)
-    if (!valid) return false
+    if (!valid) {
+      this.failedAttempts++
+      if (this.failedAttempts >= 5) {
+        this.lockUntil = Date.now() + 30_000
+      }
+      return false
+    }
 
+    this.failedAttempts = 0
     this.password = password
     this.locked = false
     this.startLockTimer()
