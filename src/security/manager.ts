@@ -9,6 +9,7 @@
  */
 
 import { encrypt, decrypt, verifyPassword } from './crypto'
+import { uint8ToBase64 } from '../utils/base64'
 
 const LOCK_TIMEOUT_MS = 5 * 60 * 1000 // 5分钟自动锁定
 const STORAGE_KEY_PASSWORD_HASH = 'nymir_pwd_hash'
@@ -113,7 +114,7 @@ class SecurityManager {
     for (const key of keys) {
       // 用随机数据覆写
       const randomValue = crypto.getRandomValues(new Uint8Array(32))
-      const fakeValue = btoa(String.fromCharCode(...randomValue))
+      const fakeValue = uint8ToBase64(randomValue)
       localStorage.setItem(key, fakeValue)
       localStorage.removeItem(key)
     }

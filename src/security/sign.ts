@@ -11,6 +11,8 @@
 
 const SIGN_ALGO = 'Ed25519'
 
+import { uint8ToBase64, base64ToUint8 } from '../utils/base64'
+
 export interface SignKeyPair {
   publicKey: CryptoKey
   privateKey: CryptoKey
@@ -33,14 +35,14 @@ export async function generateSignKeyPair(): Promise<SignKeyPair> {
  */
 export async function exportSignPublicKey(keyPair: SignKeyPair): Promise<string> {
   const raw = await crypto.subtle.exportKey('raw', keyPair.publicKey)
-  return btoa(String.fromCharCode(...new Uint8Array(raw)))
+  return uint8ToBase64(new Uint8Array(raw))
 }
 
 /**
  * 导入对端签名公钥
  */
 export async function importPeerSignPublicKey(publicKeyBase64: string): Promise<CryptoKey> {
-  const raw = Uint8Array.from(atob(publicKeyBase64), (c) => c.charCodeAt(0))
+  const raw = base64ToUint8(publicKeyBase64)
   return crypto.subtle.importKey(
     'raw',
     raw,
@@ -63,7 +65,7 @@ export async function signMessage(
     privateKey,
     encoder.encode(message),
   )
-  return btoa(String.fromCharCode(...new Uint8Array(signature)))
+  return uint8ToBase64(new Uint8Array(signature))
 }
 
 /**
@@ -75,7 +77,7 @@ export async function verifySignature(
   publicKey: CryptoKey,
 ): Promise<boolean> {
   const encoder = new TextEncoder()
-  const sigBytes = Uint8Array.from(atob(signature), (c) => c.charCodeAt(0))
+  const sigBytes = base64ToUint8(signature)
   return crypto.subtle.verify(
     { name: SIGN_ALGO },
     publicKey,
