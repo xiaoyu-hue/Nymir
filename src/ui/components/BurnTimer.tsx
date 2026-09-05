@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import type { Message } from '../../core/types'
 import { getRemainingMs } from '../../core/burn'
-import { formatCountdown } from '../utils/time'
+import { formatCountdown } from '../../utils/time'
 import { useI18n } from '../../i18n'
 
 type Props = {

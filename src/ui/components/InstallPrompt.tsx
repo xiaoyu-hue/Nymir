@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useI18n } from '../../i18n'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -7,7 +6,6 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export default function InstallPrompt() {
-  const { t } = useI18n()
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
   const [show, setShow] = useState(false)
 
@@ -40,9 +38,9 @@ export default function InstallPrompt() {
 
   return (
     <div className="install-prompt" role="alert">
-      <span className="install-prompt-text">{t.nav?.installApp ?? '安装应用'}</span>
+      <span className="install-prompt-text">安装应用</span>
       <button onClick={handleInstall} className="install-prompt-btn">
-        {t.nav?.install ?? '安装'}
+        安装
       </button>
       <button onClick={handleDismiss} className="install-prompt-dismiss" aria-label="关闭">
         ✕
