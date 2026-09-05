@@ -26,6 +26,7 @@ export class MessageManager {
   private messageStore = new Map<string, Message>()
   private burnTimers = new Map<string, ReturnType<typeof setTimeout>>()
   private roomId: string = ''
+  private _cachedMessages: Message[] | null = null
 
   init(roomId: string): void {
     this.roomId = roomId
@@ -174,6 +175,7 @@ export class MessageManager {
         verified: false,
       }
       this.messageStore.set(failedMsg.id, failedMsg)
+      this.invalidateCache()
       try {
         await saveMessage({ ...failedMsg, roomId: this.roomId })
       } catch (err) {
@@ -200,6 +202,7 @@ export class MessageManager {
     }
 
     this.messageStore.set(msg.id, msg)
+    this.invalidateCache()
     try {
       await saveMessage({ ...msg, roomId: this.roomId })
     } catch (err) {
@@ -268,6 +271,7 @@ export class MessageManager {
 
       // 本地存储
       this.messageStore.set(msg.id, msg)
+      this.invalidateCache()
       try {
         await saveMessage({ ...msg, roomId: this.roomId })
       } catch (err) {
@@ -331,6 +335,7 @@ export class MessageManager {
     msg.destroyed = true
     this.clearBurnTimer(msg.id)
     this.messageStore.delete(msg.id)
+    this.invalidateCache()
     try {
       await destroyMessage(msg.id)
     } catch (err) {
@@ -390,9 +395,16 @@ export class MessageManager {
   }
 
   getMessages(): Message[] {
-    return [...this.messageStore.values()]
-      .filter((m) => !m.destroyed)
-      .sort((a, b) => a.timestamp - b.timestamp)
+    if (!this._cachedMessages) {
+      this._cachedMessages = [...this.messageStore.values()]
+        .filter((m) => !m.destroyed)
+        .sort((a, b) => a.timestamp - b.timestamp)
+    }
+    return this._cachedMessages
+  }
+
+  private invalidateCache(): void {
+    this._cachedMessages = null
   }
 
   async loadFromStorage(messages: Message[]): Promise<void> {
@@ -413,6 +425,8 @@ export class MessageManager {
       await this.burn(msg)
     }
 
+    this.invalidateCache()
+
     for (const msg of toKeep) {
       this.notifyListeners(msg)
     }
@@ -425,6 +439,7 @@ export class MessageManager {
     }
     this.burnTimers.clear()
     this.messageStore.clear()
+    this.invalidateCache()
     this.listeners = []
     this.channel = null
     this.readChannel = null
