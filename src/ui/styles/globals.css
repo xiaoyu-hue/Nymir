@@ -748,3 +748,114 @@ select {
   background: linear-gradient(135deg, var(--accent), #5b4bc9);
   color: white;
 }
+
+/* ========== LockScreen ========== */
+.lock-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100dvh;
+  background: linear-gradient(180deg, #0a0a1a 0%, #12122a 50%, #0a0a1a 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  z-index: 1000;
+  padding: 24px;
+  padding-top: max(24px, 15vh);
+  overflow-y: auto;
+}
+
+.lock-card {
+  padding: 32px;
+  min-width: min(300px, 90vw);
+  max-width: 400px;
+}
+
+.lock-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.lock-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.lock-heading {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.lock-desc {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.lock-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lock-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.lock-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.lock-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.lock-submit {
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+}
+
+.lock-submit.ready {
+  background: linear-gradient(135deg, var(--accent), #5b4bc9);
+  color: white;
+}
+
+.lock-forgot {
+  padding: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.lock-warning {
+  margin-top: 20px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.lock-warning-text {
+  color: var(--danger);
+  font-size: 0.8rem;
+  margin: 0;
+}
