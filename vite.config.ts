@@ -39,7 +39,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        globPatterns: ['**/*.{js,css,html,json,svg,png,woff2}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/tracker\..*/i,
