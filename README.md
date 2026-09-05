@@ -175,6 +175,7 @@ Nymir 的通信架构基于**多层降级策略**，提升连接可用性：
 │                                                             │
 │  Trystero · WebRTC P2P · BitTorrent / MQTT 双信令            │
 │  端到端加密 · 自动重连 · 策略降级                              │
+│  文件传输 · 离线消息队列 · NAT 探测 · 连接监控                  │
 ├─────────────────────────────────────────────────────────────┤
 │                    ✦  持久化层  ✦                            │
 │                                                             │
@@ -186,15 +187,18 @@ Nymir 的通信架构基于**多层降级策略**，提升连接可用性：
 
 | 层级 | 技术 | 版本 | 说明 |
 |---|---|---|---|
-| 前端框架 | React | 19 | 组件化 UI，Hooks 驱动 |
-| 类型系统 | TypeScript | 6 | 编译时类型检查 |
-| 构建工具 | Vite | 8 | 快速 HMR 与构建 |
-| 通信引擎 | Trystero | 0.25 | 无服务器 WebRTC P2P |
+| 前端框架 | React | 19.2.8 | 组件化 UI，Hooks 驱动 |
+| 类型系统 | TypeScript | 6.0.2 | 编译时类型检查 |
+| 构建工具 | Vite | 8.2.2 | 快速 HMR 与构建 |
+| 通信引擎 | Trystero | 0.25.4 | 无服务器 WebRTC P2P |
 | 信令通道 | BitTorrent + MQTT | — | 双通道自动降级 |
-| 数据存储 | idb (IndexedDB) | 8 | 浏览器本地持久化 |
+| 数据存储 | idb (IndexedDB) | 8.0.3 | 浏览器本地持久化 |
 | 端到端加密 | X25519 + AES-256-GCM | — | 密钥交换 + 对称加密 |
 | 数字签名 | Ed25519 | — | 消息完整性验证 |
 | 样式方案 | CSS 变量 + Glassmorphism | — | 液态玻璃效果 |
+| PWA 支持 | vite-plugin-pwa | 1.3.0 | 渐进式 Web 应用 |
+| 代码检查 | oxlint | 1.79.0 | 快速 JavaScript/TypeScript linter |
+| 单元测试 | vitest | 5.0.0 | Vite 原生测试框架 |
 
 ---
 
@@ -308,10 +312,12 @@ npm run preview  # 预览生产版本
 - [x] 可访问性（ARIA role、focus-visible、label 关联）
 - [x] SEO（Open Graph、Twitter Card、noscript）
 - [x] UI/UX 微交互动效系统 + 响应式适配
+- [x] 文件传输（图片/文件 E2EE 传输，分块传输，进度回调）
+- [x] 离线消息队列（发送失败消息暂存，peer 上线后自动重发）
+- [x] NAT 类型探测（WebRTC ICE 候选类型检测，优化 P2P 连接）
+- [x] 连接质量监控（延迟、连接时长、消息统计、质量评级）
 
 ### 计划中 🚀
-
-- [ ] 图片/文件发送
 - [ ] 消息搜索
 - [ ] 语音消息
 - [ ] 多设备同步（WebRTC 直传）
@@ -383,6 +389,9 @@ npm run preview  # 预览生产版本
 | [Vite](https://vite.dev) | MIT | 构建工具与开发服务器 |
 | [TypeScript](https://www.typescriptlang.org) | Apache-2.0 | 类型安全的 JavaScript 超集 |
 | [idb](https://github.com/nicedoc/idb) | ISC | IndexedDB Promise 封装 |
+| [vite-plugin-pwa](https://github.com/vite-pwa/vite-plugin-pwa) | MIT | Vite PWA 支持插件 |
+| [vitest](https://vitest.dev) | MIT | Vite 原生测试框架 |
+| [oxlint](https://oxc-project.github.io) | MIT | 快速 JavaScript/TypeScript linter |
 
 ### 灵感来源
 
