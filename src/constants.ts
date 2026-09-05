@@ -9,8 +9,6 @@ export const EXIT_ANIMATION_MS = 300
 
 // Noise
 export const NOISE_INTERVAL_MS = 30_000
-export const NOISE_MIN_LENGTH = 10
-export const NOISE_MAX_LENGTH = 110
 export const FAKE_ID_LENGTH = 20
 
 // Network
