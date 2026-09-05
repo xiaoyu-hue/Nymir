@@ -141,6 +141,7 @@ export class PeerManager {
     this.setupE2EEChannel()
     connectionMonitor.start()
     connectionMonitor.setPeerCount(this.peers.size)
+    connectionMonitor.setChannel(this.makeChannel('__monitor__'))
 
     setTimeout(() => this.broadcastE2EEKey(), 100)
 

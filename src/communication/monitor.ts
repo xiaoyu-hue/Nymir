@@ -1,6 +1,6 @@
 /**
  * Nymir 连接质量监控
- * 
+ *
  * 追踪：
  * - 延迟（通过 ping/pong 测量）
  * - 连接时长
@@ -9,6 +9,7 @@
  */
 
 import { log } from '../utils/logger'
+import { MONITOR_PING_INTERVAL_MS, QUALITY_EXCELLENT_MS, QUALITY_GOOD_MS, QUALITY_FAIR_MS } from '../constants'
 
 export type QualityLevel = 'excellent' | 'good' | 'fair' | 'poor' | 'unknown'
 
@@ -25,10 +26,10 @@ export interface ConnectionStats {
 
 type StatsListener = (stats: ConnectionStats) => void
 
-const LATENCY_PING_INTERVAL = 5000
-const QUALITY_EXCELLENT_THRESHOLD = 100
-const QUALITY_GOOD_THRESHOLD = 300
-const QUALITY_FAIR_THRESHOLD = 800
+interface PingChannel {
+  send: (data: Record<string, unknown>, target?: string) => void
+  onMessage: (cb: (data: Record<string, unknown>, info: { peerId: string }) => void) => void
+}
 
 class ConnectionMonitor {
   private latency = 0
@@ -39,9 +40,10 @@ class ConnectionMonitor {
   private bytesReceived = 0
   private peersConnected = 0
   private pingTimer: ReturnType<typeof setInterval> | null = null
-  private pendingPings = new Map<string, number>()
+  private pendingPings = new Map<string, number>() // pingId -> sentAt
   private listeners: StatsListener[] = []
   private active = false
+  private channel: PingChannel | null = null
 
   start(): void {
     if (this.active) return
@@ -50,7 +52,7 @@ class ConnectionMonitor {
 
     this.pingTimer = setInterval(() => {
       this.sendPing()
-    }, LATENCY_PING_INTERVAL)
+    }, MONITOR_PING_INTERVAL_MS)
 
     log('[Monitor] Started')
   }
@@ -62,7 +64,23 @@ class ConnectionMonitor {
       this.pingTimer = null
     }
     this.pendingPings.clear()
+    this.channel = null
     log('[Monitor] Stopped')
+  }
+
+  /**
+   * 设置 ping/pong 通信通道
+   */
+  setChannel(channel: PingChannel): void {
+    this.channel = channel
+    channel.onMessage((data, { peerId }) => {
+      if (data.type === 'ping') {
+        // 回复 pong，附带原始时间戳
+        this.channel?.send({ type: 'pong', ts: data.ts }, peerId)
+      } else if (data.type === 'pong') {
+        this.handlePong(data as { ts: number })
+      }
+    })
   }
 
   onStats(cb: StatsListener): () => void {
@@ -89,26 +107,19 @@ class ConnectionMonitor {
     this.emitStats()
   }
 
-  handlePong(peerId: string): void {
-    const sentAt = this.pendingPings.get(peerId)
-    if (sentAt) {
-      this.latency = Date.now() - sentAt
-      this.pendingPings.delete(peerId)
-      this.emitStats()
-    }
+  private handlePong(data: { ts?: number }): void {
+    if (typeof data.ts !== 'number') return
+    const now = Date.now()
+    const rtt = now - data.ts
+    // 滑动平均
+    this.latency = this.latency === 0 ? rtt : Math.round(this.latency * 0.7 + rtt * 0.3)
+    this.emitStats()
   }
 
   private sendPing(): void {
-    const pingId = crypto.randomUUID()
-    const peerId = `ping:${pingId}`
-    this.pendingPings.set(peerId, Date.now())
-
-    // 超时清理
-    setTimeout(() => {
-      if (this.pendingPings.has(peerId)) {
-        this.pendingPings.delete(peerId)
-      }
-    }, LATENCY_PING_INTERVAL)
+    if (!this.channel || this.peersConnected === 0) return
+    const ts = Date.now()
+    this.channel.send({ type: 'ping', ts })
   }
 
   getLatency(): number {
@@ -130,9 +141,9 @@ class ConnectionMonitor {
 
   private calculateQuality(): QualityLevel {
     if (this.latency === 0) return 'unknown'
-    if (this.latency < QUALITY_EXCELLENT_THRESHOLD) return 'excellent'
-    if (this.latency < QUALITY_GOOD_THRESHOLD) return 'good'
-    if (this.latency < QUALITY_FAIR_THRESHOLD) return 'fair'
+    if (this.latency < QUALITY_EXCELLENT_MS) return 'excellent'
+    if (this.latency < QUALITY_GOOD_MS) return 'good'
+    if (this.latency < QUALITY_FAIR_MS) return 'fair'
     return 'poor'
   }
 
