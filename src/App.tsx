@@ -50,15 +50,21 @@ function AppContent() {
     }
   }, [])
 
-  // 虚拟键盘检测
+  // 虚拟键盘检测 — 同时使用 viewport 高度变化和 offsetTop（iOS 键盘上推）
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
     const handleResize = () => {
-      setKeyboardOpen(vv.height < window.innerHeight * 0.7)
+      const heightRatio = vv.height / window.innerHeight
+      // 键盘弹出时：viewport 高度缩小到 <75%，或页面被上推 offsetTop > 0
+      setKeyboardOpen(heightRatio < 0.75 || vv.offsetTop > 50)
     }
     vv.addEventListener('resize', handleResize)
-    return () => vv.removeEventListener('resize', handleResize)
+    vv.addEventListener('scroll', handleResize)
+    return () => {
+      vv.removeEventListener('resize', handleResize)
+      vv.removeEventListener('scroll', handleResize)
+    }
   }, [])
 
   const handleCreateRoom = async (name: string) => {
