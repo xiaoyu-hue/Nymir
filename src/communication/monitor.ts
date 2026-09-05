@@ -10,6 +10,7 @@
 
 import { log } from '../utils/logger'
 import { MONITOR_PING_INTERVAL_MS, QUALITY_EXCELLENT_MS, QUALITY_GOOD_MS, QUALITY_FAIR_MS } from '../constants'
+import type { DataPayload } from '@trystero-p2p/core'
 
 export type QualityLevel = 'excellent' | 'good' | 'fair' | 'poor' | 'unknown'
 
@@ -27,7 +28,7 @@ export interface ConnectionStats {
 type StatsListener = (stats: ConnectionStats) => void
 
 interface PingChannel {
-  send: (data: Record<string, unknown>, target?: string) => void
+  send: (data: DataPayload, target?: string) => void
   onMessage: (cb: (data: Record<string, unknown>, info: { peerId: string }) => void) => void
 }
 

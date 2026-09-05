@@ -80,10 +80,6 @@ class SecurityManager {
     this._cachedPassword = null
   }
 
-  private getPasswordString(): string | null {
-    return this._cachedPassword
-  }
-
   /**
    * 获取缓存的密码（锁定后仍可用于加密新数据）
    * 解密旧数据仍需密码（锁定时返回 null）
