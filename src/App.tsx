@@ -10,6 +10,7 @@ import './ui/styles/globals.css'
 
 const ChatView = lazy(() => import('./ui/components/ChatView'))
 const BackupPanel = lazy(() => import('./ui/components/BackupPanel'))
+const LockScreen = lazy(() => import('./ui/components/LockScreen'))
 
 const LoadingFallback = () => (
   <div role="status" aria-live="polite" className="app-loading">
