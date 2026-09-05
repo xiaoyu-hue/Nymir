@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useState, memo } from 'react'
+import { STAR_COUNT_LOW, STAR_COUNT_HIGH, SHOOTING_STAR_REMOVAL_MS, SHOOTING_STAR_INTERVAL_MIN_MS, SHOOTING_STAR_INTERVAL_MAX_MS } from '../../constants'
 import '../styles/starfield.css'
 
 interface Star {
@@ -46,7 +47,7 @@ function isLowEndDevice(): boolean {
 }
 
 export default memo(function Starfield() {
-  const starCount = isLowEndDevice() ? 40 : 80
+  const starCount = isLowEndDevice() ? STAR_COUNT_LOW : STAR_COUNT_HIGH
   const stars = useMemo(() => generateStars(starCount), [starCount])
   const [shootingStars, setShootingStars] = useState<ShootingStar[]>([])
 
@@ -77,10 +78,10 @@ export default memo(function Starfield() {
         if (!cancelled) {
           setShootingStars((prev) => prev.filter((s) => s.id !== id))
         }
-      }, 1500)
+      }, SHOOTING_STAR_REMOVAL_MS)
     }
 
-    const interval = setInterval(spawn, 4000 + Math.random() * 6000)
+    const interval = setInterval(spawn, SHOOTING_STAR_INTERVAL_MIN_MS + Math.random() * SHOOTING_STAR_INTERVAL_MAX_MS)
     const initialTimeout = setTimeout(spawn, 2000)
 
     return () => {

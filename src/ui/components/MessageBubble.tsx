@@ -5,6 +5,7 @@ import { formatTime } from '../../utils/time'
 import { useI18n } from '../../i18n'
 import { messageManager } from '../../core/message'
 import { getRoomDisplayName } from '../../security/pseudonym'
+import { EXIT_ANIMATION_MS } from '../../constants'
 import BurnTimer from './BurnTimer'
 
 type Props = {
@@ -25,7 +26,7 @@ function MessageBubbleInner({ message, roomId, onDestroy }: Props) {
   useEffect(() => {
     if (message.destroyed && visible) {
       setExiting(true)
-      const timer = setTimeout(() => setVisible(false), 300)
+      const timer = setTimeout(() => setVisible(false), EXIT_ANIMATION_MS)
       return () => clearTimeout(timer)
     }
   }, [message.destroyed, visible])

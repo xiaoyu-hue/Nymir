@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { securityManager } from '../../security'
 import { useI18n } from '../../i18n'
+import { SHAKE_ANIMATION_MS, MIN_PASSWORD_LENGTH } from '../../constants'
 import GlassCard from './GlassCard'
 
 type Props = {
@@ -19,7 +20,7 @@ export default function LockScreen({ onUnlocked }: Props) {
 
   const triggerShake = () => {
     setShake(true)
-    setTimeout(() => setShake(false), 400)
+    setTimeout(() => setShake(false), SHAKE_ANIMATION_MS)
   }
 
   const handleSubmit = async () => {
@@ -36,7 +37,7 @@ export default function LockScreen({ onUnlocked }: Props) {
           triggerShake()
         }
       } else {
-        if (password.length < 6) {
+        if (password.length < MIN_PASSWORD_LENGTH) {
           setError(t.security.passwordTooShort)
           triggerShake()
           setLoading(false)

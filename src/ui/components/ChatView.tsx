@@ -7,6 +7,7 @@ import { peerManager } from '../../communication/peer'
 import { useRoom } from '../hooks/useRoom'
 import { useI18n } from '../../i18n'
 import { useKeyboard } from '../../App'
+import { COPY_FEEDBACK_MS } from '../../constants'
 import GlassCard from './GlassCard'
 import MessageBubble from './MessageBubble'
 
@@ -92,7 +93,7 @@ export default function ChatView() {
     try {
       await navigator.clipboard.writeText(roomId)
       setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setTimeout(() => setCopied(false), COPY_FEEDBACK_MS)
     } catch {
       // Clipboard API not available (non-secure context)
     }

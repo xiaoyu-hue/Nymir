@@ -3,6 +3,7 @@ import type { Message } from '../../core/types'
 import { getRemainingMs } from '../../core/burn'
 import { formatCountdown } from '../../utils/time'
 import { useI18n } from '../../i18n'
+import { BURN_URGENT_THRESHOLD_MS } from '../../constants'
 
 type Props = {
   message: Message
@@ -58,7 +59,7 @@ export default function BurnTimer({ message, onExpired }: Props) {
   if (remaining === Infinity) return null
   if (remaining <= 0) return <span className="burn-indicator expired">{t.message.burned}</span>
 
-  const isUrgent = remaining < 10000
+  const isUrgent = remaining < BURN_URGENT_THRESHOLD_MS
 
   return (
     <span
