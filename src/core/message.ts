@@ -218,6 +218,7 @@ export class MessageManager {
    */
   async send(content: string, burn: BurnConfig): Promise<Message> {
     if (!this.channel) throw new Error('MessageManager not initialized')
+    if (content.length > 10000) throw new Error('Message too long (max 10000 chars)')
 
     const msg: Message = {
       id: generateMessageId(),
