@@ -3,6 +3,7 @@ import { securityManager } from '../../security'
 import { useI18n } from '../../i18n'
 import { SHAKE_ANIMATION_MS, MIN_PASSWORD_LENGTH } from '../../constants'
 import GlassCard from './GlassCard'
+import ConfirmDialog, { useConfirm } from './ConfirmDialog'
 
 type Props = {
   onUnlocked: () => void
@@ -15,6 +16,7 @@ export default function LockScreen({ onUnlocked }: Props) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [shake, setShake] = useState(false)
+  const { confirm, ConfirmDialog: ConfirmDialogEl } = useConfirm()
 
   const isSetup = securityManager.isSetup
 
@@ -62,8 +64,9 @@ export default function LockScreen({ onUnlocked }: Props) {
     }
   }
 
-  const handleReset = () => {
-    if (confirm(t.security.resetWarning)) {
+  const handleReset = async () => {
+    const confirmed = await confirm(t.security.resetWarning)
+    if (confirmed) {
       securityManager.reset()
       setPassword('')
       setConfirmPassword('')
@@ -152,6 +155,7 @@ export default function LockScreen({ onUnlocked }: Props) {
           )}
         </div>
       </GlassCard>
+      <ConfirmDialogEl />
     </div>
   )
 }
