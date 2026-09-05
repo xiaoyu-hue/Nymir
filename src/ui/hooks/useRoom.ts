@@ -17,11 +17,19 @@ export function useRoom() {
 
   useEffect(() => {
     const unsub = roomManager.onEvent((event, data) => {
-      if (event === 'room:joined' || event === 'room:left') {
+      if (
+        event === 'room:joined' ||
+        event === 'room:left' ||
+        event === 'peer:join' ||
+        event === 'peer:leave'
+      ) {
         setState((prev) => ({
           ...prev,
           inRoom: roomManager.inRoom,
-          room: roomManager.room,
+          // 新建对象，确保 peers 变化触发重渲染
+          room: roomManager.room
+            ? { ...roomManager.room, peers: [...roomManager.room.peers] }
+            : null,
         }))
       }
       if (event === 'status:change') {
