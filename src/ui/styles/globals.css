@@ -636,3 +636,115 @@ select {
   .chat-messages { max-width: 860px; }
   .chat-input-inner { max-width: 860px; }
 }
+
+/* ========== RoomPanel ========== */
+.room-panel-container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 60px 20px 80px;
+}
+
+.room-panel-inner {
+  padding: 24px;
+}
+
+.room-panel-title {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.room-panel-heading {
+  font-size: 1.6rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 4px;
+}
+
+.room-panel-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.room-panel-tabs {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+
+.room-panel-tab {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.room-panel-tab.active {
+  background: rgba(124, 106, 239, 0.25);
+  color: var(--accent);
+}
+
+.room-panel-form {
+  position: relative;
+  min-height: 140px;
+}
+
+.room-panel-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.room-panel-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.room-panel-input {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.room-panel-input-code {
+  font-size: 1.1rem;
+  letter-spacing: 3px;
+  text-align: center;
+  font-family: monospace;
+  font-weight: 600;
+}
+
+.room-panel-input-name {
+  font-size: 0.9rem;
+}
+
+.room-panel-submit {
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-top: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+}
+
+.room-panel-submit.ready {
+  background: linear-gradient(135deg, var(--accent), #5b4bc9);
+  color: white;
+}
