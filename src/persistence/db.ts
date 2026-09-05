@@ -77,6 +77,8 @@ async function encryptMessage(msg: StoredMessage): Promise<StoredMessage> {
   return {
     ...msg,
     content: await encryptField(msg.content),
+    sender: await encryptField(msg.sender),
+    readBy: await Promise.all(msg.readBy.map(encryptField)),
   }
 }
 
@@ -85,6 +87,8 @@ async function decryptMessage(msg: StoredMessage): Promise<StoredMessage> {
   return {
     ...msg,
     content: await decryptField(msg.content),
+    sender: await decryptField(msg.sender),
+    readBy: await Promise.all(msg.readBy.map(decryptField)),
   }
 }
 
