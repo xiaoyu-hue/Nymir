@@ -37,7 +37,7 @@ export type E2EEStatus = 'initializing' | 'ready' | 'error'
 
 export type TOFUStatus = 'trusted' | 'untrusted' | 'new'
 
-const KEY_ROTATION_THRESHOLD = 100
+// 历史：曾在每 100 条消息时自动 rotateKeys，因无对端通知与 TOFU 衔接已关闭。
 const TOFU_STORAGE_KEY = 'nymir_tofu'
 
 function loadTOFU(): Map<string, string> {
@@ -289,17 +289,27 @@ class E2EEManager {
   }
 
   /**
-   * 记录消息发送并检查是否需要轮换密钥
+   * 记录消息发送。
+   *
+   * 注意：自动密钥轮换已禁用（方案 C）。
+   * 原因：轮换后未通知对端、TOFU 按临时 peerId 固定且无签名衔接，
+   * 会导致长对话从约第 100 条起全部解密失败。
+   * messageCount 仍累计，供日后实现可验证轮换时使用。
+   * 前向保密现状：会话级静态 ECDH + 每条消息 HKDF(messageId)，
+   * 私钥泄露可影响本场已截获密文——不提供强前向保密。
    */
   recordMessageSent(): void {
     this.messageCount++
-    if (this.messageCount >= KEY_ROTATION_THRESHOLD) {
-      this.rotateKeys()
-    }
+    // 自动轮换已关闭。勿在此处调用 rotateKeys()。
+    // 若重新启用，必须先具备：对端通知 + 旧签名钥衔接 + TOFU re-pin 协议。
   }
 
   /**
-   * 轮换密钥对（前向保密）
+   * 显式轮换密钥对（当前无自动调用）。
+   *
+   * 警告：调用前必须确保已通过 onKeyRotation 注册“向所有 peer 广播新公钥”
+   * 的回调，且对端能验证并 re-pin。否则对端仍持旧公钥，消息将无法解密。
+   * 在签名衔接协议就绪之前，生产路径不应调用本方法。
    */
   async rotateKeys(): Promise<void> {
     try {
@@ -317,7 +327,8 @@ class E2EEManager {
   }
 
   /**
-   * 注册密钥轮换回调（用于通知 peer 新公钥）
+   * 注册密钥轮换回调（用于通知 peer 新公钥）。
+   * 自动轮换关闭期间仍保留接口，供日后可验证轮换使用。
    */
   onKeyRotation(cb: () => void): void {
     this.onKeyRotationCallback = cb
