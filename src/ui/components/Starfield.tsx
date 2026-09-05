@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from 'react'
+import { useMemo, useEffect, useState, memo } from 'react'
 import '../styles/starfield.css'
 
 interface Star {
@@ -45,7 +45,7 @@ function isLowEndDevice(): boolean {
   return false
 }
 
-export default function Starfield() {
+export default memo(function Starfield() {
   const starCount = isLowEndDevice() ? 40 : 80
   const stars = useMemo(() => generateStars(starCount), [starCount])
   const [shootingStars, setShootingStars] = useState<ShootingStar[]>([])
@@ -119,4 +119,4 @@ export default function Starfield() {
       ))}
     </div>
   )
-}
+})
