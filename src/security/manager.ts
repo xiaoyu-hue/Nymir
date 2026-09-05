@@ -11,8 +11,8 @@
 import { encrypt, decrypt, verifyPassword, needsMigration } from './crypto'
 import { uint8ToBase64 } from '../utils/base64'
 import { clearAllData } from '../persistence/db'
+import { LOCK_TIMEOUT_MS } from '../../constants'
 
-const LOCK_TIMEOUT_MS = 5 * 60 * 1000 // 5分钟自动锁定
 const STORAGE_KEY_PASSWORD_HASH = 'nymir_pwd_hash'
 
 export type LockListener = (locked: boolean) => void

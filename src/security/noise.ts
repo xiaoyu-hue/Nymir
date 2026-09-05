@@ -12,8 +12,8 @@
 
 import { log } from '../utils/logger'
 import { uint8ToBase64 } from '../utils/base64'
+import { NOISE_INTERVAL_MS, NOISE_MIN_LENGTH, NOISE_MAX_LENGTH, FAKE_ID_LENGTH } from '../constants'
 
-const NOISE_INTERVAL_MS = 30000 // 30秒发送一次噪声
 const NOISE_ENABLED = true
 
 let noiseTimer: ReturnType<typeof setInterval> | null = null
@@ -23,7 +23,7 @@ let noiseCount = 0
  * 生成随机噪声数据（模拟真实消息内容）
  */
 function generateNoiseData(): string {
-  const length = Math.floor(Math.random() * 100) + 10
+  const length = Math.floor(Math.random() * NOISE_MAX_LENGTH) + NOISE_MIN_LENGTH
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
   let result = ''
   for (let i = 0; i < length; i++) {
@@ -38,7 +38,7 @@ function generateNoiseData(): string {
 function generateFakeId(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
   let result = ''
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < FAKE_ID_LENGTH; i++) {
     result += chars[Math.floor(Math.random() * chars.length)]
   }
   return result
