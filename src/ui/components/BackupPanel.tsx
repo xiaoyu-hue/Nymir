@@ -157,7 +157,7 @@ export default function BackupPanel({ onClose }: Props) {
             )}
 
             {status && (
-              <p className={`pop-in backup-status ${hasError ? 'error' : 'success'}`}>
+              <p className={`pop-in backup-status ${hasError ? 'error' : 'success'}`} aria-live="polite">
                 {status}
               </p>
             )}

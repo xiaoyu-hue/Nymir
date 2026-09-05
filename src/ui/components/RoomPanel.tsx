@@ -43,6 +43,7 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
             {(['create', 'join'] as const).map((key) => (
               <button
                 key={key}
+                id={`tab-${key}`}
                 onClick={() => setTab(key)}
                 role="tab"
                 aria-selected={tab === key}
@@ -53,7 +54,7 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
             ))}
           </div>
 
-          <div className="room-panel-form" role="tabpanel">
+          <div className="room-panel-form" role="tabpanel" aria-labelledby={tab === 'create' ? 'tab-create' : 'tab-join'}>
             {tab === 'join' ? (
               <div key="join" className="page-enter room-panel-fields">
                 <label htmlFor="room-code" className="room-panel-label">

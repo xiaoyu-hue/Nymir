@@ -82,7 +82,6 @@ body {
 button {
   cursor: pointer;
   border: none;
-  outline: none;
   font-family: inherit;
   -webkit-tap-highlight-color: transparent;
   min-height: 44px;
@@ -407,7 +406,7 @@ textarea {
   font-size: 0.9rem;
   resize: none;
   min-height: 40px;
-  max-height: 100px;
+  max-height: 120px;
   line-height: 1.4;
 }
 
@@ -1140,6 +1139,11 @@ select {
 }
 
 /* ========== 安装提示 ========== */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 .install-prompt {
   position: fixed;
   bottom: calc(var(--safe-bottom) + 12px);
