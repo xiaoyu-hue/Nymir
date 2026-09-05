@@ -5,6 +5,7 @@ import { useRoom } from './ui/hooks/useRoom'
 import { I18nProvider, useI18n } from './i18n'
 import Starfield from './ui/components/Starfield'
 import RoomPanel from './ui/components/RoomPanel'
+import InstallPrompt from './ui/components/InstallPrompt'
 import './ui/styles/globals.css'
 
 const ChatView = lazy(() => import('./ui/components/ChatView'))
@@ -180,6 +181,8 @@ function AppContent() {
             <BackupPanel onClose={() => setShowBackup(false)} />
           </Suspense>
         )}
+
+        {!inRoom && <InstallPrompt />}
       </div>
     </KeyboardContext.Provider>
   )
