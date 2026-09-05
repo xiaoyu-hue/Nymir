@@ -117,7 +117,7 @@ export default function ChatView() {
           </div>
           <div className="chat-header-right">
             <div className="chat-header-status">
-              <div className={`chat-status-dot ${status}`} />
+              <div className={`chat-status-dot ${status}`} aria-hidden="true" />
               <span className="chat-status-text">
                 {status === 'connected'
                   ? `${roomManager.room?.peers.length ?? 0} ${t.room.online}`
@@ -141,6 +141,15 @@ export default function ChatView() {
         <div
           className="room-code-bar"
           onClick={handleCopyCode}
+          role="button"
+          tabIndex={0}
+          aria-label={t.room.copy}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              handleCopyCode()
+            }
+          }}
         >
           <span className="room-code-label">{t.room.roomCode}</span>
           <span className="room-code-value">{room.id}</span>

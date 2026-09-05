@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { exportBackup, downloadBackup, importBackup, verifyBackupPassword } from '../../persistence/backup'
 import { useI18n } from '../../i18n'
 import GlassCard from './GlassCard'
@@ -17,6 +17,18 @@ export default function BackupPanel({ onClose }: Props) {
   const [mode, setMode] = useState<'export' | 'import'>('export')
 
   const isBusy = loading || importing
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') onClose()
+  }, [onClose])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onClose])
 
   const handleExport = async () => {
     if (!password || password.length < 6) {
@@ -84,7 +96,7 @@ export default function BackupPanel({ onClose }: Props) {
   }
 
   return (
-    <div className="overlay-enter backup-overlay" onClick={onClose}>
+    <div className="overlay-enter backup-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label={t.backup.title} onKeyDown={handleKeyDown}>
       <GlassCard
         variant="strong"
         className="backup-panel modal-enter"
@@ -119,6 +131,7 @@ export default function BackupPanel({ onClose }: Props) {
               onChange={(e) => setPassword(e.target.value)}
               placeholder={t.backup.passwordPlaceholder}
               className="backup-input"
+              aria-required="true"
             />
           </div>
 
