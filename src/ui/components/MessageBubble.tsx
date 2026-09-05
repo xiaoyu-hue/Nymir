@@ -54,9 +54,7 @@ function MessageBubbleInner({ message, roomId, onDestroy }: Props) {
     <div
       className={`message-bubble ${isSelf ? 'self' : 'other'} msg-enter`}
       onClick={() => {
-        if (message.burnMode === 'read_once' && !isSelf) {
-          onDestroy?.()
-        } else if (isSelf) {
+        if (isSelf) {
           setShowRecall(!showRecall)
         }
       }}
