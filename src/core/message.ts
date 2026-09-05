@@ -243,7 +243,7 @@ export class MessageManager {
             const encrypted = await e2eeManager.encrypt(content, peerId, msg.id)
             if (!encrypted) {
               // 加密失败（无 peer 公钥）— 不发送明文，跳过该 peer
-              console.warn('[Message] Encrypt returned null, skipping peer:', peerId)
+              console.warn('[Message] Encrypt returned null, skipping peer')
               continue
             }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
