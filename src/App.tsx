@@ -10,8 +10,8 @@ import BackupPanel from './ui/components/BackupPanel'
 import LockScreen from './ui/components/LockScreen'
 import './ui/styles/globals.css'
 
-type KeyboardCtx = { keyboardOpen: boolean; setKeyboardOpen: (v: boolean) => void }
-const KeyboardContext = createContext<KeyboardCtx>({ keyboardOpen: false, setKeyboardOpen: () => {} })
+type KeyboardCtx = { keyboardOpen: boolean; setKeyboardOpen: (v: boolean) => void; viewportHeight: string }
+const KeyboardContext = createContext<KeyboardCtx>({ keyboardOpen: false, setKeyboardOpen: () => {}, viewportHeight: '100dvh' })
 export const useKeyboard = () => useContext(KeyboardContext)
 
 function AppContent() {
@@ -21,6 +21,7 @@ function AppContent() {
   const [locked, setLocked] = useState(true)
   const [securityReady, setSecurityReady] = useState(false)
   const [keyboardOpen, setKeyboardOpen] = useState(false)
+  const [viewportHeight, setViewportHeight] = useState('100dvh')
 
   useEffect(() => {
     securityManager
@@ -56,8 +57,10 @@ function AppContent() {
     if (!vv) return
     const handleResize = () => {
       const heightRatio = vv.height / window.innerHeight
-      // 键盘弹出时：viewport 高度缩小到 <75%，或页面被上推 offsetTop > 0
-      setKeyboardOpen(heightRatio < 0.75 || vv.offsetTop > 50)
+      const isOpen = heightRatio < 0.75 || vv.offsetTop > 50
+      setKeyboardOpen(isOpen)
+      // 键盘弹出时，chat-view 高度跟随 visualViewport
+      setViewportHeight(isOpen ? `${vv.height}px` : '100dvh')
     }
     vv.addEventListener('resize', handleResize)
     vv.addEventListener('scroll', handleResize)
@@ -123,7 +126,7 @@ function AppContent() {
   }
 
   return (
-    <KeyboardContext.Provider value={{ keyboardOpen, setKeyboardOpen }}>
+      <KeyboardContext.Provider value={{ keyboardOpen, setKeyboardOpen, viewportHeight }}>
       <div
         style={{
           width: '100dvw',

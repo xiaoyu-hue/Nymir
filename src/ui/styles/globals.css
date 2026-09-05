@@ -305,6 +305,7 @@ textarea {
   transition: all 0.2s;
   user-select: none;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .room-code-label {
@@ -318,6 +319,9 @@ textarea {
   font-weight: 700;
   letter-spacing: 2px;
   font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .room-code-status {
@@ -562,6 +566,17 @@ select {
     height: 40px;
     bottom: calc(16px + var(--safe-bottom));
     right: 12px;
+  }
+}
+
+/* ========== 响应式 — 极小屏 / 短屏 (< 480px 且 < 600px 高) ========== */
+@media (max-width: 480px) and (max-height: 600px) {
+  .room-panel-card {
+    margin: 0 8px;
+  }
+
+  .room-panel-card .glass-strong {
+    padding: 16px !important;
   }
 }
 

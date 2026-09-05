@@ -13,7 +13,7 @@ import MessageBubble from './MessageBubble'
 export default function ChatView() {
   const { status } = useRoom()
   const { t } = useI18n()
-  const { keyboardOpen } = useKeyboard()
+  const { keyboardOpen, viewportHeight } = useKeyboard()
   const [messages, setMessages] = useState<Message[]>(() =>
     messageManager.getMessages(),
   )
@@ -117,7 +117,7 @@ export default function ChatView() {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100%',
+        height: viewportHeight,
         position: 'relative',
         zIndex: 1,
       }}
