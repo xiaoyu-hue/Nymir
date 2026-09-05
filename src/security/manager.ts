@@ -34,6 +34,7 @@ class SecurityManager {
   private lockTimer: ReturnType<typeof setTimeout> | null = null
   private lockListeners: LockListener[] = []
   private initialized = false
+  private _cachedPassword: string | null = null
 
   get failedAttempts(): number {
     return parseInt(sessionStorage.getItem(STORAGE_KEY_FAILED_ATTEMPTS) || '0', 10)
@@ -70,17 +71,25 @@ class SecurityManager {
   private setPassword(password: string): void {
     clearUint8Array(this.password)
     this.password = stringToUint8Array(password)
+    this._cachedPassword = password
   }
 
   private clearPassword(): void {
     clearUint8Array(this.password)
     this.password = null
+    this._cachedPassword = null
   }
 
   private getPasswordString(): string | null {
-    if (!this.password) return null
-    const decoder = new TextDecoder()
-    return decoder.decode(this.password)
+    return this._cachedPassword
+  }
+
+  /**
+   * 获取缓存的密码（锁定后仍可用于加密新数据）
+   * 解密旧数据仍需密码（锁定时返回 null）
+   */
+  getCachedPassword(): string | null {
+    return this._cachedPassword
   }
 
   /**
@@ -158,19 +167,19 @@ class SecurityManager {
   }
 
   /**
-   * 加密数据
+   * 加密数据（锁定后仍可加密新数据）
    */
   async encrypt(data: string): Promise<string> {
-    const pw = this.getPasswordString()
-    if (!pw) throw new Error('Security: locked')
+    const pw = this._cachedPassword
+    if (!pw) throw new Error('Security: no password set')
     return encrypt(data, pw)
   }
 
   /**
-   * 解密数据
+   * 解密数据（锁定后无法解密）
    */
   async decrypt(data: string): Promise<string> {
-    const pw = this.getPasswordString()
+    const pw = this._cachedPassword
     if (!pw) throw new Error('Security: locked')
     return decrypt(data, pw)
   }
