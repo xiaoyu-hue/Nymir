@@ -976,3 +976,36 @@ select {
   color: var(--text-secondary);
   font-size: 0.85rem;
 }
+
+/* ========== ChatView 增强 ========== */
+.chat-view {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+
+.chat-status-dot.connected {
+  background: var(--success);
+}
+
+.chat-status-dot.reconnecting {
+  background: var(--warning);
+  animation: pulse 1.5s infinite;
+}
+
+.chat-status-dot.disconnected {
+  background: var(--danger);
+}
+
+.room-code-status.copied {
+  color: var(--success);
+}
+
+.room-code-status.default {
+  color: var(--text-muted);
+}
+
+.chat-input-inner.compressed {
+  padding: 6px 10px !important;
+}

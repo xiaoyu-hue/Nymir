@@ -114,13 +114,7 @@ export default function ChatView() {
   return (
     <div
       className="page-enter chat-view"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: viewportHeight,
-        position: 'relative',
-        zIndex: 1,
-      }}
+      style={{ height: viewportHeight }}
     >
       {/* Header */}
       <GlassCard variant="strong" className="chat-header">
@@ -130,18 +124,7 @@ export default function ChatView() {
           </div>
           <div className="chat-header-right">
             <div className="chat-header-status">
-              <div
-                className="chat-status-dot"
-                style={{
-                  background:
-                    status === 'connected'
-                      ? 'var(--success)'
-                      : status === 'reconnecting'
-                        ? 'var(--warning)'
-                        : 'var(--danger)',
-                  animation: status === 'reconnecting' ? 'pulse 1.5s infinite' : 'none',
-                }}
-              />
+              <div className={`chat-status-dot ${status}`} />
               <span className="chat-status-text">
                 {status === 'connected'
                   ? `${roomManager.room?.peers.length ?? 0} ${t.room.online}`
@@ -168,19 +151,14 @@ export default function ChatView() {
         >
           <span className="room-code-label">{t.room.roomCode}</span>
           <span className="room-code-value">{room.id}</span>
-          <span
-            className={copied ? 'pop-in room-code-status' : 'room-code-status'}
-            style={{ color: copied ? 'var(--success)' : 'var(--text-muted)' }}
-          >
+          <span className={`pop-in room-code-status ${copied ? 'copied' : 'default'}`}>
             {copied ? t.room.copied : t.room.copy}
           </span>
         </div>
       )}
 
       {/* Messages */}
-      <div
-        className="chat-messages"
-      >
+      <div className="chat-messages">
         {messages.length === 0 && (
           <div className="chat-empty">
             <div className="chat-empty-icon">💬</div>
@@ -195,7 +173,7 @@ export default function ChatView() {
 
       {/* Input */}
       <GlassCard variant="strong" className="chat-input-area">
-        <div className="chat-input-inner" style={{ padding: keyboardOpen ? '6px 10px' : '10px 14px' }}>
+        <div className={`chat-input-inner ${keyboardOpen ? 'compressed' : ''}`}>
           {/* Burn mode selector - hidden when keyboard is open */}
           {!keyboardOpen && (
             <div className="burn-mode-row">
