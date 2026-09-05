@@ -30,7 +30,7 @@ export default function GlassCard({
       onKeyDown={
         onClick
           ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') onClick()
+              if (e.key === 'Enter' || e.key === ' ') onClick(e)
             }
           : undefined
       }
