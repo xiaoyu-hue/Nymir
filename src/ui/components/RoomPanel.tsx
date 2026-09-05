@@ -9,7 +9,7 @@ type Props = {
 
 export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
   const { t } = useI18n()
-  const [tab, setTab] = useState<'create' | 'join'>('join')
+  const [tab, setTab] = useState<'create' | 'join'>('create')
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
 
@@ -75,7 +75,7 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
               marginBottom: '20px',
             }}
           >
-            {(['join', 'create'] as const).map((key) => (
+            {(['create', 'join'] as const).map((key) => (
               <button
                 key={key}
                 onClick={() => setTab(key)}
