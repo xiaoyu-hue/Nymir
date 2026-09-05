@@ -32,6 +32,8 @@ import { log, error } from '../utils/logger'
 
 export type E2EEStatus = 'initializing' | 'ready' | 'error'
 
+const KEY_ROTATION_THRESHOLD = 100 // 每100条消息轮换密钥
+
 class E2EEManager {
   private keyPair: KeyPair | null = null
   private signKeyPair: SignKeyPair | null = null
@@ -40,6 +42,8 @@ class E2EEManager {
   private status: E2EEStatus = 'initializing'
   private _publicKeyString: string | null = null
   private _signPublicKeyString: string | null = null
+  private messageCount = 0
+  private onKeyRotationCallback: (() => void) | null = null
 
   get currentStatus(): E2EEStatus {
     return this.status
@@ -204,6 +208,41 @@ class E2EEManager {
     this.peerPublicKeys.clear()
     this.peerSignPublicKeys.clear()
     clearAllSharedKeys()
+  }
+
+  /**
+   * 记录消息发送并检查是否需要轮换密钥
+   */
+  recordMessageSent(): void {
+    this.messageCount++
+    if (this.messageCount >= KEY_ROTATION_THRESHOLD) {
+      this.rotateKeys()
+    }
+  }
+
+  /**
+   * 轮换密钥对（前向保密）
+   */
+  async rotateKeys(): Promise<void> {
+    try {
+      this.keyPair = await generateKeyPair()
+      this._publicKeyString = await exportPublicKey(this.keyPair)
+      this.signKeyPair = await generateSignKeyPair()
+      this._signPublicKeyString = await exportSignPublicKey(this.signKeyPair)
+      this.messageCount = 0
+      clearAllSharedKeys()
+      log('[E2EE] Keys rotated')
+      this.onKeyRotationCallback?.()
+    } catch (e) {
+      error('[E2EE] Key rotation failed:', e)
+    }
+  }
+
+  /**
+   * 注册密钥轮换回调（用于通知 peer 新公钥）
+   */
+  onKeyRotation(cb: () => void): void {
+    this.onKeyRotationCallback = cb
   }
 }
 

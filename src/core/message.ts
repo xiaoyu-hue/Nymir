@@ -270,6 +270,11 @@ export class MessageManager {
         // 没有 peer，仅本地保存（不发送）
       }
 
+      // 记录消息发送（用于密钥轮换）
+      if (peerList.length > 0) {
+        e2eeManager.recordMessageSent()
+      }
+
       // 本地存储
       this.messageStore.set(msg.id, msg)
       this.invalidateCache()
