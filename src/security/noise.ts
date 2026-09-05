@@ -62,8 +62,11 @@ function generateNoiseMessage(): Record<string, unknown> {
  * 注意：真实消息也可能无签名（如果发送方 E2EE 未就绪），所以这是概率性检测
  */
 export function isNoiseMessage(data: Record<string, unknown>): boolean {
+  // 真实消息必须有 sender 字段（来自 messageManager.send 的 payload）
+  // 噪声消息不包含 sender —— 这是最可靠的区分特征
+  if (data.sender) return false
+
   // 噪声特征：未加密 + 无签名 + burnMode 为 read_once
-  // 真实的 read_once 消息通常有签名或已加密
   return (
     data.encrypted === false &&
     !data.signature &&
