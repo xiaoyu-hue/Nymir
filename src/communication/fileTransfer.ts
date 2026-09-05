@@ -13,6 +13,7 @@ import { peerManager, type Channel } from './peer'
 import { e2eeManager } from '../security/e2eeManager'
 import { generateMessageId } from '../utils/id'
 import { log, warn, error } from '../utils/logger'
+import { uint8ToBase64 } from '../utils/base64'
 
 const CHUNK_SIZE = 16 * 1024 // 16KB per chunk
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
@@ -28,6 +29,7 @@ export interface FileMetadata {
   chunks: number
   sender: string
   timestamp: number
+  hash: string // SHA-256 hex of original file data
 }
 
 export interface FileTransfer {
@@ -81,6 +83,10 @@ class FileTransferManager {
     const buffer = await file.arrayBuffer()
     const chunks = Math.ceil(buffer.byteLength / CHUNK_SIZE)
 
+    // 计算文件 SHA-256 哈希
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer)
+    const fileHash = uint8ToBase64(new Uint8Array(hashBuffer))
+
     const isImage = file.type.startsWith('image/')
     const metadata: FileMetadata = {
       id: transferId,
@@ -91,6 +97,7 @@ class FileTransferManager {
       chunks,
       sender: peerManager.id,
       timestamp: Date.now(),
+      hash: fileHash,
     }
 
     const transfer: FileTransfer = {
@@ -241,6 +248,13 @@ class FileTransferManager {
         // 解密（使用发送方的 peerId 作为密钥标识）
         const decrypted = await e2eeManager.decryptFile(merged.buffer, transfer.metadata.sender)
         if (!decrypted) throw new Error('Decryption failed')
+
+        // 验证文件完整性
+        const decryptedHashBuffer = await crypto.subtle.digest('SHA-256', decrypted)
+        const decryptedHash = uint8ToBase64(new Uint8Array(decryptedHashBuffer))
+        if (decryptedHash !== transfer.metadata.hash) {
+          throw new Error('File integrity check failed: hash mismatch')
+        }
 
         transfer.data = decrypted
         transfer.status = 'complete'
