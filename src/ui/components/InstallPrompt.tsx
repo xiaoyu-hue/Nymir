@@ -44,7 +44,7 @@ export default function InstallPrompt() {
       <button onClick={handleInstall} className="install-prompt-btn">
         {t.nav.install}
       </button>
-      <button onClick={handleDismiss} className="install-prompt-dismiss" aria-label="关闭">
+      <button onClick={handleDismiss} className="install-prompt-dismiss" aria-label={t.install.close}>
         ✕
       </button>
     </div>

@@ -89,6 +89,17 @@ const en: Translations = {
     locked: 'Locked',
     warning: 'Forgot password means permanent data loss. Remember it!',
   },
+  confirm: {
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+  },
+  error: {
+    title: 'Application Error',
+    reload: 'Reload',
+  },
+  install: {
+    close: 'Close',
+  },
 }
 
 export default en

@@ -87,6 +87,17 @@ const zh = {
     locked: '已锁定',
     warning: '忘记密码将永久丢失所有数据，请务必牢记！',
   },
+  confirm: {
+    cancel: '取消',
+    confirm: '确认',
+  },
+  error: {
+    title: '应用发生错误',
+    reload: '重新加载',
+  },
+  install: {
+    close: '关闭',
+  },
 }
 
 export type Translations = typeof zh
