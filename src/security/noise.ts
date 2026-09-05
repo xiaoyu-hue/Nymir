@@ -12,7 +12,7 @@
 
 import { log } from '../utils/logger'
 import { uint8ToBase64 } from '../utils/base64'
-import { NOISE_INTERVAL_MS, NOISE_MIN_LENGTH, NOISE_MAX_LENGTH, FAKE_ID_LENGTH } from '../constants'
+import { NOISE_INTERVAL_MS, FAKE_ID_LENGTH } from '../constants'
 
 const NOISE_ENABLED = true
 
