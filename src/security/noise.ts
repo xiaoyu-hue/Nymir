@@ -10,6 +10,8 @@
  * - 使流量分析更困难
  */
 
+import { log } from '../utils/logger'
+
 const NOISE_INTERVAL_MS = 30000 // 30秒发送一次噪声
 const NOISE_ENABLED = true
 
@@ -91,7 +93,7 @@ export function startNoiseGeneration(
     noiseCount++
   }, NOISE_INTERVAL_MS)
 
-  console.log('[Noise] Started noise generation')
+  log('[Noise] Started noise generation')
 }
 
 /**
@@ -101,7 +103,7 @@ export function stopNoiseGeneration(): void {
   if (noiseTimer) {
     clearInterval(noiseTimer)
     noiseTimer = null
-    console.log(`[Noise] Stopped. Sent ${noiseCount} noise messages`)
+    log(`[Noise] Stopped. Sent ${noiseCount} noise messages`)
   }
 }
 

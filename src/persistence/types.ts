@@ -1,10 +1,12 @@
+import type { BurnMode } from '../core/types'
+
 export interface StoredMessage {
   id: string
   roomId: string
   content: string
   sender: string
   timestamp: number
-  burnMode: string
+  burnMode: BurnMode
   burnAfter?: number
   burnAt?: number
   readBy: string[]

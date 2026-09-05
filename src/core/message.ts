@@ -3,6 +3,7 @@ import { saveMessage, markMessageRead, destroyMessage } from '../persistence/db'
 import { e2eeManager } from '../security/e2eeManager'
 import { isNoiseMessage, startNoiseGeneration, stopNoiseGeneration } from '../security/noise'
 import { generateMessageId } from '../utils/id'
+import { warn } from '../utils/logger'
 import type { Message, BurnConfig } from './types'
 import { shouldDestroy, getRemainingMs } from './burn'
 
@@ -95,7 +96,7 @@ export class MessageManager {
 
     // 验证 payload 必要字段
     if (!data.id || !data.timestamp || !data.burnMode) {
-      console.warn('[Message] Ignoring malformed payload:', {
+      warn('[Message] Ignoring malformed payload:', {
         peerId,
         hasId: !!data.id,
         hasTimestamp: !!data.timestamp,
@@ -118,7 +119,7 @@ export class MessageManager {
           // 解密失败 — 不使用明文回退
           decryptFailed = true
           content = '[encrypted message]'
-          console.warn('[Message] Decrypt failed, not saving as readable:', {
+          warn('[Message] Decrypt failed, not saving as readable:', {
             roomId: this.roomId,
             msgId: data.id,
             peerId,
@@ -143,7 +144,7 @@ export class MessageManager {
         const valid = await e2eeManager.verify(content, data.signature, peerId)
         verified = valid
         if (!valid) {
-          console.warn('[Message] Signature verification failed:', {
+          warn('[Message] Signature verification failed:', {
             roomId: this.roomId,
             msgId: data.id,
             peerId,
@@ -243,7 +244,7 @@ export class MessageManager {
             const encrypted = await e2eeManager.encrypt(content, peerId, msg.id)
             if (!encrypted) {
               // 加密失败（无 peer 公钥）— 不发送明文，跳过该 peer
-              console.warn('[Message] Encrypt returned null, skipping peer')
+              warn('[Message] Encrypt returned null, skipping peer')
               continue
             }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

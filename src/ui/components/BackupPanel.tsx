@@ -10,13 +10,13 @@ type Props = {
 export default function BackupPanel({ onClose }: Props) {
   const { t } = useI18n()
   const [status, setStatus] = useState('')
+  const [hasError, setHasError] = useState(false)
   const [loading, setLoading] = useState(false)
   const [importing, setImporting] = useState(false)
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState<'export' | 'import'>('export')
 
   const isBusy = loading || importing
-  const hasError = status.includes('failed') || status.includes('失败') || status.includes('Wrong')
 
   const handleExport = async () => {
     if (!password || password.length < 6) {
@@ -26,6 +26,7 @@ export default function BackupPanel({ onClose }: Props) {
 
     setLoading(true)
     setStatus('')
+    setHasError(false)
     try {
       const json = await exportBackup(password)
       downloadBackup(json)
@@ -33,6 +34,7 @@ export default function BackupPanel({ onClose }: Props) {
       setPassword('')
     } catch (e) {
       setStatus(`${t.backup.exportFailed}: ${e}`)
+      setHasError(true)
     } finally {
       setLoading(false)
     }
@@ -53,6 +55,7 @@ export default function BackupPanel({ onClose }: Props) {
 
       setImporting(true)
       setStatus('')
+      setHasError(false)
 
       try {
         const text = await file.text()
@@ -61,6 +64,7 @@ export default function BackupPanel({ onClose }: Props) {
         const valid = await verifyBackupPassword(text, password)
         if (!valid) {
           setStatus(t.backup.wrongPassword)
+          setHasError(true)
           setImporting(false)
           return
         }
@@ -71,6 +75,7 @@ export default function BackupPanel({ onClose }: Props) {
         setPassword('')
       } catch (err) {
         setStatus(`${t.backup.importFailed}: ${err}`)
+        setHasError(true)
       } finally {
         setImporting(false)
       }

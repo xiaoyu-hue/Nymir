@@ -28,6 +28,8 @@ import {
   type SignKeyPair,
 } from './sign'
 
+import { log, error } from '../utils/logger'
+
 export type E2EEStatus = 'initializing' | 'ready' | 'error'
 
 class E2EEManager {
@@ -63,9 +65,9 @@ class E2EEManager {
       this._signPublicKeyString = await exportSignPublicKey(this.signKeyPair)
 
       this.status = 'ready'
-      console.log('[E2EE] Initialized with encryption + signing')
+      log('[E2EE] Initialized with encryption + signing')
     } catch (e) {
-      console.error('[E2EE] Init failed:', e)
+      error('[E2EE] Init failed:', e)
       this.status = 'error'
     }
   }
@@ -101,9 +103,9 @@ class E2EEManager {
         this.peerSignPublicKeys.set(peerId, peerSignKey)
       }
 
-      console.log('[E2EE] Received peer keys')
+      log('[E2EE] Received peer keys')
     } catch (e) {
-      console.error('[E2EE] Failed to import peer keys:', e)
+      error('[E2EE] Failed to import peer keys:', e)
     }
   }
 
@@ -132,7 +134,7 @@ class E2EEManager {
       )
       return JSON.stringify(payload)
     } catch (e) {
-      console.error('[E2EE] Encrypt failed:', e)
+      error('[E2EE] Encrypt failed:', e)
       return null
     }
   }
@@ -149,7 +151,7 @@ class E2EEManager {
       const payload = JSON.parse(ciphertext)
       return await decryptMessage(payload, peerId, this.keyPair.privateKey, peerKey, messageId)
     } catch (e) {
-      console.error('[E2EE] Decrypt failed:', e)
+      error('[E2EE] Decrypt failed:', e)
       return null
     }
   }
@@ -162,7 +164,7 @@ class E2EEManager {
     try {
       return await signMessage(message, this.signKeyPair.privateKey)
     } catch (e) {
-      console.error('[E2EE] Sign failed:', e)
+      error('[E2EE] Sign failed:', e)
       return null
     }
   }
@@ -181,7 +183,7 @@ class E2EEManager {
     try {
       return await verifySignature(message, signature, peerSignKey)
     } catch (e) {
-      console.error('[E2EE] Verify failed:', e)
+      error('[E2EE] Verify failed:', e)
       return false
     }
   }
