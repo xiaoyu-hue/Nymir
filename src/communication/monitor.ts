@@ -10,7 +10,7 @@
 
 import { log } from '../utils/logger'
 import { MONITOR_PING_INTERVAL_MS, QUALITY_EXCELLENT_MS, QUALITY_GOOD_MS, QUALITY_FAIR_MS } from '../constants'
-import type { DataPayload } from '@trystero-p2p/core'
+import type { Channel } from './peer'
 
 export type QualityLevel = 'excellent' | 'good' | 'fair' | 'poor' | 'unknown'
 
@@ -27,10 +27,8 @@ export interface ConnectionStats {
 
 type StatsListener = (stats: ConnectionStats) => void
 
-interface PingChannel {
-  send: (data: DataPayload, target?: string) => void
-  onMessage: (cb: (data: Record<string, unknown>, info: { peerId: string }) => void) => void
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type MonitorChannel = Channel<Record<string, any>>
 
 class ConnectionMonitor {
   private latency = 0
@@ -44,7 +42,7 @@ class ConnectionMonitor {
   private pendingPings = new Map<string, number>() // pingId -> sentAt
   private listeners: StatsListener[] = []
   private active = false
-  private channel: PingChannel | null = null
+  private channel: MonitorChannel | null = null
 
   start(): void {
     if (this.active) return
@@ -72,7 +70,7 @@ class ConnectionMonitor {
   /**
    * 设置 ping/pong 通信通道
    */
-  setChannel(channel: PingChannel): void {
+  setChannel(channel: MonitorChannel): void {
     this.channel = channel
     channel.onMessage((data, { peerId }) => {
       if (data.type === 'ping') {
