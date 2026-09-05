@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import GlassCard from './GlassCard'
+import { useI18n } from '../../i18n'
 
 type Props = {
   open: boolean
@@ -10,6 +11,7 @@ type Props = {
 }
 
 export default function ConfirmDialog({ open, message, onConfirm, onCancel }: Props) {
+  const { t } = useI18n()
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -87,7 +89,7 @@ export default function ConfirmDialog({ open, message, onConfirm, onCancel }: Pr
                   fontSize: '0.9rem',
                 }}
               >
-                取消
+                {t.confirm.cancel}
               </button>
               <button
                 onClick={onConfirm}
@@ -102,7 +104,7 @@ export default function ConfirmDialog({ open, message, onConfirm, onCancel }: Pr
                   border: '1px solid rgba(239, 68, 68, 0.3)',
                 }}
               >
-                确认
+                {t.confirm.confirm}
               </button>
             </div>
           </div>
