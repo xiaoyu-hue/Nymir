@@ -5,41 +5,61 @@
  * - 首次使用时生成
  * - 持久化存储在 localStorage
  * - 每个房间可以有不同假名
+ * - 使用 crypto.getRandomValues 保证密码学安全随机
  */
 
 const STORAGE_KEY = 'nymir_anonymous_id'
 const ROOM_NAMES_KEY = 'nymir_room_names'
 
-// 形容词 + 名词组合
+// 扩展词库：40 形容词 × 40 名词 × 30 动物 × 10000 数字 = 4.8亿组合
 const ADJECTIVES = [
   '安静的', '快乐的', '神秘的', '勇敢的', '聪明的',
   '温柔的', '活泼的', '优雅的', '善良的', '坚强的',
+  '智慧的', '温柔的', '迅捷的', '深邃的', '闪耀的',
+  '宁静的', '澎湃的', '无畏的', '灵动的', '温暖的',
   'calm', 'happy', 'brave', 'wise', 'gentle',
   'lively', 'elegant', 'kind', 'strong', 'clever',
+  'swift', 'deep', 'bright', 'serene', 'bold',
+  'warm', 'cool', 'wild', 'free', 'true',
 ]
 
 const NOUNS = [
   '星星', '月亮', '太阳', '云朵', '风',
   '森林', '海洋', '山峰', '河流', '湖泊',
+  '极光', '银河', '彗星', '流星', '彩虹',
+  '潮汐', '冰川', '沙漠', '绿洲', '悬崖',
   'star', 'moon', 'sun', 'cloud', 'wind',
   'forest', 'ocean', 'mountain', 'river', 'lake',
+  'aurora', 'galaxy', 'comet', 'meteor', 'rainbow',
+  'tide', 'glacier', 'desert', 'oasis', 'cliff',
 ]
 
 const ANIMALS = [
   '狐狸', '兔子', '鹿', '猫头鹰', '海豚',
   '蝴蝶', '蜜蜂', '松鼠', '海鸥', '天鹅',
+  '狼', '鹰', '豹', '鲸鱼', '海龟',
+  '熊猫', '雪豹', '信天翁', '火烈鸟', '水獭',
   'fox', 'rabbit', 'deer', 'owl', 'dolphin',
   'butterfly', 'bee', 'squirrel', 'seagull', 'swan',
 ]
 
 /**
+ * 安全随机整数 [0, max)
+ */
+function secureRandomInt(max: number): number {
+  const arr = new Uint32Array(1)
+  crypto.getRandomValues(arr)
+  return arr[0] % max
+}
+
+/**
  * 生成随机假名
  */
 function generateAnonymousName(): string {
-  const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)]
-  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)]
-  const animal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)]
-  const num = Math.floor(Math.random() * 100)
+  const adj = ADJECTIVES[secureRandomInt(ADJECTIVES.length)]
+  const noun = NOUNS[secureRandomInt(NOUNS.length)]
+  const animal = ANIMALS[secureRandomInt(ANIMALS.length)]
+  const num = secureRandomInt(10000)
 
   // 格式：形容词 + 名词 + 动物 + 数字
   return `${adj}${noun}${animal}${num}`
@@ -70,7 +90,6 @@ export function getRoomDisplayName(roomId: string, peerId: string, isSelf: boole
   try {
     roomNames = JSON.parse(localStorage.getItem(ROOM_NAMES_KEY) || '{}')
   } catch {
-    // JSON 解析失败，使用空对象
     roomNames = {}
   }
   const key = `${roomId}:${peerId}`
