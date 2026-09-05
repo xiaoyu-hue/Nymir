@@ -17,7 +17,6 @@ export interface Channel<T> {
 
 export type Strategy = 'torrent' | 'mqtt'
 
-// E2EE 密钥交换 action
 interface E2EEPayload {
   type: string
   publicKey: string
@@ -32,7 +31,7 @@ export class PeerManager {
   private peerLeaveCallbacks: PeerCallback[] = []
   private roomRebuiltCallbacks: (() => void)[] = []
   private peerKeyCallbacks: PeerCallback[] = []
-  private currentStrategy: Strategy = 'torrent'
+  private currentStrategy: Strategy = 'mqtt'
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private strategyFallbackTimer: ReturnType<typeof setTimeout> | null = null
   private e2eeChannel: Channel<E2EEPayload> | null = null
@@ -70,7 +69,6 @@ export class PeerManager {
     }
   }
 
-  /** 传输策略切换、底层 room 重建后触发（需重绑业务 channel） */
   onRoomRebuilt(cb: () => void): () => void {
     this.roomRebuiltCallbacks.push(cb)
     return () => {
@@ -78,7 +76,6 @@ export class PeerManager {
     }
   }
 
-  /** 收到并处理完对端 E2EE 公钥后触发（可重试加密发送） */
   onPeerKey(cb: PeerCallback): () => void {
     this.peerKeyCallbacks.push(cb)
     return () => {
@@ -145,8 +142,9 @@ export class PeerManager {
   join(roomId: string): void {
     if (this.room) this.leave()
 
-    this.currentStrategy = 'torrent'
-    this.room = this.joinWithStrategy(roomId, 'torrent')
+    // 默认走 MQTT：移动网络上 WebTorrent tracker 常被干扰；MQTT 公共 broker 更稳
+    this.currentStrategy = 'mqtt'
+    this.room = this.joinWithStrategy(roomId, 'mqtt')
 
     this.setupE2EEChannel()
     connectionMonitor.start()
@@ -155,9 +153,10 @@ export class PeerManager {
 
     setTimeout(() => this.broadcastE2EEKey(), 100)
 
+    // 若一段时间仍发现不了对端，再降级尝试 torrent
     this.strategyFallbackTimer = setTimeout(() => {
       if (this.peers.size === 0 && this.room) {
-        this.switchStrategy(roomId, 'mqtt')
+        this.switchStrategy(roomId, 'torrent')
       }
     }, 5000)
   }
