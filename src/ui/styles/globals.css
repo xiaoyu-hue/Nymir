@@ -561,7 +561,16 @@ select {
     min-width: 32px;
   }
 
-  .app-backup-btn {
+.app-action-bar {
+  position: fixed;
+  top: calc(var(--safe-top) + 12px);
+  right: 12px;
+  display: flex;
+  gap: 6px;
+  z-index: 50;
+}
+
+.app-backup-btn {
     width: 40px;
     height: 40px;
     bottom: calc(16px + var(--safe-bottom));

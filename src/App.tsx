@@ -125,17 +125,7 @@ function AppContent() {
 
         {/* Action bar - top right, safe area aware, hidden when in room */}
         {!keyboardOpen && !inRoom && (
-          <div
-            className="app-action-bar"
-            style={{
-              position: 'fixed',
-              top: 'calc(var(--safe-top) + 12px)',
-              right: '12px',
-              display: 'flex',
-              gap: '6px',
-              zIndex: 50,
-            }}
-          >
+          <div className="app-action-bar">
             <button
               onClick={() => securityManager.lock()}
               aria-label={t.security.locked}
