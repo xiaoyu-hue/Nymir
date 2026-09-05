@@ -12,7 +12,7 @@
 import { peerManager, type Channel } from './peer'
 import { e2eeManager } from '../security/e2eeManager'
 import { generateMessageId } from '../utils/id'
-import { log, error } from '../utils/logger'
+import { log, warn, error } from '../utils/logger'
 
 const CHUNK_SIZE = 16 * 1024 // 16KB per chunk
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
@@ -104,44 +104,54 @@ class FileTransferManager {
     this.notifyListeners(transfer)
 
     try {
-      // 发送元数据
-      this.channel.send({ type: 'file-meta', metadata }, peerId)
+      // 确定目标 peers
+      const targets = peerId ? [peerId] : peerManager.peerList
+      if (targets.length === 0) throw new Error('No peers connected')
 
-      // 加密并分块发送
-      const encryptedBuffer = await e2eeManager.encryptFile(buffer)
-      if (!encryptedBuffer) throw new Error('Encryption failed')
+      // 发送元数据
+      for (const target of targets) {
+        this.channel.send({ type: 'file-meta', metadata }, target)
+      }
 
       this.activeSendAbort = new AbortController()
 
-      for (let i = 0; i < chunks; i++) {
-        if (this.activeSendAbort.signal.aborted) {
-          transfer.status = 'cancelled'
-          this.notifyListeners(transfer)
-          return transferId
+      // 为每个 peer 单独加密并发送（每个 peer 的共享密钥不同）
+      for (const target of targets) {
+        const encryptedBuffer = await e2eeManager.encryptFile(buffer, target)
+        if (!encryptedBuffer) {
+          warn(`[FileTransfer] Encryption failed for peer ${target}, skipping`)
+          continue
         }
 
-        const start = i * CHUNK_SIZE
-        const end = Math.min(start + CHUNK_SIZE, encryptedBuffer.byteLength)
-        const chunk = encryptedBuffer.slice(start, end)
+        const encryptedChunks = Math.ceil(encryptedBuffer.byteLength / CHUNK_SIZE)
 
-        this.channel.send(
-          { type: 'file-chunk', transferId, index: i, data: chunk },
-          peerId,
-        )
+        for (let i = 0; i < encryptedChunks; i++) {
+          if (this.activeSendAbort.signal.aborted) {
+            transfer.status = 'cancelled'
+            this.notifyListeners(transfer)
+            return transferId
+          }
 
-        transfer.progress = Math.round(((i + 1) / chunks) * 100)
-        this.notifyListeners(transfer)
+          const start = i * CHUNK_SIZE
+          const end = Math.min(start + CHUNK_SIZE, encryptedBuffer.byteLength)
+          const chunk = encryptedBuffer.slice(start, end)
 
-        // 小延迟避免阻塞
-        if (i % 10 === 0) {
-          await new Promise((r) => setTimeout(r, 0))
+          this.channel.send(
+            { type: 'file-chunk', transferId, index: i, data: chunk },
+            target,
+          )
+
+          // 小延迟避免阻塞
+          if (i % 10 === 0) {
+            await new Promise((r) => setTimeout(r, 0))
+          }
         }
       }
 
       transfer.status = 'complete'
       transfer.progress = 100
       this.notifyListeners(transfer)
-      log(`[FileTransfer] Sent ${file.name} (${file.size} bytes)`)
+      log(`[FileTransfer] Sent ${file.name} (${file.size} bytes) to ${targets.length} peer(s)`)
     } catch (err) {
       transfer.status = 'error'
       transfer.error = err instanceof Error ? err.message : String(err)
@@ -228,8 +238,8 @@ class FileTransferManager {
           }
         }
 
-        // 解密
-        const decrypted = await e2eeManager.decryptFile(merged.buffer)
+        // 解密（使用发送方的 peerId 作为密钥标识）
+        const decrypted = await e2eeManager.decryptFile(merged.buffer, transfer.metadata.sender)
         if (!decrypted) throw new Error('Decryption failed')
 
         transfer.data = decrypted
