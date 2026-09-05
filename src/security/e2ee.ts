@@ -188,3 +188,66 @@ export function clearSharedKey(peerId: string): void {
 export function clearAllSharedKeys(): void {
   sharedKeys.clear()
 }
+
+/**
+ * 加密文件（使用 AES-256-GCM）
+ */
+export async function encryptFile(data: ArrayBuffer): Promise<ArrayBuffer | null> {
+  try {
+    const key = await crypto.subtle.generateKey(
+      { name: AES_ALGO, length: AES_KEY_LENGTH },
+      true,
+      ['encrypt', 'decrypt'],
+    )
+    const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH))
+
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: AES_ALGO, iv },
+      key,
+      data,
+    )
+
+    // 导出密钥以便解密
+    const rawKey = await crypto.subtle.exportKey('raw', key)
+
+    // 合并 key + iv + ciphertext
+    const combined = new Uint8Array(rawKey.byteLength + iv.length + ciphertext.byteLength)
+    combined.set(new Uint8Array(rawKey), 0)
+    combined.set(iv, rawKey.byteLength)
+    combined.set(new Uint8Array(ciphertext), rawKey.byteLength + iv.length)
+
+    return combined.buffer
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 解密文件
+ */
+export async function decryptFile(data: ArrayBuffer): Promise<ArrayBuffer | null> {
+  try {
+    const combined = new Uint8Array(data)
+
+    // 提取 key (32 bytes) + iv (12 bytes) + ciphertext
+    const rawKey = combined.slice(0, 32)
+    const iv = combined.slice(32, 32 + IV_LENGTH)
+    const ciphertext = combined.slice(32 + IV_LENGTH)
+
+    const key = await crypto.subtle.importKey(
+      'raw',
+      rawKey,
+      { name: AES_ALGO, length: AES_KEY_LENGTH },
+      false,
+      ['decrypt'],
+    )
+
+    return crypto.subtle.decrypt(
+      { name: AES_ALGO, iv },
+      key,
+      ciphertext,
+    )
+  } catch {
+    return null
+  }
+}

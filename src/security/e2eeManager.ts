@@ -14,6 +14,8 @@ import {
   importPeerPublicKey,
   encryptMessage,
   decryptMessage,
+  encryptFile,
+  decryptFile,
   clearSharedKey,
   clearAllSharedKeys,
   type KeyPair,
@@ -264,6 +266,20 @@ class E2EEManager {
    */
   isTOFUPinned(peerId: string): boolean {
     return this.tofuStore.has(peerId)
+  }
+
+  /**
+   * 加密文件
+   */
+  async encryptFile(data: ArrayBuffer): Promise<ArrayBuffer | null> {
+    return encryptFile(data)
+  }
+
+  /**
+   * 解密文件
+   */
+  async decryptFile(data: ArrayBuffer): Promise<ArrayBuffer | null> {
+    return decryptFile(data)
   }
 
   /**
