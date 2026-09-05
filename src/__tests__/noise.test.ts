@@ -53,3 +53,45 @@ describe('isNoiseMessage', () => {
     expect(isNoiseMessage({ sender: 'real-peer', random: 'data' })).toBe(false)
   })
 })
+
+describe('isNoiseMessage — 真实消息与恶意构造', () => {
+  it('不得把带 sender 的真实消息形态误判为噪声（含完整聊天字段）', () => {
+    const real = {
+      id: 'realMsgIdABCDEFGH12',
+      content: 'ciphertext-looking-base64-payload-xxxxxx',
+      sender: 'peer-abc',
+      timestamp: Date.now(),
+      burnMode: 'persist' as const,
+      encrypted: true,
+      signature: 'sig-bytes',
+      sig: 2,
+    }
+    expect(isNoiseMessage(real)).toBe(false)
+  })
+
+  it('不带 sender、encrypted+read_once+无签名 的合法外观载荷会被判为噪声', () => {
+    const lookalike = {
+      id: 'fakeid12345678901234',
+      content: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+      timestamp: Date.now(),
+      burnMode: 'read_once',
+      encrypted: true,
+      readBy: [],
+      destroyed: false,
+    }
+    expect(isNoiseMessage(lookalike)).toBe(true)
+  })
+
+  it('不带 sender 但带 signature 的载荷不会被当成噪声（可能进入验签路径）', () => {
+    const malicious = {
+      id: 'evilMsgId1234567890',
+      content: 'plaintext-or-cipher-with-enough-len',
+      timestamp: Date.now(),
+      burnMode: 'persist',
+      encrypted: false,
+      signature: 'forged-or-any',
+      sig: 2,
+    }
+    expect(isNoiseMessage(malicious)).toBe(false)
+  })
+})
