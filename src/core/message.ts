@@ -1,9 +1,10 @@
 import { peerManager, type Channel } from '../communication/peer'
+import { offlineQueue } from '../communication/offlineQueue'
 import { saveMessage, markMessageRead, destroyMessage } from '../persistence/db'
 import { e2eeManager } from '../security/e2eeManager'
 import { isNoiseMessage, startNoiseGeneration, stopNoiseGeneration } from '../security/noise'
 import { generateMessageId } from '../utils/id'
-import { warn, error } from '../utils/logger'
+import { log, warn, error } from '../utils/logger'
 import type { Message, BurnConfig } from './types'
 import { shouldDestroy, getRemainingMs } from './burn'
 import { READ_ONCE_AUTO_DESTROY_MS } from '../constants'
@@ -232,18 +233,14 @@ export class MessageManager {
     }
 
     try {
-      // 计算签名（对原始明文签名）
       const signature = await e2eeManager.sign(content)
-
       const peerList = peerManager.peerList
 
       if (peerList.length > 0) {
-        // 为每个 peer 单独加密并发送
         for (const peerId of peerList) {
           try {
             const encrypted = await e2eeManager.encrypt(content, peerId, msg.id)
             if (!encrypted) {
-              // 加密失败（无 peer 公钥）— 不发送明文，跳过该 peer
               warn('[Message] Encrypt returned null, skipping peer')
               continue
             }
@@ -263,38 +260,74 @@ export class MessageManager {
               msgId: msg.id,
               peerId,
             })
-            // 跳过该 peer，不影响其他 peer
           }
         }
-      } else {
-        // 没有 peer，仅本地保存（不发送）
-      }
-
-      // 记录消息发送（用于密钥轮换）
-      if (peerList.length > 0) {
         e2eeManager.recordMessageSent()
+      } else {
+        // 没有 peer — 入队等待离线投递
+        offlineQueue.enqueue(msg.id, this.roomId, msg as unknown as Record<string, unknown>, [])
+        log(`[Message] No peers, queued message ${msg.id}`)
       }
 
-      // 本地存储
       this.messageStore.set(msg.id, msg)
       this.invalidateCache()
       try {
         await saveMessage({ ...msg, roomId: this.roomId })
       } catch (err) {
-        logError('saveMessage (send) error', err, {
-          roomId: this.roomId,
-          msgId: msg.id,
-        })
+        logError('saveMessage (send) error', err, { roomId: this.roomId, msgId: msg.id })
       }
       this.scheduleBurn(msg)
       this.notifyListeners(msg)
       return msg
     } catch (err) {
-      logError('send() unrecoverable error', err, {
-        roomId: this.roomId,
-        msgId: msg.id,
-      })
+      logError('send() unrecoverable error', err, { roomId: this.roomId, msgId: msg.id })
       throw err
+    }
+  }
+
+  /**
+   * 重发离线队列中的消息
+   */
+  async retryOfflineMessages(): Promise<void> {
+    if (!this.channel) return
+
+    const pending = offlineQueue.getPending(this.roomId)
+    if (pending.length === 0) return
+
+    const peerList = peerManager.peerList
+    if (peerList.length === 0) return
+
+    for (const queued of pending) {
+      const msg = this.messageStore.get(queued.id)
+      if (!msg || msg.destroyed) {
+        offlineQueue.markDelivered(queued.id)
+        continue
+      }
+
+      try {
+        for (const peerId of peerList) {
+          try {
+            const encrypted = await e2eeManager.encrypt(msg.content, peerId, msg.id)
+            if (!encrypted) continue
+
+            const payload: AnyPayload = {
+              ...msg,
+              content: encrypted,
+              encrypted: true,
+            }
+            const signature = await e2eeManager.sign(msg.content)
+            if (signature) payload.signature = signature
+
+            this.channel.send(payload, peerId)
+          } catch (err) {
+            logError('Retry send failed', err, { msgId: msg.id, peerId })
+          }
+        }
+        offlineQueue.markSent(queued.id)
+      } catch (err) {
+        logError('Retry batch failed', err, { msgId: queued.id })
+        offlineQueue.markFailed(queued.id)
+      }
     }
   }
 
