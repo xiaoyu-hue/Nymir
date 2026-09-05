@@ -67,7 +67,7 @@ export default function LockScreen({ onUnlocked }: Props) {
   const handleReset = async () => {
     const confirmed = await confirm(t.security.resetWarning)
     if (confirmed) {
-      securityManager.reset()
+      await securityManager.reset()
       setPassword('')
       setConfirmPassword('')
       setError('')
