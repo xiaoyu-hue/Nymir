@@ -20,19 +20,6 @@ let noiseTimer: ReturnType<typeof setInterval> | null = null
 let noiseCount = 0
 
 /**
- * 生成随机噪声数据（模拟真实消息内容）
- */
-function generateNoiseData(): string {
-  const length = Math.floor(Math.random() * NOISE_MAX_LENGTH) + NOISE_MIN_LENGTH
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  let result = ''
-  for (let i = 0; i < length; i++) {
-    result += chars[Math.floor(Math.random() * chars.length)]
-  }
-  return result
-}
-
-/**
  * 生成随机 ID（模拟真实消息 ID 格式）
  */
 function generateFakeId(): string {

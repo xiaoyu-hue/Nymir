@@ -24,10 +24,6 @@ const VERSION_BYTE = 0x02 // v2 = 600K
 
 import { uint8ToBase64, base64ToUint8 } from '../utils/base64'
 
-function getIterations(data: Uint8Array): number {
-  return data[0] === 0x01 ? PBKDF2_ITERATIONS_V1 : PBKDF2_ITERATIONS_V2
-}
-
 /**
  * 从密码派生 AES-256 密钥
  */

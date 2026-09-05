@@ -1,11 +1,11 @@
-import type { ReactNode, MouseEvent } from 'react'
+import type { ReactNode, MouseEvent, KeyboardEvent } from 'react'
 import '../styles/glass.css'
 
 type Props = {
   children: ReactNode
   variant?: 'default' | 'strong' | 'subtle'
   className?: string
-  onClick?: (e?: MouseEvent) => void
+  onClick?: (e?: MouseEvent | KeyboardEvent) => void
 }
 
 export default function GlassCard({

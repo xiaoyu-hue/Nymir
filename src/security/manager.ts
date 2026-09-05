@@ -11,7 +11,7 @@
 import { encrypt, decrypt, verifyPassword, needsMigration } from './crypto'
 import { uint8ToBase64 } from '../utils/base64'
 import { clearAllData } from '../persistence/db'
-import { LOCK_TIMEOUT_MS } from '../../constants'
+import { LOCK_TIMEOUT_MS } from '../constants'
 
 const STORAGE_KEY_PASSWORD_HASH = 'nymir_pwd_hash'
 
