@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import GlassCard from './GlassCard'
 import { useI18n } from '../../i18n'
@@ -18,6 +18,7 @@ export default function ConfirmDialog({ open, message, onConfirm, onCancel }: Pr
     if (open) {
       requestAnimationFrame(() => setVisible(true))
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setVisible(false)
     }
   }, [open])
@@ -113,42 +114,4 @@ export default function ConfirmDialog({ open, message, onConfirm, onCancel }: Pr
     </div>,
     document.body,
   )
-}
-
-export function useConfirm() {
-  const [state, setState] = useState<{
-    open: boolean
-    message: string
-    resolve: ((value: boolean) => void) | null
-  }>({ open: false, message: '', resolve: null })
-
-  const confirm = useCallback((message: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      setState({ open: true, message, resolve })
-    })
-  }, [])
-
-  const handleConfirm = useCallback(() => {
-    state.resolve?.(true)
-    setState({ open: false, message: '', resolve: null })
-  }, [state])
-
-  const handleCancel = useCallback(() => {
-    state.resolve?.(false)
-    setState({ open: false, message: '', resolve: null })
-  }, [state])
-
-  const ConfirmDialogElement = useCallback(
-    () => (
-      <ConfirmDialog
-        open={state.open}
-        message={state.message}
-        onConfirm={handleConfirm}
-        onCancel={handleCancel}
-      />
-    ),
-    [state.open, state.message, handleConfirm, handleCancel],
-  )
-
-  return { confirm, ConfirmDialog: ConfirmDialogElement }
 }

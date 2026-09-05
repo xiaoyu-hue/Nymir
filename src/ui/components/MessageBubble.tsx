@@ -25,6 +25,7 @@ function MessageBubbleInner({ message, roomId, onDestroy }: Props) {
 
   useEffect(() => {
     if (message.destroyed && visible) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setExiting(true)
       const timer = setTimeout(() => setVisible(false), EXIT_ANIMATION_MS)
       return () => clearTimeout(timer)

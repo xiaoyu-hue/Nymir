@@ -3,7 +3,7 @@ import { securityManager } from '../../security'
 import { useI18n } from '../../i18n'
 import { SHAKE_ANIMATION_MS, MIN_PASSWORD_LENGTH } from '../../constants'
 import GlassCard from './GlassCard'
-import { useConfirm } from './ConfirmDialog'
+import { useConfirm } from './useConfirm'
 
 type Props = {
   onUnlocked: () => void
