@@ -65,6 +65,8 @@ const zh = {
   },
   nav: {
     switchLang: 'English',
+    installApp: '安装应用',
+    install: '安装',
   },
   security: {
     setupTitle: '设置安全密码',

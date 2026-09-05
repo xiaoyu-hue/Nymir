@@ -67,6 +67,8 @@ const en: Translations = {
   },
   nav: {
     switchLang: '中文',
+    installApp: 'Install App',
+    install: 'Install',
   },
   security: {
     setupTitle: 'Set Security Password',

@@ -3,6 +3,7 @@ import { roomManager } from './core/room'
 import { securityManager, e2eeManager } from './security'
 import { useRoom } from './ui/hooks/useRoom'
 import { I18nProvider, useI18n } from './i18n'
+import { error } from './utils/logger'
 import Starfield from './ui/components/Starfield'
 import RoomPanel from './ui/components/RoomPanel'
 import InstallPrompt from './ui/components/InstallPrompt'
@@ -40,7 +41,7 @@ function AppContent() {
         await e2eeManager.init()
       })
       .catch((err) => {
-        console.error('[App] Security init failed:', err)
+        error('[App] Security init failed:', err)
         setSecurityReady(true)
       })
 

@@ -3,19 +3,18 @@ import { saveMessage, markMessageRead, destroyMessage } from '../persistence/db'
 import { e2eeManager } from '../security/e2eeManager'
 import { isNoiseMessage, startNoiseGeneration, stopNoiseGeneration } from '../security/noise'
 import { generateMessageId } from '../utils/id'
-import { warn } from '../utils/logger'
+import { warn, error } from '../utils/logger'
 import type { Message, BurnConfig } from './types'
 import { shouldDestroy, getRemainingMs } from './burn'
 import { READ_ONCE_AUTO_DESTROY_MS } from '../constants'
 
 export type MessageListener = (msg: Message) => void
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyPayload = Record<string, any>
+type AnyPayload = Record<string, unknown>
 
 function logError(context: string, err: unknown, extra?: Record<string, unknown>): void {
   const msg = err instanceof Error ? err.message : String(err)
   const stack = err instanceof Error ? err.stack : undefined
-  console.error(`[Message] ${context}: ${msg}`, { ...extra, stack })
+  error(`[Message] ${context}: ${msg}`, { ...extra, stack })
 }
 
 export class MessageManager {
