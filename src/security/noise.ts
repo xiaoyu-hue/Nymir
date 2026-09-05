@@ -11,6 +11,7 @@
  */
 
 import { log } from '../utils/logger'
+import { uint8ToBase64 } from '../utils/base64'
 
 const NOISE_INTERVAL_MS = 30000 // 30秒发送一次噪声
 const NOISE_ENABLED = true
@@ -44,33 +45,35 @@ function generateFakeId(): string {
 }
 
 /**
- * 生成噪声消息（外观与真实消息完全一致）
+ * 生成噪声消息（外观与真实加密消息完全一致）
  */
 function generateNoiseMessage(): Record<string, unknown> {
+  // 生成看起来像加密内容的 base64 字符串
+  const fakeEncrypted = uint8ToBase64(crypto.getRandomValues(new Uint8Array(48)))
   return {
     id: generateFakeId(),
-    content: generateNoiseData(),
+    content: fakeEncrypted,
     timestamp: Date.now(),
     burnMode: 'read_once',
     readBy: [],
     destroyed: false,
-    encrypted: false,
-    // 无 signature、无 noise 标记、无 sender 字段 — 与真实消息外观一致
+    encrypted: true,
+    // 无 signature、无 sender — 与真实加密消息外观一致
   }
 }
 
 /**
- * 检查是否是噪声消息（基于无签名 + 无加密 + read_once 模式）
- * 注意：真实消息也可能无签名（如果发送方 E2EE 未就绪），所以这是概率性检测
+ * 检查是否是噪声消息
+ * 基于: 无 sender 字段 + encrypted=true + 无 signature + burnMode=read_once
+ * 真实消息必须有 sender（来自 messageManager.send 的 payload）
  */
 export function isNoiseMessage(data: Record<string, unknown>): boolean {
-  // 真实消息必须有 sender 字段（来自 messageManager.send 的 payload）
-  // 噪声消息不包含 sender —— 这是最可靠的区分特征
+  // 真实消息必须有 sender 字段
   if (data.sender) return false
 
-  // 噪声特征：未加密 + 无签名 + burnMode 为 read_once
+  // 噪声特征：加密 + 无签名 + read_once 模式
   return (
-    data.encrypted === false &&
+    data.encrypted === true &&
     !data.signature &&
     data.burnMode === 'read_once' &&
     typeof data.content === 'string' &&
