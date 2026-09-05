@@ -69,7 +69,7 @@ export class MessageManager {
       try {
         if (data.type === 'recall') {
           const msg = this.messageStore.get(data.msgId)
-          if (msg) {
+          if (msg && data.peerId === msg.sender) {
             await this.burn(msg)
           }
         }
@@ -298,7 +298,7 @@ export class MessageManager {
     if (!msg || msg.sender !== peerManager.id) return false
 
     // Broadcast recall to peers
-    this.recallChannel?.send({ type: 'recall', msgId })
+    this.recallChannel?.send({ type: 'recall', msgId, peerId: peerManager.id })
 
     // Destroy locally
     await this.burn(msg)
