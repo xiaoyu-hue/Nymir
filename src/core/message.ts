@@ -197,8 +197,8 @@ export class MessageManager {
       burnMode: data.burnMode,
       burnAfter: data.burnAfter,
       burnAt: data.burnAt,
-      readBy: data.readBy ?? [],
-      destroyed: data.destroyed ?? false,
+      readBy: [],
+      destroyed: false,
       verified,
     }
 
