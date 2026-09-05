@@ -10,6 +10,7 @@
 
 import { encrypt, decrypt, verifyPassword } from './crypto'
 import { uint8ToBase64 } from '../utils/base64'
+import { clearAllData } from '../persistence/db'
 
 const LOCK_TIMEOUT_MS = 5 * 60 * 1000 // 5分钟自动锁定
 const STORAGE_KEY_PASSWORD_HASH = 'nymir_pwd_hash'
@@ -107,6 +108,9 @@ class SecurityManager {
    * 重置所有数据（忘记密码）
    */
   async reset(): Promise<void> {
+    // 清除 IndexedDB 中的所有数据
+    await clearAllData()
+
     // 安全清除 localStorage
     const keys = Object.keys(localStorage).filter(
       (k) => k.startsWith('nymir_') || k === STORAGE_KEY_PASSWORD_HASH,
