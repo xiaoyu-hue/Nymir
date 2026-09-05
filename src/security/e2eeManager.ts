@@ -29,10 +29,28 @@ import {
 } from './sign'
 
 import { log, error } from '../utils/logger'
+import { uint8ToBase64 } from '../utils/base64'
 
 export type E2EEStatus = 'initializing' | 'ready' | 'error'
 
-const KEY_ROTATION_THRESHOLD = 100 // 每100条消息轮换密钥
+export type TOFUStatus = 'trusted' | 'untrusted' | 'new'
+
+const KEY_ROTATION_THRESHOLD = 100
+const TOFU_STORAGE_KEY = 'nymir_tofu'
+
+function loadTOFU(): Map<string, string> {
+  try {
+    const raw = localStorage.getItem(TOFU_STORAGE_KEY)
+    if (!raw) return new Map()
+    return new Map(Object.entries(JSON.parse(raw)))
+  } catch {
+    return new Map()
+  }
+}
+
+function saveTOFU(map: Map<string, string>): void {
+  localStorage.setItem(TOFU_STORAGE_KEY, JSON.stringify(Object.fromEntries(map)))
+}
 
 class E2EEManager {
   private keyPair: KeyPair | null = null
@@ -44,6 +62,7 @@ class E2EEManager {
   private _signPublicKeyString: string | null = null
   private messageCount = 0
   private onKeyRotationCallback: (() => void) | null = null
+  private tofuStore = loadTOFU()
 
   get currentStatus(): E2EEStatus {
     return this.status
@@ -91,14 +110,26 @@ class E2EEManager {
   }
 
   /**
-   * 处理接收到的对端公钥
+   * 处理接收到的对端公钥（带 TOFU 验证）
    */
   async handlePeerPublicKey(
     peerId: string,
     publicKeyStr: string,
     signPublicKeyStr?: string,
-  ): Promise<void> {
+  ): Promise<TOFUStatus> {
     try {
+      // TOFU: 计算公钥哈希并验证
+      const encoder = new TextEncoder()
+      const keyBytes = encoder.encode(publicKeyStr)
+      const hashBuffer = await crypto.subtle.digest('SHA-256', keyBytes)
+      const keyHash = uint8ToBase64(new Uint8Array(hashBuffer))
+
+      const storedHash = this.tofuStore.get(peerId)
+      if (storedHash && storedHash !== keyHash) {
+        error('[E2EE] TOFU: Peer key changed for', peerId)
+        return 'untrusted'
+      }
+
       const peerKey = await importPeerPublicKey(publicKeyStr)
       this.peerPublicKeys.set(peerId, peerKey)
 
@@ -107,9 +138,19 @@ class E2EEManager {
         this.peerSignPublicKeys.set(peerId, peerSignKey)
       }
 
-      log('[E2EE] Received peer keys')
+      // 首次连接：存储公钥哈希
+      if (!storedHash) {
+        this.tofuStore.set(peerId, keyHash)
+        saveTOFU(this.tofuStore)
+        log('[E2EE] TOFU: Pinned new peer key')
+        return 'new'
+      }
+
+      log('[E2EE] Received peer keys (TOFU verified)')
+      return 'trusted'
     } catch (e) {
       error('[E2EE] Failed to import peer keys:', e)
+      return 'untrusted'
     }
   }
 
@@ -208,6 +249,21 @@ class E2EEManager {
     this.peerPublicKeys.clear()
     this.peerSignPublicKeys.clear()
     clearAllSharedKeys()
+  }
+
+  /**
+   * 清除 TOFU 信任库
+   */
+  clearTOFU(): void {
+    this.tofuStore.clear()
+    localStorage.removeItem(TOFU_STORAGE_KEY)
+  }
+
+  /**
+   * 检查 peer 公钥是否已固定
+   */
+  isTOFUPinned(peerId: string): boolean {
+    return this.tofuStore.has(peerId)
   }
 
   /**

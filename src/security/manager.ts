@@ -2,7 +2,7 @@
  * Nymir 安全管理器
  * 
  * 职责：
- * - 管理用户密码（内存中，不持久化）
+ * - 管理用户密码（内存中，用 Uint8Array 存储以便清零）
  * - 控制锁定/解锁状态
  * - 协调加密/解密操作
  * - 自动锁屏计时
@@ -17,8 +17,17 @@ const STORAGE_KEY_PASSWORD_HASH = 'nymir_pwd_hash'
 
 export type LockListener = (locked: boolean) => void
 
+function stringToUint8Array(str: string): Uint8Array {
+  const encoder = new TextEncoder()
+  return encoder.encode(str)
+}
+
+function clearUint8Array(arr: Uint8Array | null): void {
+  if (arr) arr.fill(0)
+}
+
 class SecurityManager {
-  private password: string | null = null
+  private password: Uint8Array | null = null
   private locked = true
   private lockTimer: ReturnType<typeof setTimeout> | null = null
   private lockListeners: LockListener[] = []
@@ -32,6 +41,22 @@ class SecurityManager {
 
   get isSetup(): boolean {
     return localStorage.getItem(STORAGE_KEY_PASSWORD_HASH) !== null
+  }
+
+  private setPassword(password: string): void {
+    clearUint8Array(this.password)
+    this.password = stringToUint8Array(password)
+  }
+
+  private clearPassword(): void {
+    clearUint8Array(this.password)
+    this.password = null
+  }
+
+  private getPasswordString(): string | null {
+    if (!this.password) return null
+    const decoder = new TextDecoder()
+    return decoder.decode(this.password)
   }
 
   /**
@@ -53,11 +78,10 @@ class SecurityManager {
    * 设置新密码
    */
   async setupPassword(password: string): Promise<void> {
-    // 生成测试数据来验证密码
     const testEncrypted = await encrypt('nymir_verify', password)
     localStorage.setItem(STORAGE_KEY_PASSWORD_HASH, testEncrypted)
     
-    this.password = password
+    this.setPassword(password)
     this.locked = false
     this.startLockTimer()
     this.notifyListeners(false)
@@ -67,7 +91,6 @@ class SecurityManager {
    * 解锁（输入密码）
    */
   async unlock(password: string): Promise<boolean> {
-    // 速率限制：5次失败后锁定30秒
     if (this.failedAttempts >= 5) {
       const remaining = this.lockUntil - Date.now()
       if (remaining > 0) return false
@@ -87,12 +110,11 @@ class SecurityManager {
     }
 
     this.failedAttempts = 0
-    this.password = password
+    this.setPassword(password)
     this.locked = false
     this.startLockTimer()
     this.notifyListeners(false)
 
-    // 自动迁移：v1(100K) → v2(600K)
     if (needsMigration(storedHash)) {
       const reEncrypted = await encrypt('nymir_verify', password)
       localStorage.setItem(STORAGE_KEY_PASSWORD_HASH, reEncrypted)
@@ -105,7 +127,7 @@ class SecurityManager {
    * 锁定
    */
   lock(): void {
-    this.password = null
+    this.clearPassword()
     this.locked = true
     this.clearLockTimer()
     this.notifyListeners(true)
@@ -115,38 +137,37 @@ class SecurityManager {
    * 加密数据
    */
   async encrypt(data: string): Promise<string> {
-    if (!this.password) throw new Error('Security: locked')
-    return encrypt(data, this.password)
+    const pw = this.getPasswordString()
+    if (!pw) throw new Error('Security: locked')
+    return encrypt(data, pw)
   }
 
   /**
    * 解密数据
    */
   async decrypt(data: string): Promise<string> {
-    if (!this.password) throw new Error('Security: locked')
-    return decrypt(data, this.password)
+    const pw = this.getPasswordString()
+    if (!pw) throw new Error('Security: locked')
+    return decrypt(data, pw)
   }
 
   /**
    * 重置所有数据（忘记密码）
    */
   async reset(): Promise<void> {
-    // 清除 IndexedDB 中的所有数据
     await clearAllData()
 
-    // 安全清除 localStorage
     const keys = Object.keys(localStorage).filter(
       (k) => k.startsWith('nymir_') || k === STORAGE_KEY_PASSWORD_HASH,
     )
     for (const key of keys) {
-      // 用随机数据覆写
       const randomValue = crypto.getRandomValues(new Uint8Array(32))
       const fakeValue = uint8ToBase64(randomValue)
       localStorage.setItem(key, fakeValue)
       localStorage.removeItem(key)
     }
 
-    this.password = null
+    this.clearPassword()
     this.locked = true
     this.clearLockTimer()
     this.notifyListeners(true)
