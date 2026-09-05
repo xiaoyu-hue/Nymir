@@ -82,13 +82,16 @@ export default function LockScreen({ onUnlocked }: Props) {
         left: 0,
         right: 0,
         bottom: 0,
+        height: '100dvh',
         background: 'linear-gradient(180deg, #0a0a1a 0%, #12122a 50%, #0a0a1a 100%)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         zIndex: 1000,
         padding: '24px',
+        paddingTop: 'max(24px, 15vh)',
+        overflowY: 'auto',
       }}
     >
       <GlassCard variant="strong" className={shake ? 'shake' : ''}>

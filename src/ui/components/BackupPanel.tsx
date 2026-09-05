@@ -98,7 +98,7 @@ export default function BackupPanel({ onClose }: Props) {
         className="backup-panel modal-enter"
         onClick={(e) => e?.stopPropagation()}
       >
-        <div style={{ padding: '24px', minWidth: 'min(320px, 90vw)' }}>
+        <div style={{ padding: '24px', minWidth: 'min(320px, 90vw)', maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto' }}>
           <h2
             style={{
               fontSize: '1.2rem',
