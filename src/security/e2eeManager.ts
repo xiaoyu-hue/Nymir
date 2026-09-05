@@ -101,9 +101,9 @@ class E2EEManager {
         this.peerSignPublicKeys.set(peerId, peerSignKey)
       }
 
-      console.log(`[E2EE] Received keys from ${peerId}`)
+      console.log('[E2EE] Received peer keys')
     } catch (e) {
-      console.error(`[E2EE] Failed to import keys from ${peerId}:`, e)
+      console.error('[E2EE] Failed to import peer keys:', e)
     }
   }
 
@@ -132,7 +132,7 @@ class E2EEManager {
       )
       return JSON.stringify(payload)
     } catch (e) {
-      console.error(`[E2EE] Encrypt failed for ${peerId}:`, e)
+      console.error('[E2EE] Encrypt failed:', e)
       return null
     }
   }
@@ -149,7 +149,7 @@ class E2EEManager {
       const payload = JSON.parse(ciphertext)
       return await decryptMessage(payload, peerId, this.keyPair.privateKey, peerKey, messageId)
     } catch (e) {
-      console.error(`[E2EE] Decrypt failed from ${peerId}:`, e)
+      console.error('[E2EE] Decrypt failed:', e)
       return null
     }
   }
@@ -181,7 +181,7 @@ class E2EEManager {
     try {
       return await verifySignature(message, signature, peerSignKey)
     } catch (e) {
-      console.error(`[E2EE] Verify failed from ${peerId}:`, e)
+      console.error('[E2EE] Verify failed:', e)
       return false
     }
   }
