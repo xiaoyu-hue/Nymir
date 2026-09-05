@@ -29,9 +29,22 @@ export class MessageManager {
   private burnTimers = new Map<string, ReturnType<typeof setTimeout>>()
   private roomId: string = ''
   private _cachedMessages: Message[] | null = null
+  private unsubRoomRebuilt: (() => void) | null = null
 
   init(roomId: string): void {
     this.roomId = roomId
+    this.bindChannels()
+
+    // 传输策略切换会重建底层 room，必须重绑业务 channel，否则收不到实时消息
+    this.unsubRoomRebuilt?.()
+    this.unsubRoomRebuilt = peerManager.onRoomRebuilt(() => {
+      log('[Message] Room rebuilt — rebinding channels')
+      this.bindChannels()
+    })
+  }
+
+  /** 在当前 peer room 上绑定 messages/read/recall 通道 */
+  private bindChannels(): void {
     this.channel = peerManager.makeChannel<AnyPayload>('messages')
     this.readChannel = peerManager.makeChannel<AnyPayload>('read-receipts')
     this.recallChannel = peerManager.makeChannel<AnyPayload>('recall')
@@ -262,11 +275,12 @@ export class MessageManager {
       const peerList = peerManager.peerList
 
       if (peerList.length > 0) {
+        let delivered = 0
         for (const peerId of peerList) {
           try {
             const encrypted = await e2eeManager.encrypt(content, peerId, msg.id)
             if (!encrypted) {
-              warn('[Message] Encrypt returned null, skipping peer')
+              warn('[Message] Encrypt returned null (no peer key?), will queue if none delivered')
               continue
             }
             const signature = await e2eeManager.sign(encrypted)
@@ -280,6 +294,7 @@ export class MessageManager {
               payload.signature = signature
             }
             this.channel.send(payload, peerId)
+            delivered++
           } catch (err) {
             logError('Per-peer encrypt/send failed', err, {
               roomId: this.roomId,
@@ -288,7 +303,12 @@ export class MessageManager {
             })
           }
         }
-        e2eeManager.recordMessageSent()
+        if (delivered > 0) {
+          e2eeManager.recordMessageSent()
+        } else {
+          offlineQueue.enqueue(msg.id, this.roomId, msg as unknown as Record<string, unknown>, [])
+          log(`[Message] Peers present but encrypt failed, queued ${msg.id}`)
+        }
       } else {
         offlineQueue.enqueue(msg.id, this.roomId, msg as unknown as Record<string, unknown>, [])
         log(`[Message] No peers, queued message ${msg.id}`)
@@ -496,6 +516,8 @@ export class MessageManager {
     this.messageStore.clear()
     this.invalidateCache()
     this.listeners = []
+    this.unsubRoomRebuilt?.()
+    this.unsubRoomRebuilt = null
     this.channel = null
     this.readChannel = null
     this.recallChannel = null
