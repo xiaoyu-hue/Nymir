@@ -117,6 +117,8 @@ cd Nymir && npm install && npm run dev
 
 请阅读 [贡献者行为准则](./CODE_OF_CONDUCT.md)。协作约束见 [AGENTS.md](./AGENTS.md)。
 
+关于作者，见 [AUTHOR.md](./docs/AUTHOR.md)；全部项目文档见 [docs/](./docs/README.md)。
+
 ---
 
 *Nymir — 让秘密只属于你*

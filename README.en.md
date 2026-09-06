@@ -107,6 +107,8 @@ cd Nymir && npm install && npm run dev
 
 See [Code of Conduct](./CODE_OF_CONDUCT.md) and [AGENTS.md](./AGENTS.md).
 
+About the author: [AUTHOR.en.md](./docs/AUTHOR.en.md). All project docs: [docs/](./docs/README.md).
+
 ---
 
 *Nymir — keep secrets yours*
