@@ -31,6 +31,7 @@ function stopTick() {
 export default function BurnTimer({ message, onExpired }: Props) {
   const { t } = useI18n()
   const [remaining, setRemaining] = useState(() => getRemainingMs(message))
+  const [prevMessage, setPrevMessage] = useState(message)
   const onExpiredRef = useRef(onExpired)
   const messageRef = useRef(message)
   const hasExpiredRef = useRef(false)
@@ -44,11 +45,18 @@ export default function BurnTimer({ message, onExpired }: Props) {
     messageRef.current = message
   }, [message])
 
+  // Adjust countdown during render when the message changes
+  // (React "adjusting state when props change" pattern — avoids a
+  // cascading re-render caused by setState inside an effect)
+  if (prevMessage !== message) {
+    setPrevMessage(message)
+    setRemaining(getRemainingMs(message))
+  }
+
   // Initial check: if already expired, fire immediately
-  // eslint-disable-next-line react/set-state-in-effect
+  // (notifying the parent is an external effect, so it stays in useEffect)
   useEffect(() => {
     const r = getRemainingMs(message)
-    setRemaining(r)
     if (r <= 0 && !hasExpiredRef.current) {
       hasExpiredRef.current = true
       onExpiredRef.current?.()
