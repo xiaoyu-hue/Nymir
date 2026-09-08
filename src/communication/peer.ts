@@ -10,6 +10,7 @@ const APP_ID = 'nymir_treehole_v1'
 
 export type PeerCallback = (peerId: string) => void
 export type MessageCallback<T> = (data: T, info: { peerId: string }) => void
+export type RoomNameCallback = (name: string, peerId: string) => void
 
 export interface Channel<T> {
   send: (data: T, target?: string) => void
@@ -25,6 +26,11 @@ interface E2EEPayload {
   [key: string]: string
 }
 
+interface RoomMetaPayload {
+  type: 'room_name' | 'room_name_request'
+  name?: string
+}
+
 export class PeerManager {
   private room: Room | null = null
   private peers = new Set<string>()
@@ -32,10 +38,12 @@ export class PeerManager {
   private peerLeaveCallbacks: PeerCallback[] = []
   private roomRebuiltCallbacks: (() => void)[] = []
   private peerKeyCallbacks: PeerCallback[] = []
+  private roomNameCallbacks: RoomNameCallback[] = []
   private currentStrategy: Strategy = 'mqtt'
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private strategyFallbackTimer: ReturnType<typeof setTimeout> | null = null
   private e2eeChannel: Channel<E2EEPayload> | null = null
+  private roomMetaChannel: Channel<RoomMetaPayload> | null = null
   private isSwitchingStrategy = false
 
   get id(): string {
@@ -84,31 +92,51 @@ export class PeerManager {
     }
   }
 
+  /**
+   * 监听对端广播的房间名字
+   */
+  onRoomName(cb: RoomNameCallback): () => void {
+    this.roomNameCallbacks.push(cb)
+    return () => {
+      this.roomNameCallbacks = this.roomNameCallbacks.filter((fn) => fn !== cb)
+    }
+  }
+
+  /**
+   * 向房间内所有 peer 广播房间名字
+   */
+  broadcastRoomName(name: string): void {
+    if (!this.roomMetaChannel) return
+    this.roomMetaChannel.send({ type: 'room_name', name })
+  }
+
+  /**
+   * 向房间内请求房间名字（新加入者使用）
+   */
+  requestRoomName(): void {
+    if (!this.roomMetaChannel) return
+    this.roomMetaChannel.send({ type: 'room_name_request' })
+  }
+
   private joinWithStrategy(roomId: string, strategy: Strategy): Room {
     const joinFn = strategy === 'torrent' ? joinTorrent : joinMqtt
     const room = joinFn({ appId: APP_ID }, roomId)
-
     room.onPeerJoin = (peerId: string) => {
       this.peers.add(peerId)
       connectionMonitor.setPeerCount(this.peers.size)
-
       if (this.strategyFallbackTimer) {
         clearTimeout(this.strategyFallbackTimer)
         this.strategyFallbackTimer = null
       }
-
       this.sendE2EEKey(peerId)
-
       for (const cb of this.peerJoinCallbacks) cb(peerId)
     }
-
     room.onPeerLeave = (peerId: string) => {
       this.peers.delete(peerId)
       connectionMonitor.setPeerCount(this.peers.size)
       e2eeManager.removePeerKey(peerId)
       for (const cb of this.peerLeaveCallbacks) cb(peerId)
     }
-
     return room
   }
 
@@ -117,7 +145,6 @@ export class PeerManager {
     const publicKey = e2eeManager.getOwnPublicKey()
     const signPublicKey = e2eeManager.getOwnSignPublicKey()
     if (!publicKey || !signPublicKey) return
-
     this.e2eeChannel.send({ type: 'e2ee_key', publicKey, signPublicKey }, targetPeerId)
   }
 
@@ -126,7 +153,6 @@ export class PeerManager {
     const publicKey = e2eeManager.getOwnPublicKey()
     const signPublicKey = e2eeManager.getOwnSignPublicKey()
     if (!publicKey || !signPublicKey) return
-
     this.e2eeChannel.send({ type: 'e2ee_key', publicKey, signPublicKey })
   }
 
@@ -140,20 +166,32 @@ export class PeerManager {
     })
   }
 
+  /**
+   * 设置房间元数据通道，用于同步房间名字等元信息
+   */
+  private setupRoomMetaChannel(): void {
+    this.roomMetaChannel = this.makeChannel<RoomMetaPayload>('room-meta')
+    this.roomMetaChannel.onMessage((data, { peerId }) => {
+      if (data.type === 'room_name' && typeof data.name === 'string' && data.name.trim()) {
+        for (const cb of this.roomNameCallbacks) cb(data.name, peerId)
+      } else if (data.type === 'room_name_request') {
+        // 对端请求房间名字，由 RoomManager 决定是否回复（在 RoomManager 中处理）
+        for (const cb of this.roomNameCallbacks) cb('', peerId)
+      }
+    })
+  }
+
   join(roomId: string): void {
     if (this.room) this.leave()
-
     // 默认走 MQTT：移动网络上 WebTorrent tracker 常被干扰；MQTT 公共 broker 更稳
     this.currentStrategy = 'mqtt'
     this.room = this.joinWithStrategy(roomId, 'mqtt')
-
     this.setupE2EEChannel()
+    this.setupRoomMetaChannel()
     connectionMonitor.start()
     connectionMonitor.setPeerCount(this.peers.size)
     connectionMonitor.setChannel(this.makeChannel('__monitor__'))
-
     setTimeout(() => this.broadcastE2EEKey(), 100)
-
     // 若一段时间仍发现不了对端，再降级尝试 torrent
     this.strategyFallbackTimer = setTimeout(() => {
       if (this.peers.size === 0 && this.room) {
@@ -165,10 +203,8 @@ export class PeerManager {
   private switchStrategy(roomId: string, newStrategy: Strategy): void {
     if (this.isSwitchingStrategy) return
     this.isSwitchingStrategy = true
-
     try {
       log(`[Nymir] Switching from ${this.currentStrategy} to ${newStrategy}`)
-
       if (this.strategyFallbackTimer) {
         clearTimeout(this.strategyFallbackTimer)
         this.strategyFallbackTimer = null
@@ -177,24 +213,21 @@ export class PeerManager {
         clearTimeout(this.reconnectTimer)
         this.reconnectTimer = null
       }
-
       if (this.room) {
         this.room.leave()
         this.room = null
       }
       this.peers.clear()
       this.e2eeChannel = null
+      this.roomMetaChannel = null
       e2eeManager.clearAll()
-
       this.currentStrategy = newStrategy
       this.room = this.joinWithStrategy(roomId, newStrategy)
-
       this.setupE2EEChannel()
+      this.setupRoomMetaChannel()
       connectionMonitor.setChannel(this.makeChannel('__monitor__'))
       connectionMonitor.setPeerCount(this.peers.size)
-
       for (const cb of this.roomRebuiltCallbacks) cb()
-
       setTimeout(() => this.broadcastE2EEKey(), 100)
     } finally {
       this.isSwitchingStrategy = false
@@ -213,9 +246,7 @@ export class PeerManager {
 
   makeChannel<T extends DataPayload>(namespace: string): Channel<T> {
     if (!this.room) throw new Error('Not connected to a room')
-
     const action = this.room.makeAction<T>(namespace)
-
     return {
       send: (data: T, target?: string) => {
         action.send(data, target ? { target } : undefined)
@@ -241,6 +272,7 @@ export class PeerManager {
       this.peers.clear()
     }
     this.e2eeChannel = null
+    this.roomMetaChannel = null
     connectionMonitor.stop()
     e2eeManager.clearAll()
   }

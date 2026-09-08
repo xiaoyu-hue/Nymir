@@ -21,13 +21,14 @@ export function useRoom() {
         event === 'room:joined' ||
         event === 'room:left' ||
         event === 'room:rebuilt' ||
+        event === 'room:name-change' ||
         event === 'peer:join' ||
         event === 'peer:leave'
       ) {
         setState((prev) => ({
           ...prev,
           inRoom: roomManager.inRoom,
-          // 新建对象，确保 peers 变化触发重渲染
+          // 新建对象，确保 peers / name 变化触发重渲染
           room: roomManager.room
             ? { ...roomManager.room, peers: [...roomManager.room.peers] }
             : null,

@@ -10,7 +10,6 @@ import { log } from '../utils/logger'
 import { RECONNECT_BASE_DELAY_MS, RECONNECT_MAX_DELAY_MS, RECONNECT_MAX_ATTEMPTS } from '../constants'
 
 export type RoomListener = (event: string, data?: unknown) => void
-
 export type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected'
 
 export class RoomManager {
@@ -52,7 +51,6 @@ export class RoomManager {
   async createRoom(name: string): Promise<RoomInfo> {
     const maxRetries = 5
     let id = ''
-
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       id = generateRoomId()
       const existing = await getRoom(id)
@@ -61,14 +59,12 @@ export class RoomManager {
         throw new Error('Failed to generate unique room ID')
       }
     }
-
     const room: RoomInfo = {
       id,
       name,
       createdAt: Date.now(),
       peers: [],
     }
-
     await saveRoom({ id, name, createdAt: room.createdAt })
     await this.joinRoom(id, name)
     return room
@@ -78,10 +74,12 @@ export class RoomManager {
     if (!isValidRoomId(roomId)) {
       throw new Error('Invalid room code format')
     }
-
     if (this.currentRoom) this.leaveRoom()
 
     const existing = await getRoom(roomId)
+    // isCreator: 调用方显式传入了房间名（createRoom 路径），视为房间创建者
+    const isCreator = typeof roomName === 'string' && roomName.trim().length > 0
+
     this.currentRoom = {
       id: roomId,
       name: roomName || existing?.name || roomId,
@@ -101,7 +99,6 @@ export class RoomManager {
     peerManager.join(roomId)
     messageManager.init(roomId)
     connectionMonitor.start()
-
     this.setStatus('connected')
 
     const unsubJoin = peerManager.onPeerJoin((peerId) => {
@@ -110,9 +107,17 @@ export class RoomManager {
         this.reconnectAttempts = 0
         this.setStatus('connected')
         this.emit('peer:join', peerId)
-
         // 重发离线队列中的消息
         messageManager.retryOfflineMessages()
+
+        // 房间名字同步：
+        // - 创建者：有 peer 加入时广播自己的房间名
+        // - 加入者：有 peer 加入时请求房间名（若本地仍是占位的 roomId）
+        if (isCreator) {
+          peerManager.broadcastRoomName(this.currentRoom.name)
+        } else if (this.currentRoom.name === this.currentRoom.id) {
+          peerManager.requestRoomName()
+        }
       }
     })
 
@@ -120,7 +125,6 @@ export class RoomManager {
       if (this.currentRoom) {
         this.currentRoom.peers = peerManager.peerList
         this.emit('peer:leave', peerId)
-
         if (this.currentRoom.peers.length === 0) {
           this.attemptReconnect()
         }
@@ -132,6 +136,26 @@ export class RoomManager {
       messageManager.retryOfflineMessages()
     })
 
+    // 房间名字同步：接收对端广播/请求
+    const unsubRoomName = peerManager.onRoomName((name, peerId) => {
+      if (!this.currentRoom) return
+
+      // name 为空字符串表示对端在请求房间名字（room_name_request）
+      if (!name) {
+        // 仅当自己持有非占位的房间名时才回复，避免把 roomId 传播出去
+        if (this.currentRoom.name !== this.currentRoom.id) {
+          peerManager.broadcastRoomName(this.currentRoom.name)
+        }
+        return
+      }
+
+      // 收到对端广播的房间名：
+      // 仅当本地仍是占位名（=== roomId）时才采用，不覆盖用户已自定义的名字
+      if (this.currentRoom.name === this.currentRoom.id && name !== this.currentRoom.id) {
+        this.updateRoomName(name)
+      }
+    })
+
     // 传输策略切换（MQTT ↔ torrent）后重建底层 room，同步 peers 并通知 UI
     const unsubRoomRebuilt = peerManager.onRoomRebuilt(() => {
       if (this.currentRoom) {
@@ -140,7 +164,7 @@ export class RoomManager {
       }
     })
 
-    this.unsubs.push(unsubJoin, unsubLeave, unsubPeerKey, unsubRoomRebuilt)
+    this.unsubs.push(unsubJoin, unsubLeave, unsubPeerKey, unsubRoomName, unsubRoomRebuilt)
 
     const saved = await getMessagesByRoom(roomId)
     const messages = saved.map((s: StoredMessage) => ({
@@ -155,29 +179,44 @@ export class RoomManager {
       verified: s.verified,
     }))
     await messageManager.loadFromStorage(messages)
-
     this.emit('room:joined', roomId)
+  }
+
+  /**
+   * 更新当前房间名字，并持久化到 IndexedDB，通知 UI 刷新
+   */
+  private async updateRoomName(name: string): Promise<void> {
+    if (!this.currentRoom) return
+    const trimmed = name.trim()
+    if (!trimmed || trimmed === this.currentRoom.name) return
+
+    this.currentRoom.name = trimmed
+    try {
+      await saveRoom({
+        id: this.currentRoom.id,
+        name: trimmed,
+        createdAt: this.currentRoom.createdAt,
+      })
+    } catch (err) {
+      log('[Room] Failed to persist room name:', err)
+    }
+    this.emit('room:name-change', trimmed)
   }
 
   private attemptReconnect(): void {
     if (this.reconnectTimer || !this.currentRoom) return
-
     this.reconnectAttempts++
     if (this.reconnectAttempts > RECONNECT_MAX_ATTEMPTS) {
       this.setStatus('disconnected')
       this.emit('reconnect:failed')
       return
     }
-
     this.setStatus('reconnecting')
-
     const delay = Math.min(
       RECONNECT_BASE_DELAY_MS * Math.pow(2, this.reconnectAttempts - 1),
       RECONNECT_MAX_DELAY_MS,
     )
-
     log(`[Room] Reconnect attempt ${this.reconnectAttempts}/${RECONNECT_MAX_ATTEMPTS} in ${delay}ms`)
-
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null
       if (this.currentRoom) {
@@ -191,10 +230,8 @@ export class RoomManager {
       clearTimeout(this.reconnectTimer)
       this.reconnectTimer = null
     }
-
     for (const unsub of this.unsubs) unsub()
     this.unsubs = []
-
     messageManager.destroy()
     peerManager.leave()
     connectionMonitor.stop()
