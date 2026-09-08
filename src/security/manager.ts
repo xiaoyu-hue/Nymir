@@ -81,8 +81,7 @@ class SecurityManager {
   }
 
   /**
-   * 获取缓存的密码（锁定后仍可用于加密新数据）
-   * 解密旧数据仍需密码（锁定时返回 null）
+   * 获取缓存的密码（仅解锁状态可用；lock() 会清空缓存并返回 null）
    */
   getCachedPassword(): string | null {
     return this._cachedPassword
