@@ -20,6 +20,7 @@ export function useRoom() {
       if (
         event === 'room:joined' ||
         event === 'room:left' ||
+        event === 'room:rebuilt' ||
         event === 'peer:join' ||
         event === 'peer:leave'
       ) {

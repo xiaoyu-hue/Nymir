@@ -132,7 +132,15 @@ export class RoomManager {
       messageManager.retryOfflineMessages()
     })
 
-    this.unsubs.push(unsubJoin, unsubLeave, unsubPeerKey)
+    // 传输策略切换（MQTT ↔ torrent）后重建底层 room，同步 peers 并通知 UI
+    const unsubRoomRebuilt = peerManager.onRoomRebuilt(() => {
+      if (this.currentRoom) {
+        this.currentRoom.peers = peerManager.peerList
+        this.emit('room:rebuilt')
+      }
+    })
+
+    this.unsubs.push(unsubJoin, unsubLeave, unsubPeerKey, unsubRoomRebuilt)
 
     const saved = await getMessagesByRoom(roomId)
     const messages = saved.map((s: StoredMessage) => ({

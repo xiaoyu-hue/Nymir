@@ -120,7 +120,7 @@ export default function ChatView() {
               <div className={`chat-status-dot ${status}`} aria-hidden="true" />
               <span className="chat-status-text">
                 {status === 'connected'
-                  ? `${room?.peers.length ?? 0} ${t.room.online}`
+                  ? `${(room?.peers.length ?? 0) + 1} ${t.room.online}`
                   : status === 'reconnecting'
                     ? t.room.reconnecting
                     : t.room.disconnected}

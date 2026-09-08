@@ -1,9 +1,10 @@
-import { joinRoom as joinTorrent } from '@trystero-p2p/torrent'
-import { joinRoom as joinMqtt } from '@trystero-p2p/mqtt'
+import { joinRoom as joinTorrent, selfId as torrentSelfId } from '@trystero-p2p/torrent'
+import { joinRoom as joinMqtt, selfId as mqttSelfId } from '@trystero-p2p/mqtt'
 import type { Room, DataPayload } from '@trystero-p2p/core'
 import { e2eeManager } from '../security/e2eeManager'
 import { connectionMonitor } from './monitor'
 import { log } from '../utils/logger'
+import { STRATEGY_FALLBACK_MS } from '../constants'
 
 const APP_ID = 'nymir_treehole_v1'
 
@@ -38,9 +39,9 @@ export class PeerManager {
   private isSwitchingStrategy = false
 
   get id(): string {
-    return this.currentStrategy === 'torrent'
-      ? (joinTorrent as unknown as { selfId: string }).selfId
-      : (joinMqtt as unknown as { selfId: string }).selfId
+    // selfId 是 @trystero-p2p/core 模块加载时生成的常量，
+    // mqtt 和 torrent 包都重新导出同一个 selfId，二者值相同。
+    return this.currentStrategy === 'torrent' ? torrentSelfId : mqttSelfId
   }
 
   get peerList(): string[] {
@@ -158,7 +159,7 @@ export class PeerManager {
       if (this.peers.size === 0 && this.room) {
         this.switchStrategy(roomId, 'torrent')
       }
-    }, 5000)
+    }, STRATEGY_FALLBACK_MS)
   }
 
   private switchStrategy(roomId: string, newStrategy: Strategy): void {

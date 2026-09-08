@@ -13,7 +13,7 @@ export const FAKE_ID_LENGTH = 20
 
 // Network
 export const BROADCAST_DELAY_MS = 100
-export const STRATEGY_FALLBACK_MS = 5000
+export const STRATEGY_FALLBACK_MS = 10000
 export const RECONNECT_INTERVAL_MS = 3000
 export const RECONNECT_BASE_DELAY_MS = 1000
 export const RECONNECT_MAX_DELAY_MS = 30_000
