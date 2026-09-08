@@ -56,6 +56,10 @@ export default function BurnTimer({ message, onExpired }: Props) {
   // Initial check: if already expired, fire immediately
   // (notifying the parent is an external effect, so it stays in useEffect)
   useEffect(() => {
+    // New message: reset the fired-flag so onExpired can fire once for it
+    // (fixes: previously the flag never reset, so a second message
+    // arriving at the same component instance would never notify)
+    hasExpiredRef.current = false
     const r = getRemainingMs(message)
     if (r <= 0 && !hasExpiredRef.current) {
       hasExpiredRef.current = true
