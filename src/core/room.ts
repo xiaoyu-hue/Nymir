@@ -137,7 +137,7 @@ export class RoomManager {
     })
 
     // 房间名字同步：接收对端广播/请求
-    const unsubRoomName = peerManager.onRoomName((name, peerId) => {
+    const unsubRoomName = peerManager.onRoomName((name, _peerId) => {
       if (!this.currentRoom) return
 
       // name 为空字符串表示对端在请求房间名字（room_name_request）

@@ -28,7 +28,8 @@ interface E2EEPayload {
 
 interface RoomMetaPayload {
   type: 'room_name' | 'room_name_request'
-  name?: string
+  name: string
+  [key: string]: string
 }
 
 export class PeerManager {
@@ -115,7 +116,7 @@ export class PeerManager {
    */
   requestRoomName(): void {
     if (!this.roomMetaChannel) return
-    this.roomMetaChannel.send({ type: 'room_name_request' })
+    this.roomMetaChannel.send({ type: 'room_name_request', name: '' })
   }
 
   private joinWithStrategy(roomId: string, strategy: Strategy): Room {
