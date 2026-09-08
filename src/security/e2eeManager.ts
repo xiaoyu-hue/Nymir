@@ -44,14 +44,23 @@ function loadTOFU(): Map<string, string> {
   try {
     const raw = localStorage.getItem(TOFU_STORAGE_KEY)
     if (!raw) return new Map()
-    return new Map(Object.entries(JSON.parse(raw)))
+    // 新数据：base64 编码存储；旧数据：明文 JSON，尝试直接解析以兼容
+    let jsonStr: string
+    try {
+      jsonStr = atob(raw)
+    } catch {
+      jsonStr = raw
+    }
+    return new Map(Object.entries(JSON.parse(jsonStr)))
   } catch {
     return new Map()
   }
 }
 
 function saveTOFU(map: Map<string, string>): void {
-  localStorage.setItem(TOFU_STORAGE_KEY, JSON.stringify(Object.fromEntries(map)))
+  // base64 编码存储，避免明文 JSON（TOFU 数据虽非敏感，但与本地加密理念一致）
+  const jsonStr = JSON.stringify(Object.fromEntries(map))
+  localStorage.setItem(TOFU_STORAGE_KEY, btoa(jsonStr))
 }
 
 class E2EEManager {

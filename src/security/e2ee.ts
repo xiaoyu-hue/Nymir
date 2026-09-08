@@ -52,7 +52,7 @@ function evictOldestSharedKey(): void {
 export async function generateKeyPair(): Promise<KeyPair> {
   const keyPair = await crypto.subtle.generateKey(
     { name: KEY_TYPE },
-    true, // extractable for export
+    false, // 私钥不可导出，防止 XSS 时私钥被窃取；仅公钥需要导出
     ['deriveKey', 'deriveBits'],
   )
   return keyPair as KeyPair

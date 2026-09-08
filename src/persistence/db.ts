@@ -32,11 +32,15 @@ async function getDB(): Promise<IDBPDatabase<NymirDB>> {
   return dbInstance
 }
 
+// 加密数据前缀标记，用于可靠区分加密/明文（替代不可靠的正则猜测）
+const ENCRYPTED_PREFIX = 'enc:'
+
 // 加密/解密辅助函数
 async function encryptField(value: string): Promise<string> {
   if (securityManager.isLocked) return value
   try {
-    return await securityManager.encrypt(value)
+    const encrypted = await securityManager.encrypt(value)
+    return ENCRYPTED_PREFIX + encrypted
   } catch {
     return value
   }
@@ -45,14 +49,23 @@ async function encryptField(value: string): Promise<string> {
 async function decryptField(value: string): Promise<string> {
   if (securityManager.isLocked) return value
   try {
-    // 检查是否是加密数据（base64 格式）
+    // 新数据：带 enc: 前缀，可靠识别
+    if (value.startsWith(ENCRYPTED_PREFIX)) {
+      return await securityManager.decrypt(value.slice(ENCRYPTED_PREFIX.length))
+    }
+    // 旧数据兼容：无前缀时尝试正则检测 + 解密
+    // 解密失败时返回原值（不再返回 [encrypted]，避免明文被误判后丢失）
     if (value.length > 20 && /^[A-Za-z0-9+/=]+$/.test(value)) {
-      return await securityManager.decrypt(value)
+      try {
+        return await securityManager.decrypt(value)
+      } catch {
+        return value
+      }
     }
     return value
   } catch {
-    warn('[DB] Decryption failed, returning placeholder')
-    return '[encrypted]'
+    warn('[DB] Decryption failed, returning original value')
+    return value
   }
 }
 
@@ -136,8 +149,11 @@ export async function destroyMessage(id: string): Promise<void> {
 export async function markMessageRead(id: string, peerId: string): Promise<void> {
   const db = await getDB()
   const msg = await db.get('messages', id)
-  if (msg && !msg.readBy.includes(peerId)) {
-    msg.readBy.push(peerId)
+  if (!msg) return
+  // 数据库中 readBy 存储的是加密后的 peerId，必须先加密再比较和存入
+  const encryptedPeerId = await encryptField(peerId)
+  if (!msg.readBy.includes(encryptedPeerId)) {
+    msg.readBy.push(encryptedPeerId)
     await db.put('messages', msg)
   }
 }

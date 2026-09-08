@@ -26,8 +26,10 @@ export interface FileMetadata {
   name: string
   type: FileType
   mimeType: string
-  size: number
-  chunks: number
+  size: number // 原始文件大小（用于显示）
+  chunks: number // 原始文件块数（用于显示）
+  encryptedSize: number // 加密后数据总大小（用于接收端分配合并缓冲区）
+  encryptedChunks: number // 加密后数据块数（用于接收端判断是否收完）
   sender: string
   timestamp: number
   hash: string // SHA-256 hex of original file data
@@ -86,13 +88,15 @@ class FileTransferManager {
     const fileHash = uint8ToBase64(new Uint8Array(hashBuffer))
 
     const isImage = file.type.startsWith('image/')
-    const metadata: FileMetadata = {
+    let metadata: FileMetadata = {
       id: transferId,
       name: file.name,
       type: isImage ? 'image' : 'file',
       mimeType: file.type,
       size: file.size,
       chunks,
+      encryptedSize: 0, // 加密后填充
+      encryptedChunks: 0, // 加密后填充
       sender: peerManager.id,
       timestamp: Date.now(),
       hash: fileHash,
@@ -113,23 +117,41 @@ class FileTransferManager {
       const targets = peerId ? [peerId] : peerManager.peerList
       if (targets.length === 0) throw new Error('No peers connected')
 
-      // 发送元数据
-      for (const target of targets) {
-        this.channel.send({ type: 'file-meta', metadata }, target)
-      }
-
       this.activeSendAbort = new AbortController()
 
-      // 为每个 peer 单独加密并发送（每个 peer 的共享密钥不同）
+      // 第一步：先为所有 peer 加密，存储加密结果
+      // 必须先加密才能知道加密后大小和块数，元数据中需要携带这些信息
+      const encryptedBuffers = new Map<string, ArrayBuffer>()
       for (const target of targets) {
         const encryptedBuffer = await e2eeManager.encryptFile(buffer, target)
         if (!encryptedBuffer) {
           warn(`[FileTransfer] Encryption failed for peer ${target}, skipping`)
           continue
         }
+        encryptedBuffers.set(target, encryptedBuffer)
+      }
 
-        const encryptedChunks = Math.ceil(encryptedBuffer.byteLength / CHUNK_SIZE)
+      if (encryptedBuffers.size === 0) {
+        throw new Error('Encryption failed for all peers')
+      }
 
+      // 用第一个成功加密的 peer 计算加密后大小和块数
+      // AES-GCM 输出大小固定，所有 peer 的加密结果大小一致
+      const firstEncrypted = encryptedBuffers.values().next().value as ArrayBuffer
+      const encryptedSize = firstEncrypted.byteLength
+      const encryptedChunks = Math.ceil(encryptedSize / CHUNK_SIZE)
+
+      // 更新元数据，携带加密后大小和块数
+      metadata = { ...metadata, encryptedSize, encryptedChunks }
+      transfer.metadata = metadata
+
+      // 第二步：发送元数据（携带加密后大小和块数）
+      for (const target of encryptedBuffers.keys()) {
+        this.channel.send({ type: 'file-meta', metadata }, target)
+      }
+
+      // 第三步：为每个 peer 发送加密后的块
+      for (const [target, encryptedBuffer] of encryptedBuffers) {
         for (let i = 0; i < encryptedChunks; i++) {
           if (this.activeSendAbort.signal.aborted) {
             transfer.status = 'cancelled'
@@ -225,17 +247,23 @@ class FileTransferManager {
 
     chunks.set(index, new Uint8Array(data))
     transfer.chunksReceived = chunks.size
-    transfer.progress = Math.round((chunks.size / transfer.metadata.chunks) * 100)
+
+    // 使用加密后的块数计算进度和判断是否收完
+    // 向后兼容：旧版本元数据无 encryptedChunks 时回退到原始 chunks
+    const totalChunks = transfer.metadata.encryptedChunks || transfer.metadata.chunks
+    transfer.progress = Math.round((chunks.size / totalChunks) * 100)
     this.notifyListeners(transfer)
 
     // 检查是否所有块都已接收
-    if (chunks.size === transfer.metadata.chunks) {
+    if (chunks.size === totalChunks) {
       try {
-      // 合并所有块
-      const merged = new Uint8Array(transfer.metadata.size)
-      let offset = 0
+        // 合并所有块 — 必须使用加密后大小分配缓冲区
+        // 向后兼容：旧版本元数据无 encryptedSize 时回退到原始 size
+        const mergedSize = transfer.metadata.encryptedSize || transfer.metadata.size
+        const merged = new Uint8Array(mergedSize)
+        let offset = 0
 
-        for (let i = 0; i < transfer.metadata.chunks; i++) {
+        for (let i = 0; i < totalChunks; i++) {
           const chunk = chunks.get(i)
           if (chunk) {
             merged.set(chunk, offset)

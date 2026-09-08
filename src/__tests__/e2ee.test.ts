@@ -7,12 +7,12 @@ import {
 } from '../security/e2ee'
 
 describe('e2ee', () => {
-  it('generateKeyPair returns key pair with extractable keys', async () => {
+  it('generateKeyPair returns key pair: public key extractable, private key non-extractable', async () => {
     const keyPair = await generateKeyPair()
     expect(keyPair.publicKey).toBeDefined()
     expect(keyPair.privateKey).toBeDefined()
-    expect(keyPair.publicKey.extractable).toBe(true)
-    expect(keyPair.privateKey.extractable).toBe(true)
+    expect(keyPair.publicKey.extractable).toBe(true) // 公钥需导出用于交换
+    expect(keyPair.privateKey.extractable).toBe(false) // 私钥不可导出，防止 XSS 窃取
   })
 
   it('exportPublicKey returns base64 string of correct length', async () => {

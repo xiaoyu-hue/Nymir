@@ -24,7 +24,7 @@ export interface SignKeyPair {
 export async function generateSignKeyPair(): Promise<SignKeyPair> {
   const keyPair = await crypto.subtle.generateKey(
     { name: SIGN_ALGO },
-    true,
+    false, // 私钥不可导出，防止 XSS 时私钥被窃取；仅公钥需要导出
     ['sign', 'verify'],
   )
   return keyPair as SignKeyPair
