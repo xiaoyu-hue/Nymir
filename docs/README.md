@@ -6,6 +6,7 @@ This folder holds Nymir's project documents. Only GitHub-convention files (READM
 
 | 文档 / Document | 说明 / Description |
 | --- | --- |
+| [THREAT_MODEL.md](./THREAT_MODEL.md) | 威胁模型：资产、攻击者、信任边界、主要威胁与残余风险 · Threat model (assets, adversaries, trust boundaries, residual risks) |
 | [Nymir-项目版本史与架构演化.md](./Nymir-项目版本史与架构演化.md) | 项目发展历史、版本演化脉络与未来架构方向（Local-First / P2P / E2EE） · Project history, version evolution and future architecture direction |
 | [AUTHOR.md](./AUTHOR.md) | 关于作者（中文） · About the author (Chinese) |
 | [AUTHOR.en.md](./AUTHOR.en.md) | About the author (English) · 关于作者（英文） |
