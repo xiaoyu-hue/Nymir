@@ -71,28 +71,38 @@ export async function exportPublicKey(keyPair: KeyPair): Promise<string> {
  */
 export async function importPeerPublicKey(publicKeyBase64: string): Promise<CryptoKey> {
   const raw = base64ToUint8(publicKeyBase64)
+  // X25519 公钥仅作为 ECDH 对端参数，keyUsages 必须为空数组
+  // （WebCrypto：公钥不能声明 deriveKey/deriveBits usage）
   return crypto.subtle.importKey(
     'raw',
     raw,
     { name: KEY_TYPE },
     false,
-    ['deriveKey'],
+    [],
   )
 }
 
 /**
- * 从共享密钥派生 AES 密钥
+ * 从 X25519 ECDH 派生 HKDF 基密钥（非 AES 密钥）
+ *
+ * 必须先 deriveBits 再 import 为 HKDF，才能继续用每消息 HKDF 派生 AES 密钥。
+ * 直接 deriveKey → AES-GCM 会导致 baseKey 无 deriveKey usage，无法做消息级前向保密。
  */
 async function deriveSharedKey(
   privateKey: CryptoKey,
   peerPublicKey: CryptoKey,
 ): Promise<CryptoKey> {
-  return crypto.subtle.deriveKey(
+  const bits = await crypto.subtle.deriveBits(
     { name: KEY_TYPE, public: peerPublicKey },
     privateKey,
-    { name: AES_ALGO, length: AES_KEY_LENGTH },
+    256,
+  )
+  return crypto.subtle.importKey(
+    'raw',
+    bits,
+    'HKDF',
     false,
-    ['encrypt', 'decrypt'],
+    ['deriveKey'],
   )
 }
 
