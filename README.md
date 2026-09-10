@@ -39,18 +39,24 @@ Nymir **不是完全去中心化**的。数据存储与消息传输是本地/P2P
 
 更准确的定位是：**无业务服务器 + 本地优先 + P2P 通信**。
 
+### 一条消息的旅程
+
+发送时：明文 → AES-256-GCM 加密 → Ed25519 签名 → 通过 P2P 通道发出。
+接收时：验签 → 解密 → 字段加密后写入本地 IndexedDB。
+加密和签名都在你的浏览器里完成，中间节点（包括公共信令）只能看到密文和签名，看不到明文。
+
 ---
 
 ## ✦ 安全与隐私
 
 ### 安全特性
 
-- ✅ **端到端加密** — X25519 + AES-256-GCM
-- ✅ **每消息密钥** — HKDF 按消息派生
-- ✅ **密文签名（encrypt-then-sign）** — Ed25519 签密文
+- ✅ **会话消息端到端加密** — X25519 密钥协商 + AES-256-GCM（建连/信令阶段除外，见已知局限）
+- ✅ **每消息密钥** — HKDF 按消息派生，不同消息密钥不同
+- ✅ **密文签名（encrypt-then-sign）** — Ed25519 签密文，验签失败不展示
 - ✅ **签名失败可见** — 气泡明确标示，不静默展示
 - ✅ **P2P 直连** — 会话消息不经业务云端存储
-- ✅ **本地存储** — IndexedDB
+- ✅ **本地存储加密** — IndexedDB 字段级加密（AES-256-GCM，密码派生密钥）
 - ✅ **阅后即焚** — 可配置
 - ✅ **加密备份** — AES-256-GCM
 
@@ -70,6 +76,15 @@ Nymir **不是完全去中心化**的。数据存储与消息传输是本地/P2P
 - **双端实时依赖浏览器与 NAT**
 - **公钥交换经公共信令、无带外指纹校验** — TOFU 钉住首次公钥；**第一次交换**时中间人注入假公钥无法被协议单独识破；无安全码/二维码带外核对
 - **流量混淆强度有限** — 约每 30 秒、固定约 48 字节噪声；等间隔等长填充在流量分析中可能可识别，**不能**对抗认真分析
+
+### 不适合什么场景
+
+诚实说，Nymir 不是万能的隐私工具，以下场景请谨慎使用或选择更专业的方案：
+
+- **高风险通信**（记者、活动人士、举报人等面临国家级对手的场景）——流量混淆有限、TOFU 有弱点、无离线收件箱，不适合对抗认真的流量分析
+- **需要长期留存重要记录**——阅后即焚会主动销毁消息；本地存储加密后若忘记锁屏密码，数据**永久无法恢复**
+- **多设备/跨设备同步**——当前无多设备同步，消息只存在当前浏览器
+- **公共或共享设备**——本地数据存在浏览器 profile 里，他人用同一浏览器可访问（除非设置了锁屏密码）
 
 ---
 
@@ -103,15 +118,36 @@ cd Nymir && npm install && npm run dev
 
 [AGPL-3.0](./LICENSE)
 
-### 核心依赖
+## ✦ 致谢与依赖
+
+Nymir 站在这些开源项目的肩膀上。没有它们，一个零编程基础的作者不可能做出这个项目。
+
+### 运行时依赖
 
 | 项目 | 协议 | 说明 |
 |------|------|------|
-| [React](https://react.dev) | MIT | UI |
-| [Vite](https://vite.dev) | MIT | 构建 |
-| [Trystero](https://github.com/dmotz/trystero) | MIT | P2P |
-| [TypeScript](https://www.typescriptlang.org) | Apache-2.0 | 类型 |
+| [React](https://react.dev) | MIT | UI 框架 |
+| [React DOM](https://react.dev) | MIT | DOM 渲染 |
+| [@trystero-p2p/mqtt](https://www.npmjs.com/package/@trystero-p2p/mqtt) | MIT | P2P 信令（MQTT 通道） |
+| [@trystero-p2p/torrent](https://www.npmjs.com/package/@trystero-p2p/torrent) | MIT | P2P 信令（WebTorrent 通道） |
 | [idb](https://github.com/jakearchibald/idb) | ISC | IndexedDB 封装 |
+
+### 开发与工具链
+
+| 项目 | 协议 | 说明 |
+|------|------|------|
+| [TypeScript](https://www.typescriptlang.org) | Apache-2.0 | 类型系统 |
+| [Vite](https://vite.dev) | MIT | 构建工具 |
+| [Vitest](https://vitest.dev) | MIT | 测试框架（179 个测试） |
+| [Oxlint](https://oxc.rs) | MIT | 代码检查（CI 门禁） |
+| [vite-plugin-pwa](https://vite-pwa-org.netlify.app) | MIT | PWA 支持（可安装、离线可用） |
+| [jsdom](https://github.com/jsdom/jsdom) | MIT | DOM 测试环境 |
+| [@testing-library/react](https://testing-library.com) | MIT | React 组件测试 |
+
+### 特别致谢
+
+- **WebCrypto API**（W3C 标准，浏览器内置）—— X25519 密钥协商、AES-256-GCM 加解密、HKDF 密钥派生、Ed25519 签名全部基于此。Nymir 不实现任何密码学原语，只调用浏览器经过审计的内置实现。
+- **所有为开源社区贡献代码、文档和时间的人。**
 
 ## ✦ 贡献
 
