@@ -167,7 +167,13 @@ describe('messageManager 接收路径', () => {
     expect(msgs[0].content).toBe('')
   })
 
-  it('记录当前行为：encrypted=false 且验签通过时，会把 content 当明文接受', async () => {
+  /**
+   * 已知缺口（TODO，随实现修复后本断言反转）：
+   * encrypted=false 且验签通过时，当前实现会把 content 当明文接受——
+   * 这允许发送方用 sign-then-encrypt 的旧方式传输明文，绕过 encrypt-then-sign 契约。
+   * 修复计划：sig===2 的载荷必须 encrypted===true，否则视为验签失败。
+   */
+  it('记录当前行为（待修复）：encrypted=false 且验签通过时，会把 content 当明文接受', async () => {
     verifyMock.mockResolvedValue(true)
 
     await fireIncoming({

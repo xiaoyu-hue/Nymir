@@ -67,20 +67,11 @@ describe('offlineQueue', () => {
   })
 
   /**
-   * 契约：退出房间应清理离线队列，避免 payload 残留。
-   * 当前 room.leaveRoom() 只调 messageManager.destroy()，并不调用 offlineQueue.clear()。
-   * 本测试断言「期望行为」，当前应失败。
+   * 已知缺口（已登记为 it.todo，不阻塞 CI）：
+   * 退出房间应清理该房间的离线队列，避免 payload 残留。
+   * 当前 room.leaveRoom() 只调 messageManager.destroy()，并不清理队列。
+   * 修复计划：新增 offlineQueue.clearRoom(roomId)，并在 room.leaveRoom() 中调用；
+   * 修复完成后本 todo 转为真实断言。
    */
-  it.fails('契约：模拟退出房间后队列中不应残留敏感 payload（当前 leave 未 clear）', () => {
-    offlineQueue.enqueue(
-      'msg-leave',
-      'room-a',
-      { content: 'still-secret', id: 'msg-leave' },
-      [],
-    )
-    // 模拟当前 leaveRoom 实际会做的事：不调用 offlineQueue.clear()
-    // 期望：不应再读到 pending
-    expect(offlineQueue.getPending('room-a')).toHaveLength(0)
-    expect(offlineQueue.getStats().total).toBe(0)
-  })
+  it.todo('契约：退出房间后该房间队列不应残留敏感 payload（待实现 clearRoom）')
 })

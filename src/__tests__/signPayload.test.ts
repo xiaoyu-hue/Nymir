@@ -108,41 +108,21 @@ describe('e2eeManager 层：明文签名可被 verify 确认（缺陷在协议�
 
     const peerId = 'attacker-peer'
     const signPub = e2eeManager.getOwnSignPublicKey()
+    const encPub = e2eeManager.getOwnPublicKey()
     expect(signPub).toBeTruthy()
+    expect(encPub).toBeTruthy()
 
-    // 把「自己的」签名公钥登记为某个 peer 的公钥，模拟对端已交换密钥
-    await e2eeManager.handlePeerPublicKey(
-      peerId,
-      // 加密公钥也需要，这里用同一会话导出的加密公钥
-      e2eeManager.getOwnPublicKey()!,
-      signPub!,
-    )
+    // 用本会话导出的密钥登记为对端公钥，模拟密钥交换完成
+    // （Node 22 WebCrypto 支持 X25519，可确定性导入，无需分支降级）
+    await e2eeManager.handlePeerPublicKey(peerId, encPub!, signPub!)
+    expect(e2eeManager.hasPeerKey(peerId)).toBe(true)
 
     const plaintext = '好'
     const signature = await e2eeManager.sign(plaintext)
     expect(signature).toBeTruthy()
 
-    // 在「明文签名」协议下，知道猜测即可确认
+    // 攻击前提：签名绑定明文，截获者知道候选词即可离线确认
     const verified = await e2eeManager.verify(plaintext, signature!, peerId)
-    // 注意：handlePeerPublicKey 在 Node 下可能因 X25519 import usages 失败
-    // 若 peer 签名公钥未导入，verify 返回 false——此时跳过本断言的强依赖
-    if (e2eeManager.hasPeerKey(peerId)) {
-      // 签名公钥与加密公钥是分开存的；hasPeerKey 只表示加密钥
-      // verify 失败时说明签名公钥未导入，不强制
-      const result = verified
-      // 若为 true，则确认缺陷路径存在
-      if (result === true) {
-        expect(result).toBe(true)
-      } else {
-        // Node 环境可能无法 import 加密公钥，改用底层 sign 模块完成等价证明
-        const kp = await generateSignKeyPair()
-        const sig = await signMessage(plaintext, kp.privateKey)
-        expect(await verifySignature(plaintext, sig, kp.publicKey)).toBe(true)
-      }
-    } else {
-      const kp = await generateSignKeyPair()
-      const sig = await signMessage(plaintext, kp.privateKey)
-      expect(await verifySignature(plaintext, sig, kp.publicKey)).toBe(true)
-    }
+    expect(verified).toBe(true)
   })
 })
