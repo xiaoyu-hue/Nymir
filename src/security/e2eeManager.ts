@@ -263,21 +263,6 @@ class E2EEManager {
   }
 
   /**
-   * 清除 TOFU 信任库
-   */
-  clearTOFU(): void {
-    this.tofuStore.clear()
-    localStorage.removeItem(TOFU_STORAGE_KEY)
-  }
-
-  /**
-   * 检查 peer 公钥是否已固定
-   */
-  isTOFUPinned(peerId: string): boolean {
-    return this.tofuStore.has(peerId)
-  }
-
-  /**
    * 加密文件（使用 E2EE 共享密钥保护文件密钥）
    */
   async encryptFile(data: ArrayBuffer, peerId: string): Promise<ArrayBuffer | null> {

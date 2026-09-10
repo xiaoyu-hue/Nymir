@@ -105,10 +105,3 @@ export function stopNoiseGeneration(): void {
     log(`[Noise] Stopped. Sent ${noiseCount} noise messages`)
   }
 }
-
-/**
- * 获取噪声统计
- */
-export function getNoiseStats(): { count: number; enabled: boolean } {
-  return { count: noiseCount, enabled: NOISE_ENABLED }
-}
