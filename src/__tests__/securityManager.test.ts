@@ -111,6 +111,20 @@ describe('securityManager setupPassword / lock / unlock', () => {
     await expect(manager.decrypt('x')).rejects.toThrow('Security: locked')
   })
 
+  it('重新 setupPassword 覆盖旧密码，按需解码返回新密码（无残留字符串副本）', async () => {
+    await manager.setupPassword('first-password')
+    expect(manager.getCachedPassword()).toBe('first-password')
+
+    await manager.setupPassword('second-password')
+    expect(manager.getCachedPassword()).toBe('second-password')
+
+    // 覆盖后加解密使用新密码
+    const cipher = await manager.encrypt('x')
+    expect(await manager.decrypt(cipher)).toBe('x')
+    // 旧密码不再可用
+    await expect(manager.decrypt(await manager.encrypt('y'))).resolves.toBe('y')
+  })
+
   it('解锁状态下 encrypt→decrypt 往返一致', async () => {
     await manager.setupPassword(PWD)
     const cipher = await manager.encrypt('树洞秘密 🔒')

@@ -34,7 +34,6 @@ class SecurityManager {
   private lockTimer: ReturnType<typeof setTimeout> | null = null
   private lockListeners: LockListener[] = []
   private initialized = false
-  private _cachedPassword: string | null = null
 
   get failedAttempts(): number {
     return parseInt(sessionStorage.getItem(STORAGE_KEY_FAILED_ATTEMPTS) || '0', 10)
@@ -71,22 +70,24 @@ class SecurityManager {
   private setPassword(password: string): void {
     clearUint8Array(this.password)
     this.password = stringToUint8Array(password)
-    this._cachedPassword = password
   }
 
   private clearPassword(): void {
+    // fill(0) 清零唯一持久副本（Uint8Array）。
+    // 不再另存不可清零的 JS 字符串副本：字符串仅在使用时按需解码、调用后即弃。
     clearUint8Array(this.password)
     this.password = null
-    this._cachedPassword = null
     // 派生密钥同样不应在锁定后常驻内存
     clearCryptoCache()
   }
 
   /**
-   * 获取缓存的密码（仅解锁状态可用；lock() 会清空缓存并返回 null）
+   * 获取缓存的密码（仅解锁状态可用；lock() 会清空并返回 null）。
+   * 按需从 Uint8Array 解码：返回的字符串是临时值，锁定后无残留副本。
    */
   getCachedPassword(): string | null {
-    return this._cachedPassword
+    if (!this.password) return null
+    return new TextDecoder().decode(this.password)
   }
 
   /**
@@ -167,7 +168,7 @@ class SecurityManager {
    * 加密数据（锁定后仍可加密新数据）
    */
   async encrypt(data: string): Promise<string> {
-    const pw = this._cachedPassword
+    const pw = this.getCachedPassword()
     if (!pw) throw new Error('Security: no password set')
     return encrypt(data, pw)
   }
@@ -176,7 +177,7 @@ class SecurityManager {
    * 解密数据（锁定后无法解密）
    */
   async decrypt(data: string): Promise<string> {
-    const pw = this._cachedPassword
+    const pw = this.getCachedPassword()
     if (!pw) throw new Error('Security: locked')
     return decrypt(data, pw)
   }
