@@ -200,6 +200,18 @@ class OfflineQueue {
     this.queue = []
     this.saveToStorage()
   }
+
+  /**
+   * 移除指定房间的全部队列条目（退出房间时调用，避免该房间 payload 残留）
+   */
+  clearRoom(roomId: string): void {
+    const before = this.queue.length
+    this.queue = this.queue.filter((q) => q.roomId !== roomId)
+    if (this.queue.length !== before) {
+      this.saveToStorage()
+      log(`[OfflineQueue] Cleared queue for room ${roomId}`)
+    }
+  }
 }
 
 export const offlineQueue = new OfflineQueue()

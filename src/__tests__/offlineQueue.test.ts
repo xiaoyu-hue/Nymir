@@ -66,6 +66,26 @@ describe('offlineQueue', () => {
     expect(localStorage.getItem('nymir_offline_queue')).toBe('[]')
   })
 
+  it('clearRoom 只清理指定房间的条目，其他房间保留', () => {
+    offlineQueue.enqueue('a-1', 'room-a', { content: 'secret-a' }, [])
+    offlineQueue.enqueue('b-1', 'room-b', { content: 'secret-b' }, [])
+
+    offlineQueue.clearRoom('room-a')
+
+    expect(offlineQueue.getPending('room-a')).toHaveLength(0)
+    expect(offlineQueue.getStats().total).toBe(1)
+    expect(offlineQueue.getPending('room-b')).toHaveLength(1)
+    // localStorage 同步清理
+    const persisted = JSON.parse(localStorage.getItem('nymir_offline_queue') || '[]')
+    expect(persisted.some((q: { roomId: string }) => q.roomId === 'room-a')).toBe(false)
+  })
+
+  it('clearRoom 对不存在的房间是幂等的，不报错', () => {
+    offlineQueue.enqueue('a-1', 'room-a', { content: 'x' }, [])
+    expect(() => offlineQueue.clearRoom('no-such-room')).not.toThrow()
+    expect(offlineQueue.getStats().total).toBe(1)
+  })
+
   /**
    * 已知缺口（已登记为 it.todo，不阻塞 CI）：
    * 退出房间应清理该房间的离线队列，避免 payload 残留。
