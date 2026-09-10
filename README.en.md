@@ -7,6 +7,8 @@
 
 # ✦ Nymir
 
+> ⚠️ **Important Notice**: This project is developed with AI assistance, by an individual author with zero programming background. The code has NOT undergone a professional security audit. **It is NOT recommended for real sensitive scenarios** (such as high-risk communication, important data storage, etc.). If you need to use it for such scenarios, please conduct a professional security assessment first.
+
 **P2P anonymous chat · Read-and-burn · Local-first**
 
 > *Your data stays on your device. Privacy first, local storage.*
