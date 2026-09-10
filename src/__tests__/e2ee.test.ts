@@ -8,7 +8,7 @@
  * - 私钥不可导出
  * - 文件加解密往返
  */
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   generateKeyPair,
   exportPublicKey,
@@ -19,6 +19,7 @@ import {
   clearAllSharedKeys,
   encryptFile,
   decryptFile,
+  type KeyPair,
 } from '../security/e2ee'
 
 describe('e2ee — 密钥生成与导出', () => {
@@ -181,6 +182,56 @@ describe('e2ee — 每消息 HKDF 前向保密', () => {
     const d2 = await decryptMessage(enc, 'alice', bob.privateKey, alicePub, 'same-id')
     expect(d1).toBe('cached')
     expect(d2).toBe('cached')
+  })
+})
+
+describe('e2ee — 共享密钥 LRU 缓存上限', () => {
+  beforeEach(() => {
+    clearAllSharedKeys()
+  })
+
+  it('超过 100 个 peer 时淘汰最旧共享密钥（上限恰为 100，非 101）', async () => {
+    // deriveSharedKey 每次缓存未命中都会调用 deriveBits：
+    // 用它计数可观察缓存是否命中（无需暴露内部 Map）
+    const self = await generateKeyPair()
+    const peers: KeyPair[] = []
+    for (let i = 0; i < 101; i++) {
+      peers.push(await generateKeyPair())
+    }
+
+    const spy = vi.spyOn(crypto.subtle, 'deriveBits')
+    try {
+      for (let i = 0; i < 101; i++) {
+        await encryptMessage('x', 'peer-' + i, self.privateKey, peers[i].publicKey, 'msg-' + i)
+      }
+      const callsAfterInsert = spy.mock.calls.length
+
+      // 最旧的 peer-0 若已被淘汰，本次会重新派生（deriveBits +1）
+      await encryptMessage('y', 'peer-0', self.privateKey, peers[0].publicKey, 'msg-again')
+
+      expect(spy.mock.calls.length).toBe(callsAfterInsert + 1)
+    } finally {
+      spy.mockRestore()
+      clearAllSharedKeys()
+    }
+  })
+
+  it('未超上限时最近使用的 peer 共享密钥仍命中缓存', async () => {
+    const self = await generateKeyPair()
+    const peer = await generateKeyPair()
+
+    const spy = vi.spyOn(crypto.subtle, 'deriveBits')
+    try {
+      await encryptMessage('a', 'peer-keep', self.privateKey, peer.publicKey, 'm1')
+      const callsAfterFirst = spy.mock.calls.length
+
+      await encryptMessage('b', 'peer-keep', self.privateKey, peer.publicKey, 'm2')
+
+      expect(spy.mock.calls.length).toBe(callsAfterFirst)
+    } finally {
+      spy.mockRestore()
+      clearAllSharedKeys()
+    }
   })
 })
 

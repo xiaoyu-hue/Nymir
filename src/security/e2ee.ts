@@ -120,9 +120,10 @@ async function getSharedKey(
     return key
   }
   key = await deriveSharedKey(privateKey, peerPublicKey)
-  evictOldestSharedKey()
   sharedKeys.set(peerId, key)
   touchSharedKey(peerId)
+  // 先 set 再淘汰：否则上限实际为 MAX_SHARED_KEYS+1
+  evictOldestSharedKey()
   return key
 }
 
