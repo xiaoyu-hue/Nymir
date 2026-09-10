@@ -36,14 +36,11 @@ async function getDB(): Promise<IDBPDatabase<NymirDB>> {
 const ENCRYPTED_PREFIX = 'enc:'
 
 // 加密/解密辅助函数
+// 红线：加密失败（含锁定无密钥）时抛错，绝不静默降级为明文落盘。
+// 一旦明文写入 IndexedDB，将不再有重新加密的时机，且违反「禁止明文落盘」。
 async function encryptField(value: string): Promise<string> {
-  if (securityManager.isLocked) return value
-  try {
-    const encrypted = await securityManager.encrypt(value)
-    return ENCRYPTED_PREFIX + encrypted
-  } catch {
-    return value
-  }
+  const encrypted = await securityManager.encrypt(value)
+  return ENCRYPTED_PREFIX + encrypted
 }
 
 async function decryptField(value: string): Promise<string> {
