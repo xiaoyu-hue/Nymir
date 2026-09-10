@@ -61,10 +61,12 @@ vi.mock('../communication/offlineQueue', () => ({
 import { messageManager, MESSAGE_SIG_VERSION } from '../core/message'
 import { e2eeManager } from '../security/e2eeManager'
 import { saveMessage } from '../persistence/db'
+import { offlineQueue } from '../communication/offlineQueue'
 
 const verifyMock = e2eeManager.verify as ReturnType<typeof vi.fn>
 const decryptMock = e2eeManager.decrypt as ReturnType<typeof vi.fn>
 const saveMock = saveMessage as ReturnType<typeof vi.fn>
+const enqueueMock = offlineQueue.enqueue as ReturnType<typeof vi.fn>
 
 async function fireIncoming(data: Record<string, unknown>, peerId = 'peer-a') {
   if (!handlers.messages) throw new Error('messages handler not bound')
@@ -76,6 +78,7 @@ beforeEach(() => {
   verifyMock.mockReset()
   decryptMock.mockReset()
   saveMock.mockReset()
+  enqueueMock.mockReset()
   messageManager.destroy()
   messageManager.init('test-room')
 })
@@ -105,6 +108,28 @@ describe('messageManager 接收路径', () => {
     await fireIncoming({
       id: 'm2',
       timestamp: Date.now(),
+      content: 'x',
+    })
+    expect(messageManager.getMessages()).toHaveLength(0)
+    expect(saveMock).not.toHaveBeenCalled()
+  })
+
+  it('burnMode 非枚举值（构造值）的 payload 被丢弃', async () => {
+    await fireIncoming({
+      id: 'm-bad-burn',
+      timestamp: Date.now(),
+      burnMode: 'never-burn',
+      content: 'x',
+    })
+    expect(messageManager.getMessages()).toHaveLength(0)
+    expect(saveMock).not.toHaveBeenCalled()
+  })
+
+  it('timestamp 非数字的 payload 被丢弃', async () => {
+    await fireIncoming({
+      id: 'm-bad-ts',
+      timestamp: '2026-09-10T00:00:00Z',
+      burnMode: 'persist',
       content: 'x',
     })
     expect(messageManager.getMessages()).toHaveLength(0)
@@ -168,12 +193,11 @@ describe('messageManager 接收路径', () => {
   })
 
   /**
-   * 已知缺口（TODO，随实现修复后本断言反转）：
-   * encrypted=false 且验签通过时，当前实现会把 content 当明文接受——
-   * 这允许发送方用 sign-then-encrypt 的旧方式传输明文，绕过 encrypt-then-sign 契约。
-   * 修复计划：sig===2 的载荷必须 encrypted===true，否则视为验签失败。
+   * 修复后断言（原「记录当前行为」缺陷测试已反转）：
+   * encrypted=false 且验签通过（sig=2）→ 拒绝：内容为空、verified=false。
+   * 这封堵了 sign-then-encrypt 明文绕过（encrypt-then-sign 契约）。
    */
-  it('记录当前行为（待修复）：encrypted=false 且验签通过时，会把 content 当明文接受', async () => {
+  it('encrypted=false 且验签通过时拒绝：content 为空、verified=false', async () => {
     verifyMock.mockResolvedValue(true)
 
     await fireIncoming({
@@ -188,8 +212,33 @@ describe('messageManager 接收路径', () => {
 
     const msgs = messageManager.getMessages()
     expect(msgs).toHaveLength(1)
-    expect(msgs[0].content).toBe('cleartext-body')
-    expect(msgs[0].verified).not.toBe(false)
+    expect(msgs[0].content).toBe('')
+    expect(msgs[0].verified).toBe(false)
     expect(decryptMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('messageManager 发送路径（离线队列不入明文）', () => {
+  it('无 peer 时入队离线队列，payload 不携带明文 content', async () => {
+    await messageManager.send('secret-text', { mode: 'persist' })
+
+    expect(enqueueMock).toHaveBeenCalledTimes(1)
+    const [msgId, roomId, payload] = enqueueMock.mock.calls[0]
+    expect(msgId).toBeTruthy()
+    expect(roomId).toBe('test-room')
+    expect(payload).not.toHaveProperty('content')
+    expect(JSON.stringify(payload)).not.toContain('secret-text')
+  })
+
+  it('有 peer 但加密失败时入队离线队列，payload 同样不携带明文', async () => {
+    peerListState.push('peer-a')
+    const encryptMock = e2eeManager.encrypt as ReturnType<typeof vi.fn>
+    encryptMock.mockResolvedValue(null)
+
+    await messageManager.send('secret-text-2', { mode: 'persist' })
+
+    expect(enqueueMock).toHaveBeenCalledTimes(1)
+    const payload = enqueueMock.mock.calls[0][2]
+    expect(JSON.stringify(payload)).not.toContain('secret-text-2')
   })
 })

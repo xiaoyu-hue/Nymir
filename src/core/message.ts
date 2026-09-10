@@ -5,12 +5,15 @@ import { e2eeManager } from '../security/e2eeManager'
 import { isNoiseMessage, startNoiseGeneration, stopNoiseGeneration } from '../security/noise'
 import { generateMessageId } from '../utils/id'
 import { log, warn, error } from '../utils/logger'
-import type { Message, BurnConfig, AnyPayload } from './types'
+import { BurnMode, type Message, type BurnConfig, type AnyPayload } from './types'
 import { shouldDestroy, getRemainingMs } from './burn'
 import { READ_ONCE_AUTO_DESTROY_MS } from '../constants'
 
 /** 签名协议版本：2 = encrypt-then-sign（对密文签名）。旧消息无此字段或值≠2 一律验签失败。 */
 export const MESSAGE_SIG_VERSION = 2
+
+/** 合法 burnMode 枚举（防御：拒绝构造值打乱排序/绕过阅读即焚） */
+const VALID_BURN_MODES = new Set<string>(Object.values(BurnMode))
 
 export type MessageListener = (msg: Message) => void
 
@@ -103,12 +106,19 @@ export class MessageManager {
   private async handleIncomingMessage(data: AnyPayload, peerId: string): Promise<void> {
     if (isNoiseMessage(data)) return
 
-    if (!data.id || !data.timestamp || !data.burnMode) {
+    if (!data.id || typeof data.timestamp !== 'number' || !Number.isFinite(data.timestamp)) {
       warn('[Message] Ignoring malformed payload:', {
         peerId,
         hasId: !!data.id,
-        hasTimestamp: !!data.timestamp,
-        hasBurnMode: !!data.burnMode,
+        timestampType: typeof data.timestamp,
+      })
+      return
+    }
+    if (typeof data.burnMode !== 'string' || !VALID_BURN_MODES.has(data.burnMode)) {
+      warn('[Message] Ignoring payload with invalid burnMode:', {
+        peerId,
+        msgId: data.id,
+        burnMode: data.burnMode,
       })
       return
     }
@@ -149,13 +159,25 @@ export class MessageManager {
       }
     }
 
+    // encrypt-then-sign 契约：sig===2 的载荷必须携带加密内容。
+    // encrypted=false 时签名只能是对明文（sign-then-encrypt 旧方式），
+    // 接受它会重新打开字典攻击路径，因此一律视为验签失败。
+    if (verified === true && !data.encrypted) {
+      verified = false
+      warn('[Message] Rejected plaintext payload with valid signature (encrypt-then-sign violated):', {
+        roomId: this.roomId,
+        msgId: data.id,
+        peerId,
+      })
+    }
+
     if (verified === false) {
       const failedMsg: Message = {
         id: data.id,
         content: '',
         sender: peerId,
         timestamp: data.timestamp,
-        burnMode: data.burnMode,
+        burnMode: data.burnMode as BurnMode,
         burnAfter: data.burnAfter,
         burnAt: data.burnAt,
         readBy: [],
@@ -209,7 +231,7 @@ export class MessageManager {
         content: '',
         sender: peerId,
         timestamp: data.timestamp,
-        burnMode: data.burnMode,
+        burnMode: data.burnMode as BurnMode,
         burnAfter: data.burnAfter,
         burnAt: data.burnAt,
         readBy: [],
@@ -236,7 +258,7 @@ export class MessageManager {
       content,
       sender: peerId,
       timestamp: data.timestamp,
-      burnMode: data.burnMode,
+      burnMode: data.burnMode as BurnMode,
       burnAfter: data.burnAfter,
       burnAt: data.burnAt,
       readBy: [],
@@ -306,11 +328,12 @@ export class MessageManager {
         if (delivered > 0) {
           e2eeManager.recordMessageSent()
         } else {
-          offlineQueue.enqueue(msg.id, this.roomId, msg as unknown as Record<string, unknown>, [])
+          // 入队仅存元数据，绝不携带明文 content（离线队列持久化到 localStorage）
+          offlineQueue.enqueue(msg.id, this.roomId, {}, [])
           log(`[Message] Peers present but encrypt failed, queued ${msg.id}`)
         }
       } else {
-        offlineQueue.enqueue(msg.id, this.roomId, msg as unknown as Record<string, unknown>, [])
+        offlineQueue.enqueue(msg.id, this.roomId, {}, [])
         log(`[Message] No peers, queued message ${msg.id}`)
       }
 
