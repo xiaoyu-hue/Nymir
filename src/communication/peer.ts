@@ -236,16 +236,6 @@ export class PeerManager {
     }
   }
 
-  reconnect(roomId: string): void {
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer)
-    }
-    this.reconnectTimer = setTimeout(() => {
-      log('[Nymir] Reconnecting...')
-      this.join(roomId)
-    }, 2000)
-  }
-
   makeChannel<T extends DataPayload>(namespace: string): Channel<T> {
     if (!this.room) throw new Error('Not connected to a room')
     const action = this.room.makeAction<T>(namespace)
