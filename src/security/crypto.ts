@@ -11,16 +11,23 @@
  * - 每次加密使用随机 IV
  * 
  * 版本迁移：
- * - v1: 100K iterations (旧版)
- * - v2: 600K iterations (当前)
- * - 解密时自动检测版本，成功后用新版本重新加密
+ * - v1: 100K iterations，无版本字节（旧版）
+ * - v2: 600K iterations，随机盐（当前）
+ * - v3: 600K iterations，固定盐 + 会话级派生密钥缓存（当前）
+ *   每条消息不再重复 600k 次 PBKDF2：同一密码只会派生一次，之后仅用随机 IV。
+ *   代价：固定盐使不同安装的同一密码派生出同一密钥（防彩虹表的收益消失，
+ *   密码强度与 600k 迭代的保护不变）。旧 v1/v2 数据解密走 legacy 路径。
  */
 
 const PBKDF2_ITERATIONS_V1 = 100_000
 const PBKDF2_ITERATIONS_V2 = 600_000
 const SALT_LENGTH = 16
 const IV_LENGTH = 12
-const VERSION_BYTE = 0x02 // v2 = 600K
+const VERSION_BYTE_V2 = 0x02 // v2 = 600K，随机盐
+const VERSION_BYTE_V3 = 0x03 // v3 = 600K，固定盐 + 会话缓存
+
+/** v3 固定盐：公开常量，配合随机 IV 保证 GCM 安全 */
+const SESSION_SALT = new Uint8Array(SALT_LENGTH)
 
 import { uint8ToBase64, base64ToUint8 } from '../utils/base64'
 
@@ -51,15 +58,32 @@ async function deriveKey(password: string, salt: Uint8Array, iterations: number)
   )
 }
 
+// 会话级派生密钥缓存：同密码只派生一次（v3）
+let cachedKey: { password: string; key: CryptoKey } | null = null
+
+/** 获取（或派生并缓存）v3 会话密钥 */
+async function getOrDeriveSessionKey(password: string): Promise<CryptoKey> {
+  if (cachedKey && cachedKey.password === password) return cachedKey.key
+  const key = await deriveKey(password, SESSION_SALT, PBKDF2_ITERATIONS_V2)
+  cachedKey = { password, key }
+  return key
+}
+
+/**
+ * 清除会话级派生密钥缓存（锁定/重置时调用，避免派生密钥常驻内存）
+ */
+export function clearCryptoCache(): void {
+  cachedKey = null
+}
+
 /**
  * 加密字符串
- * 返回格式: base64(version + salt + iv + ciphertext)
+ * 返回格式: base64(version + iv + ciphertext)   (v3，盐固定)
  */
 export async function encrypt(plaintext: string, password: string): Promise<string> {
   const encoder = new TextEncoder()
-  const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH))
+  const key = await getOrDeriveSessionKey(password)
   const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH))
-  const key = await deriveKey(password, salt, PBKDF2_ITERATIONS_V2)
 
   const ciphertext = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv },
@@ -67,26 +91,41 @@ export async function encrypt(plaintext: string, password: string): Promise<stri
     encoder.encode(plaintext),
   )
 
-  // 合并 version + salt + iv + ciphertext
-  const combined = new Uint8Array(1 + salt.length + iv.length + ciphertext.byteLength)
-  combined[0] = VERSION_BYTE
-  combined.set(salt, 1)
-  combined.set(iv, 1 + salt.length)
-  combined.set(new Uint8Array(ciphertext), 1 + salt.length + iv.length)
+  // 合并 version + iv + ciphertext
+  const combined = new Uint8Array(1 + iv.length + ciphertext.byteLength)
+  combined[0] = VERSION_BYTE_V3
+  combined.set(iv, 1)
+  combined.set(new Uint8Array(ciphertext), 1 + iv.length)
 
   return uint8ToBase64(combined)
 }
 
 /**
  * 解密字符串
- * 输入格式: base64(version + salt + iv + ciphertext) 或 base64(salt + iv + ciphertext) (v1)
+ * 输入格式:
+ * - v3: base64(0x03 + iv + ciphertext)
+ * - v2: base64(0x02 + salt + iv + ciphertext)
+ * - v1: base64(salt + iv + ciphertext)
  */
 export async function decrypt(ciphertext: string, password: string): Promise<string> {
   const decoder = new TextDecoder()
   const combined = base64ToUint8(ciphertext)
 
-  // 检测版本：v1 无版本字节，v2 首字节为 0x02
-  const isV2 = combined.length > 1 && combined[0] === VERSION_BYTE
+  // v3：固定盐 + 会话密钥（缓存命中则跳过 600k 派生）
+  if (combined.length > 0 && combined[0] === VERSION_BYTE_V3) {
+    const key = await getOrDeriveSessionKey(password)
+    const iv = combined.slice(1, 1 + IV_LENGTH)
+    const data = combined.slice(1 + IV_LENGTH)
+    const plaintext = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      data,
+    )
+    return decoder.decode(plaintext)
+  }
+
+  // v1/v2 legacy：检测版本，用内嵌盐派生
+  const isV2 = combined.length > 1 && combined[0] === VERSION_BYTE_V2
   const offset = isV2 ? 1 : 0
   const iterations = isV2 ? PBKDF2_ITERATIONS_V2 : PBKDF2_ITERATIONS_V1
 
@@ -106,12 +145,13 @@ export async function decrypt(ciphertext: string, password: string): Promise<str
 }
 
 /**
- * 检查是否需要迁移到 v2（600K iterations）
+ * 检查是否需要迁移到 v3（固定盐 + 会话缓存）
+ * v1/v2 均为旧格式，返回 true
  */
 export function needsMigration(encryptedData: string): boolean {
   try {
     const combined = base64ToUint8(encryptedData)
-    return !(combined.length > 1 && combined[0] === VERSION_BYTE)
+    return !(combined.length > 1 && combined[0] === VERSION_BYTE_V3)
   } catch {
     return false
   }

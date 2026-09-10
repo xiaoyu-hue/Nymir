@@ -8,7 +8,7 @@
  * - 自动锁屏计时
  */
 
-import { encrypt, decrypt, verifyPassword, needsMigration } from './crypto'
+import { encrypt, decrypt, verifyPassword, needsMigration, clearCryptoCache } from './crypto'
 import { uint8ToBase64 } from '../utils/base64'
 import { clearAllData } from '../persistence/db'
 import { LOCK_TIMEOUT_MS } from '../constants'
@@ -78,6 +78,8 @@ class SecurityManager {
     clearUint8Array(this.password)
     this.password = null
     this._cachedPassword = null
+    // 派生密钥同样不应在锁定后常驻内存
+    clearCryptoCache()
   }
 
   /**
