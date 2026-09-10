@@ -29,20 +29,26 @@ Nymir is a **P2P anonymous messenger**. Messages travel **end-to-end encrypted o
 
 More accurate: **serverless + local-first + P2P messaging**.
 
+### A message's journey
+
+On send: plaintext → AES-256-GCM encrypt → Ed25519 sign → send over P2P channel.
+On receive: verify signature → decrypt → encrypt fields, then write to local IndexedDB.
+Encryption and signing happen entirely in your browser. Intermediate nodes (including public signaling) only see ciphertext and signatures, never plaintext.
+
 ---
 
 ## ✦ Security & Privacy
 
 ### Security Features
 
-- ✅ **End-to-End Encryption** — X25519 + AES-256-GCM
-- ✅ **Per-message keys** — HKDF
-- ✅ **Encrypt-then-sign** — Ed25519 over ciphertext
-- ✅ **Visible signature failures** — shown on the bubble
+- ✅ **Session message E2EE** — X25519 key agreement + AES-256-GCM (signaling/setup phase excluded, see Known Limitations)
+- ✅ **Per-message keys** — HKDF derived per message, different keys for different messages
+- ✅ **Encrypt-then-sign** — Ed25519 over ciphertext; verification failure means no display
+- ✅ **Visible signature failures** — shown on the bubble, never silent
 - ✅ **P2P Direct** — no app-server message store
-- ✅ **Local Storage** — IndexedDB
+- ✅ **Encrypted local storage** — IndexedDB field-level encryption (AES-256-GCM, password-derived key)
 - ✅ **Read-once / timed burn**
-- ✅ **Encrypted Backup**
+- ✅ **Encrypted Backup** — AES-256-GCM
 
 ### Security Considerations
 
@@ -60,6 +66,15 @@ More accurate: **serverless + local-first + P2P messaging**.
 - **Realtime depends on browser and NAT**
 - **Public-key exchange over public signaling, no out-of-band fingerprint check** — TOFU pins the first key; a MITM who injects a fake key **on first contact** cannot be detected by the protocol alone; no safety-number / QR verification
 - **Traffic obfuscation is weak** — noise about every 30 seconds with a fixed ~48-byte payload; regular interval and size can themselves be a fingerprint; **does not** resist serious traffic analysis
+
+### When Nymir is NOT a good fit
+
+To be honest, Nymir is not a universal privacy tool. Please think twice or choose more specialized software in these scenarios:
+
+- **High-risk communication** (journalists, activists, whistleblowers facing state-level adversaries) — weak traffic obfuscation, TOFU vulnerability, no offline inbox; not suitable against serious traffic analysis
+- **Long-term retention of important records** — read-and-burn actively destroys messages; if you forget the lock-screen password, locally encrypted data is **permanently unrecoverable**
+- **Multi-device / cross-device sync** — no multi-device sync currently; messages only live in the current browser
+- **Public or shared devices** — local data lives in the browser profile; anyone using the same browser can access it (unless a lock-screen password is set)
 
 ---
 
@@ -93,15 +108,36 @@ cd Nymir && npm install && npm run dev
 
 [AGPL-3.0](./LICENSE)
 
-### Core dependencies
+## ✦ Acknowledgments & Dependencies
+
+Nymir stands on the shoulders of these open-source projects. Without them, a zero-programming-background author could not have built this.
+
+### Runtime dependencies
 
 | Project | License | Notes |
 |---------|---------|-------|
-| [React](https://react.dev) | MIT | UI |
-| [Vite](https://vite.dev) | MIT | Build |
-| [Trystero](https://github.com/dmotz/trystero) | MIT | P2P |
-| [TypeScript](https://www.typescriptlang.org) | Apache-2.0 | Types |
+| [React](https://react.dev) | MIT | UI framework |
+| [React DOM](https://react.dev) | MIT | DOM rendering |
+| [@trystero-p2p/mqtt](https://www.npmjs.com/package/@trystero-p2p/mqtt) | MIT | P2P signaling (MQTT channel) |
+| [@trystero-p2p/torrent](https://www.npmjs.com/package/@trystero-p2p/torrent) | MIT | P2P signaling (WebTorrent channel) |
 | [idb](https://github.com/jakearchibald/idb) | ISC | IndexedDB wrapper |
+
+### Development & tooling
+
+| Project | License | Notes |
+|---------|---------|-------|
+| [TypeScript](https://www.typescriptlang.org) | Apache-2.0 | Type system |
+| [Vite](https://vite.dev) | MIT | Build tool |
+| [Vitest](https://vitest.dev) | MIT | Test framework (179 tests) |
+| [Oxlint](https://oxc.rs) | MIT | Linter (CI gate) |
+| [vite-plugin-pwa](https://vite-pwa-org.netlify.app) | MIT | PWA support (installable, offline-capable) |
+| [jsdom](https://github.com/jsdom/jsdom) | MIT | DOM test environment |
+| [@testing-library/react](https://testing-library.com) | MIT | React component testing |
+
+### Special thanks
+
+- **WebCrypto API** (W3C standard, built into browsers) — X25519 key agreement, AES-256-GCM encryption, HKDF key derivation, and Ed25519 signing all rely on it. Nymir does not implement any cryptographic primitives itself; it only calls the browser's audited built-in implementation.
+- **Everyone who contributes code, documentation, and time to the open-source community.**
 
 ## ✦ Contributing
 
