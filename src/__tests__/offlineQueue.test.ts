@@ -87,11 +87,8 @@ describe('offlineQueue', () => {
   })
 
   /**
-   * 已知缺口（已登记为 it.todo，不阻塞 CI）：
-   * 退出房间应清理该房间的离线队列，避免 payload 残留。
-   * 当前 room.leaveRoom() 只调 messageManager.destroy()，并不清理队列。
-   * 修复计划：新增 offlineQueue.clearRoom(roomId)，并在 room.leaveRoom() 中调用；
-   * 修复完成后本 todo 转为真实断言。
+   * 『退出房间应清理该房间离线队列』的契约已由 room.test.ts 覆盖
+   * （room.leaveRoom() 调用 offlineQueue.clearRoom(当前房间 id)）。
+   * clearRoom 自身的隔离/幂等行为见上方两个用例。
    */
-  it.todo('契约：退出房间后该房间队列不应残留敏感 payload（待实现 clearRoom）')
 })

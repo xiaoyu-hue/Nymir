@@ -1,5 +1,6 @@
 import { peerManager } from '../communication/peer'
 import { connectionMonitor } from '../communication/monitor'
+import { offlineQueue } from '../communication/offlineQueue'
 import { saveRoom, getAllRooms, deleteRoom as dbDeleteRoom, getMessagesByRoom, getRoom } from '../persistence/db'
 import { generateRoomId, isValidRoomId } from '../utils/id'
 import { messageManager } from './message'
@@ -233,6 +234,10 @@ export class RoomManager {
     for (const unsub of this.unsubs) unsub()
     this.unsubs = []
     messageManager.destroy()
+    // 退出房间时清理该房间的离线队列，避免 payload 残留
+    if (this.currentRoom) {
+      offlineQueue.clearRoom(this.currentRoom.id)
+    }
     peerManager.leave()
     connectionMonitor.stop()
     this.currentRoom = null
