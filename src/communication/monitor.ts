@@ -43,6 +43,7 @@ class ConnectionMonitor {
   private listeners: StatsListener[] = []
   private active = false
   private channel: MonitorChannel | null = null
+  private channelUnsub: (() => void) | null = null
 
   start(): void {
     if (this.active) return
@@ -63,6 +64,9 @@ class ConnectionMonitor {
       this.pingTimer = null
     }
     this.pendingPings.clear()
+    // 清理已注册的 onMessage，避免通道/房间重建后旧 handler 残留
+    this.channelUnsub?.()
+    this.channelUnsub = null
     this.channel = null
     log('[Monitor] Stopped')
   }
@@ -71,8 +75,10 @@ class ConnectionMonitor {
    * 设置 ping/pong 通信通道
    */
   setChannel(channel: MonitorChannel): void {
+    // 重复 setChannel（如传输策略切换）时先退订旧通道，防止重复注册泄漏
+    this.channelUnsub?.()
     this.channel = channel
-    channel.onMessage((data, { peerId }) => {
+    this.channelUnsub = channel.onMessage((data, { peerId }) => {
       if (data.type === 'ping') {
         // 回复 pong，附带原始时间戳
         this.channel?.send({ type: 'pong', ts: data.ts }, peerId)

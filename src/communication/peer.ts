@@ -14,7 +14,8 @@ export type RoomNameCallback = (name: string, peerId: string) => void
 
 export interface Channel<T> {
   send: (data: T, target?: string) => void
-  onMessage: (cb: MessageCallback<T>) => void
+  /** 注册消息回调，返回退订函数（重复绑定/重建时用于清理旧 handler） */
+  onMessage: (cb: MessageCallback<T>) => () => void
 }
 
 export type Strategy = 'torrent' | 'mqtt'
@@ -254,6 +255,11 @@ export class PeerManager {
       },
       onMessage: (cb: MessageCallback<T>) => {
         action.onMessage = (data: T, ctx: { peerId: string }) => cb(data, ctx)
+        // 返回退订：将回调置空（trystero onMessage 为可空属性），
+        // 防止同一 action / 重建场景下旧 handler 残留。
+        return () => {
+          action.onMessage = null
+        }
       },
     }
   }
