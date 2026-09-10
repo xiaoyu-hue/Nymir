@@ -8,6 +8,7 @@ type MsgCb = (data: Record<string, unknown>, ctx: { peerId: string }) => void | 
 
 const handlers: { messages?: MsgCb } = {}
 const peerListState: string[] = []
+const channelUnsubs: (() => void)[] = []
 
 vi.mock('../communication/peer', () => ({
   peerManager: {
@@ -19,6 +20,9 @@ vi.mock('../communication/peer', () => ({
       send: vi.fn(),
       onMessage: (cb: MsgCb) => {
         if (namespace === 'messages') handlers.messages = cb
+        const unsub = vi.fn()
+        channelUnsubs.push(unsub)
+        return unsub
       },
     }),
     onRoomRebuilt: () => () => {},
@@ -75,6 +79,7 @@ async function fireIncoming(data: Record<string, unknown>, peerId = 'peer-a') {
 
 beforeEach(() => {
   peerListState.length = 0
+  channelUnsubs.length = 0
   verifyMock.mockReset()
   decryptMock.mockReset()
   saveMock.mockReset()
@@ -219,6 +224,19 @@ describe('messageManager 接收路径', () => {
 })
 
 describe('messageManager 发送路径（离线队列不入明文）', () => {
+  it('重复 init（房间重建）会退订旧通道的 handler，防重复注册', () => {
+    // beforeEach 已 init 一次：注册 messages/read-receipts/recall 三个通道
+    const firstBatch = channelUnsubs.slice(0, 3)
+    expect(firstBatch).toHaveLength(3)
+
+    messageManager.init('room-rebuilt')
+
+    for (const unsub of firstBatch) {
+      expect(unsub).toHaveBeenCalledTimes(1)
+    }
+    expect(channelUnsubs).toHaveLength(6)
+  })
+
   it('无 peer 时入队离线队列，payload 不携带明文 content', async () => {
     await messageManager.send('secret-text', { mode: 'persist' })
 

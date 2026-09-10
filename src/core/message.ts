@@ -33,6 +33,7 @@ export class MessageManager {
   private roomId: string = ''
   private _cachedMessages: Message[] | null = null
   private unsubRoomRebuilt: (() => void) | null = null
+  private channelUnsubs: (() => void)[] = []
 
   init(roomId: string): void {
     this.roomId = roomId
@@ -48,55 +49,61 @@ export class MessageManager {
 
   /** 在当前 peer room 上绑定 messages/read/recall 通道 */
   private bindChannels(): void {
+    // 先退订旧通道的 onMessage：房间重建/重复 init 时旧 handler 不再残留
+    for (const unsub of this.channelUnsubs) unsub()
+    this.channelUnsubs = []
+
     this.channel = peerManager.makeChannel<AnyPayload>('messages')
     this.readChannel = peerManager.makeChannel<AnyPayload>('read-receipts')
     this.recallChannel = peerManager.makeChannel<AnyPayload>('recall')
 
-    this.channel.onMessage(async (data, { peerId }) => {
-      try {
-        await this.handleIncomingMessage(data, peerId)
-      } catch (err) {
-        logError('onMessage handler error', err, {
-          roomId: this.roomId,
-          peerId,
-          msgId: data?.id,
-        })
-      }
-    })
-
-    this.readChannel.onMessage(async (data) => {
-      try {
-        if (data.type === 'read') {
-          const msg = this.messageStore.get(data.msgId)
-          if (msg && !msg.readBy.includes(data.peerId)) {
-            msg.readBy.push(data.peerId)
-            await markMessageRead(data.msgId, data.peerId)
-            this.notifyListeners(msg)
-          }
+    this.channelUnsubs.push(
+      this.channel.onMessage(async (data, { peerId }) => {
+        try {
+          await this.handleIncomingMessage(data, peerId)
+        } catch (err) {
+          logError('onMessage handler error', err, {
+            roomId: this.roomId,
+            peerId,
+            msgId: data?.id,
+          })
         }
-      } catch (err) {
-        logError('readChannel handler error', err, {
-          roomId: this.roomId,
-          msgId: data?.msgId,
-        })
-      }
-    })
+      }),
 
-    this.recallChannel.onMessage(async (data) => {
-      try {
-        if (data.type === 'recall') {
-          const msg = this.messageStore.get(data.msgId)
-          if (msg && data.peerId === msg.sender) {
-            await this.burn(msg)
+      this.readChannel.onMessage(async (data) => {
+        try {
+          if (data.type === 'read') {
+            const msg = this.messageStore.get(data.msgId)
+            if (msg && !msg.readBy.includes(data.peerId)) {
+              msg.readBy.push(data.peerId)
+              await markMessageRead(data.msgId, data.peerId)
+              this.notifyListeners(msg)
+            }
           }
+        } catch (err) {
+          logError('readChannel handler error', err, {
+            roomId: this.roomId,
+            msgId: data?.msgId,
+          })
         }
-      } catch (err) {
-        logError('recallChannel handler error', err, {
-          roomId: this.roomId,
-          msgId: data?.msgId,
-        })
-      }
-    })
+      }),
+
+      this.recallChannel.onMessage(async (data) => {
+        try {
+          if (data.type === 'recall') {
+            const msg = this.messageStore.get(data.msgId)
+            if (msg && data.peerId === msg.sender) {
+              await this.burn(msg)
+            }
+          }
+        } catch (err) {
+          logError('recallChannel handler error', err, {
+            roomId: this.roomId,
+            msgId: data?.msgId,
+          })
+        }
+      }),
+    )
 
     startNoiseGeneration((noise) => {
       this.channel?.send(noise)
@@ -541,6 +548,8 @@ export class MessageManager {
     this.listeners = []
     this.unsubRoomRebuilt?.()
     this.unsubRoomRebuilt = null
+    for (const unsub of this.channelUnsubs) unsub()
+    this.channelUnsubs = []
     this.channel = null
     this.readChannel = null
     this.recallChannel = null
