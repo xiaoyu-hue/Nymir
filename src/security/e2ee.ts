@@ -128,7 +128,10 @@ async function getSharedKey(
 }
 
 /**
- * 为特定消息派生密钥（前向保密）
+ * 为特定消息派生独立密钥（每消息密钥派生）。
+ * 注意：本方案是会话级静态 ECDH + 每消息 HKDF，
+ * 私钥泄露可影响本场已截获密文，不提供强前向保密（forward secrecy）。
+ * 详见 e2eeManager.ts 文件头注释与 docs/THREAT_MODEL.md。
  */
 async function deriveMessageKey(
   sharedKey: CryptoKey,
