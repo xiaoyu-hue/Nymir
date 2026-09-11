@@ -206,9 +206,16 @@ class OfflineQueue {
    */
   clearRoom(roomId: string): void {
     const before = this.queue.length
+    const removed = this.queue.filter((q) => q.roomId === roomId)
     this.queue = this.queue.filter((q) => q.roomId !== roomId)
     if (this.queue.length !== before) {
       this.saveToStorage()
+      // 通知 UI：这些消息已被移除（状态标记为 expired，与 prune 行为一致），
+      // 避免 UI 仍显示已被清理的离线消息。
+      for (const item of removed) {
+        item.status = 'expired'
+        this.emit(item, 'expired')
+      }
       log(`[OfflineQueue] Cleared queue for room ${roomId}`)
     }
   }
