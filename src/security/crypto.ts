@@ -163,7 +163,8 @@ export async function decrypt(ciphertext: string, password: string): Promise<str
 export function needsMigration(encryptedData: string): boolean {
   try {
     const combined = base64ToUint8(encryptedData)
-    return !(combined.length > 1 && combined[0] === VERSION_BYTE_V3)
+    // 与 decrypt() 中的 v3 检测保持一致：长度 > 0 即可读取版本字节
+    return !(combined.length > 0 && combined[0] === VERSION_BYTE_V3)
   } catch {
     return false
   }
