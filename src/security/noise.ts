@@ -1,32 +1,29 @@
 /**
  * Nymir 流量混淆模块
- * 
- * 通过添加噪声数据来混淆流量分析
- * 
+ *
+ * 通过添加噪声数据来提高流量分析的成本。
+ *
+ * ⚠️ 能力边界（诚实声明，勿高估）：
+ * - 当前噪声是基础版，存在可识别特征：固定间隔、burnMode 恒为 read_once、无 sender、无 signature。
+ * - 有经验的流量分析者仍可能通过周期性和字段特征区分噪声与真实消息。
+ * - 本模块的目标是「提高分析成本」，而非「完全无法区分」。
+ * - 更强的混淆（随机间隔、假 sender/签名、随机 burnMode）需要更大的设计改动，暂未实现。
+ *
  * 原理：
  * - 在真实消息中混入随机噪声消息
- * - 噪声消息格式与真实消息相同（无可识别标记）
- * - 接收方无法区分噪声与真实消息
- * - 使流量分析更困难
+ * - 接收方通过 isNoiseMessage 识别并丢弃噪声
+ * - 使流量分析更困难（但非不可能）
  */
 
 import { log } from '../utils/logger'
 import { uint8ToBase64 } from '../utils/base64'
+import { secureRandomInt } from '../utils/random'
 import { NOISE_INTERVAL_MS, FAKE_ID_LENGTH } from '../constants'
 
 const NOISE_ENABLED = true
 
 let noiseTimer: ReturnType<typeof setInterval> | null = null
 let noiseCount = 0
-
-/**
- * 生成安全随机整数 [0, max)
- */
-function secureRandomInt(max: number): number {
-  const array = new Uint32Array(1)
-  crypto.getRandomValues(array)
-  return array[0] % max
-}
 
 /**
  * 生成随机 ID（模拟真实消息 ID 格式）
@@ -86,6 +83,7 @@ export function startNoiseGeneration(
   if (!NOISE_ENABLED) return
   if (noiseTimer) return
 
+  noiseCount = 0 // 每次启动时重置计数，避免 stop/start 后统计累加
   noiseTimer = setInterval(() => {
     const noise = generateNoiseMessage()
     sendFn(noise)
