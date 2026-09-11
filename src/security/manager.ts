@@ -70,6 +70,9 @@ class SecurityManager {
   private setPassword(password: string): void {
     clearUint8Array(this.password)
     this.password = stringToUint8Array(password)
+    // 防御性清理：设置新密码时清空派生密钥缓存，
+    // 避免旧密码的派生密钥在内存中残留。
+    clearCryptoCache()
   }
 
   private clearPassword(): void {
