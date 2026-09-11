@@ -144,6 +144,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **test: backup tests sync with new behavior**
   > db mock adds getRoom/getMessage; "import into library with existing data" test changed from "same-id overwrite" to "same-id skip, protects local new data", expects actual import count 0.
 
+### 🛠️ Fixes
+
+#### Round 5 Fifth Code Review (i18n/utils/App/ChatView/UI components)
+
+- **fix(ui): 4 async operations add error handling, remove scheduled dead code**
+  > App.tsx handleCreateRoom/handleJoinRoom, ChatView.tsx handleSend, MessageBubble.tsx handleRecall, LockScreen.tsx handleReset all add try/catch to prevent unhandled Promise rejections. ChatView.tsx removes scheduled mode dead code in BurnConfig that is not supported by UI.
+
+### 📋 Review Notes
+
+#### Round 5 Fifth Code Review
+
+- **Scope**: i18n (3 files), utils (5 files), App.tsx main component, ChatView.tsx chat view, UI components (13 files)
+- **Result**: No serious security vulnerabilities or functional bugs found. UI components are overall secure (no dangerouslySetInnerHTML/innerHTML/eval, no XSS risk).
+- **Issues found**: 8 low-priority issues (4 async operations without error handling, 1 dead code, 1 imprecise regex, 2 minor issues), fixed 4 error handling and 1 dead code.
+
 ---
 
 ## Earlier Changes

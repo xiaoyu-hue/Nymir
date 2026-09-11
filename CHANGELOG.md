@@ -144,6 +144,21 @@
 - **test: backup 测试同步新行为**
   > db mock 新增 getRoom/getMessage；"导入到已有数据的库"测试从"同 id 覆盖"改为"同 id 跳过，保护本地新数据"，期望返回实际导入数量 0。
 
+### 🛠️ 功能修复
+
+#### 第五轮代码审查（i18n/utils/App/ChatView/UI组件）
+
+- **fix(ui): 4处异步操作添加错误处理，移除 scheduled 死代码**
+  > App.tsx handleCreateRoom/handleJoinRoom、ChatView.tsx handleSend、MessageBubble.tsx handleRecall、LockScreen.tsx handleReset 均添加 try/catch，防止未捕获 Promise rejection。ChatView.tsx 移除 BurnConfig 中 UI 不支持的 scheduled 模式死代码。
+
+### 📋 审查记录
+
+#### 第五轮代码审查
+
+- **审查范围**：i18n 国际化（3文件）、utils 工具（5文件）、App.tsx 主组件、ChatView.tsx 聊天视图、UI 组件（13个）
+- **审查结果**：未发现严重安全漏洞或功能 bug。UI 组件整体安全（无 dangerouslySetInnerHTML/innerHTML/eval，无 XSS 风险）。
+- **发现问题**：8个低优先级问题（4处异步操作无错误处理、1处死代码、1个正则不精确、2个小问题），已修复4处错误处理和1处死代码。
+
 ---
 
 ## 早期变更
