@@ -17,7 +17,7 @@ const ROOM_NAMES_KEY = 'nymir_room_names'
 const ADJECTIVES = [
   '安静的', '快乐的', '神秘的', '勇敢的', '聪明的',
   '温柔的', '活泼的', '优雅的', '善良的', '坚强的',
-  '智慧的', '温柔的', '迅捷的', '深邃的', '闪耀的',
+  '智慧的', '从容的', '迅捷的', '深邃的', '闪耀的',
   '宁静的', '澎湃的', '无畏的', '灵动的', '温暖的',
   'calm', 'happy', 'brave', 'wise', 'gentle',
   'lively', 'elegant', 'kind', 'strong', 'clever',
