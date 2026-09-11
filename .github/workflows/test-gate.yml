@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: typecheck · lint · test
+    name: typecheck · lint · test · build
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -33,3 +33,6 @@ jobs:
 
       - name: Test with coverage
         run: npm run test:coverage
+
+      - name: Build
+        run: npm run build
