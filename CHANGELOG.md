@@ -108,6 +108,42 @@
 - **fix(ui): RoomPanel 房间名 input 增加 maxLength={50}**
   > 与房间码 maxLength={9} 保持一致的输入限制，防止用户输入超长房间名。
 
+### 🛡️ 安全修复
+
+#### 第四轮安全审计修复（sign/pseudonym/noise/backup/burn 五模块）
+
+- **fix(security): noise 模块注释诚实降级声明能力边界**
+  > 原注释声称"噪声消息格式与真实消息相同（无可识别标记）"，但实际噪声存在固定间隔、burnMode 恒为 read_once、无 sender、无 signature 等可识别特征。修改注释，诚实声明"当前噪声是基础版，目标是提高分析成本，而非完全无法区分"，符合项目"文档不得超出实现"的原则。
+
+### 🛠️ 功能修复
+
+#### 第四轮安全审计修复
+
+- **fix(security): pseudonym ADJECTIVES 数组移除重复元素**
+  > '温柔的' 出现两次，注释声称 40 个形容词实际只有 39 个唯一值。替换第二个 '温柔的' 为 '从容的'，确保 40 个唯一形容词。
+
+- **fix(security): noise startNoiseGeneration 时重置 noiseCount**
+  > stop 后再 start 时 noiseCount 继续累加，导致日志统计不准确。每次启动时重置为 0。
+
+- **fix(security): noise 改用 utils/random 统一 secureRandomInt，消除重复实现**
+  > noise.ts 自己实现了一遍 secureRandomInt（取模运算，有模偏差），与 utils/random.ts 重复。改为导入统一实现，消除重复代码。
+
+- **fix(persistence): backup importBackup 导入时跳过已存在条目，避免覆盖本地新数据**
+  > 原逻辑直接 saveRoom/saveMessage，同 ID 条目会被旧备份覆盖，导致本地新产生的消息丢失。改为导入前检查 getRoom/getMessage，已存在则跳过，返回实际导入数量。
+
+- **fix(persistence): backup downloadBackup 延迟释放 blob URL**
+  > URL.revokeObjectURL 在 a.click() 后立即执行，但 click 是异步触发下载，立即 revoke 可能导致下载未开始就失效。改为 setTimeout 延迟 1 秒释放。
+
+- **feat(persistence): db 新增 getMessage(id) 函数**
+  > 供备份导入时检查消息是否已存在，避免覆盖本地新数据。
+
+### 📝 测试
+
+#### 第四轮安全审计修复
+
+- **test: backup 测试同步新行为**
+  > db mock 新增 getRoom/getMessage；"导入到已有数据的库"测试从"同 id 覆盖"改为"同 id 跳过，保护本地新数据"，期望返回实际导入数量 0。
+
 ---
 
 ## 早期变更

@@ -108,6 +108,42 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **fix(ui): RoomPanel room name input adds maxLength={50}**
   > Consistent input limit with room code maxLength={9}, prevents users from entering excessively long room names.
 
+### 🛡️ Security
+
+#### Round 4 Fourth Security Audit Fixes (sign/pseudonym/noise/backup/burn modules)
+
+- **fix(security): noise module comment honestly downgrades capability boundary**
+  > Original comment claimed "noise message format identical to real messages (no identifiable markers)", but actual noise has identifiable features: fixed interval, burnMode always read_once, no sender, no signature. Updated comment to honestly state "current noise is basic version, goal is to increase analysis cost, not make completely indistinguishable", consistent with project principle of "documentation must not exceed implementation".
+
+### 🛠️ Fixes
+
+#### Round 4 Fourth Security Audit Fixes
+
+- **fix(security): pseudonym ADJECTIVES array removes duplicate element**
+  > '温柔的' appeared twice, comment claimed 40 adjectives but only 39 unique values. Replaced second '温柔的' with '从容的', ensuring 40 unique adjectives.
+
+- **fix(security): noise resets noiseCount on startNoiseGeneration**
+  > noiseCount continued accumulating after stop/start, causing inaccurate log statistics. Reset to 0 on each start.
+
+- **fix(security): noise uses unified secureRandomInt from utils/random, eliminates duplicate implementation**
+  > noise.ts implemented its own secureRandomInt (modulo operation with modulo bias), duplicating utils/random.ts. Changed to import unified implementation, eliminates duplicate code.
+
+- **fix(persistence): backup importBackup skips existing entries on import, avoids overwriting local new data**
+  > Original logic directly called saveRoom/saveMessage, same-ID entries would be overwritten by old backup, causing local newly generated messages to be lost. Changed to check getRoom/getMessage before import, skip if exists, return actual import count.
+
+- **fix(persistence): backup downloadBackup delays blob URL revocation**
+  > URL.revokeObjectURL executed immediately after a.click(), but click triggers download asynchronously, immediate revocation may cause download to fail before starting. Changed to setTimeout delay 1 second revocation.
+
+- **feat(persistence): db adds getMessage(id) function**
+  > Used by backup import to check if message already exists, avoids overwriting local new data.
+
+### 📝 Tests
+
+#### Round 4 Fourth Security Audit Fixes
+
+- **test: backup tests sync with new behavior**
+  > db mock adds getRoom/getMessage; "import into library with existing data" test changed from "same-id overwrite" to "same-id skip, protects local new data", expects actual import count 0.
+
 ---
 
 ## Earlier Changes
