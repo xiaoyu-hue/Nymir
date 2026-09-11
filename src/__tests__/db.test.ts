@@ -62,7 +62,7 @@ const baseMessage = {
   timestamp: 1,
   burnMode: 'persist',
   destroyed: false,
-}
+} as const
 
 beforeEach(() => {
   stores.rooms.clear()
