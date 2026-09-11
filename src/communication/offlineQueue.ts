@@ -184,7 +184,12 @@ class OfflineQueue {
       const raw = localStorage.getItem(QUEUE_STORAGE_KEY)
       if (raw) {
         this.queue = JSON.parse(raw)
+        const before = this.queue.length
         this.prune()
+        // prune 会移除过期消息，持久化裁剪结果，防止过期消息残留 localStorage
+        if (this.queue.length !== before) {
+          this.saveToStorage()
+        }
       }
     } catch (e) {
       log('[OfflineQueue] Failed to load from storage:', e)
