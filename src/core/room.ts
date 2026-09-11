@@ -260,6 +260,12 @@ export class RoomManager {
     await dbDeleteRoom(id)
   }
 
+  /**
+   * @deprecated 废弃死代码：此方法从未被调用，且清理逻辑不完整
+   * （仅 leaveRoom + clearLocalStorage，未清理 IndexedDB，未调用 securityManager.reset()）。
+   * 完整重置请使用 securityManager.reset()（已清理 IndexedDB + localStorage 覆写 + 密码清零）。
+   * 保留此方法仅作历史参考，请勿在新代码中调用。
+   */
   async secureReset(): Promise<void> {
     this.leaveRoom()
     clearLocalStorage('nymir')
