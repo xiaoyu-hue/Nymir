@@ -7,7 +7,7 @@
  * - 备份文件包含加密标记
  */
 
-import { getAllRooms, getMessagesByRoom, saveRoom, saveMessage } from './db'
+import { getAllRooms, getMessagesByRoom, saveRoom, saveMessage, getRoom, getMessage } from './db'
 import { encrypt, decrypt, verifyPassword } from '../security/crypto'
 import type { BackupData } from './types'
 
@@ -65,7 +65,8 @@ export function downloadBackup(json: string, filename?: string): void {
   a.href = url
   a.download = name
   a.click()
-  URL.revokeObjectURL(url)
+  // 延迟释放：a.click() 是异步触发下载，立即 revoke 可能导致下载未开始就失效
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 /**
@@ -138,15 +139,23 @@ export async function importBackup(
     throw new Error('Invalid backup: missing messages array')
   }
 
-  // 导入数据
+  // 导入数据：跳过已存在的条目，避免覆盖本地新产生的数据
+  let importedRooms = 0
+  let importedMessages = 0
   for (const room of data.rooms) {
     if (!room.id || !room.name) continue
+    const existing = await getRoom(room.id)
+    if (existing) continue // 本地已有该房间，跳过，不覆盖
     await saveRoom(room)
+    importedRooms++
   }
   for (const msg of data.messages) {
     if (!msg.id || !msg.content) continue
+    const existing = await getMessage(msg.id)
+    if (existing) continue // 本地已有该消息，跳过，不覆盖
     await saveMessage(msg)
+    importedMessages++
   }
 
-  return { rooms: data.rooms.length, messages: data.messages.length }
+  return { rooms: importedRooms, messages: importedMessages }
 }

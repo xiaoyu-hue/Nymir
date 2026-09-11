@@ -139,6 +139,15 @@ export async function getMessagesByRoom(roomId: string): Promise<StoredMessage[]
   return Promise.all(messages.map(decryptMessage))
 }
 
+/**
+ * 根据 ID 获取单条消息（用于备份导入时检查是否已存在，避免覆盖本地新数据）
+ */
+export async function getMessage(id: string): Promise<StoredMessage | undefined> {
+  const db = await getDB()
+  const msg = await db.get('messages', id)
+  return msg ? decryptMessage(msg) : undefined
+}
+
 export async function destroyMessage(id: string): Promise<void> {
   const db = await getDB()
   // 幂等：如果 id 不存在，不抛出异常
