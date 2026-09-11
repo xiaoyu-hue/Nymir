@@ -51,6 +51,7 @@ import {
   getMessagesByRoom,
   saveRoom,
   getRoom,
+  getMessage,
   markMessageRead,
   clearAllData,
 } from '../persistence/db'
@@ -193,5 +194,64 @@ describe('persistence/db 加密失败红线（禁止静默明文降级）', () =
     ).rejects.toThrow()
 
     expect(stores.rooms.has('r-fail')).toBe(false)
+  })
+
+  it('锁定状态下 getRoom 抛错（decryptField 锁定时拒绝暴露数据）', async () => {
+    // 先存一条加密数据
+    await saveRoom({ id: 'r-locked', name: 'secret-room', createdAt: 1 })
+    expect(stores.rooms.has('r-locked')).toBe(true)
+
+    // 锁定后读取应抛错，而非返回明文或原值
+    securityMock.securityManager.isLocked = true
+    await expect(getRoom('r-locked')).rejects.toThrow('Security: locked')
+  })
+
+  it('锁定状态下 getMessagesByRoom 抛错（decryptField 锁定时拒绝暴露数据）', async () => {
+    await saveMessage({
+      ...baseMessage,
+      id: 'm-locked-read',
+      content: 'secret content',
+      sender: 'peer1',
+      readBy: [],
+    })
+
+    securityMock.securityManager.isLocked = true
+    await expect(getMessagesByRoom('r1')).rejects.toThrow('Security: locked')
+  })
+})
+
+describe('persistence/db getMessage（单条查询）', () => {
+  it('getMessage：存在时返回解密后的消息', async () => {
+    await saveMessage({
+      ...baseMessage,
+      id: 'm-get',
+      content: 'hello world',
+      sender: 'peer1',
+      readBy: [],
+    })
+
+    const msg = await getMessage('m-get')
+    expect(msg).toBeDefined()
+    expect(msg?.id).toBe('m-get')
+    expect(msg?.content).toBe('hello world')
+    expect(msg?.sender).toBe('peer1')
+  })
+
+  it('getMessage：不存在时返回 undefined', async () => {
+    const msg = await getMessage('nonexistent')
+    expect(msg).toBeUndefined()
+  })
+
+  it('getMessage：锁定状态下抛错', async () => {
+    await saveMessage({
+      ...baseMessage,
+      id: 'm-get-locked',
+      content: 'secret',
+      sender: 'peer1',
+      readBy: [],
+    })
+
+    securityMock.securityManager.isLocked = true
+    await expect(getMessage('m-get-locked')).rejects.toThrow('Security: locked')
   })
 })
