@@ -7,9 +7,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## Two Rounds of Security Audit Fixes - 2026-09-11
+## Three Rounds of Security Audit Fixes - 2026-09-11
 
-> Includes code defect fixes discovered during the first and second rounds of security audit. Each fix is committed separately, with full test suite run before commit (179 test cases all passing).
+> Includes code defect fixes discovered during the first, second, and third rounds of security audit. Each fix is committed separately, with full test suite run before commit (179 test cases all passing).
 
 ### 🛡️ Security
 
@@ -95,6 +95,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **docs(security): e2ee deriveMessageKey comment removes "forward secrecy" wording**
   > Changed to per-message key derivation, and explains this approach is session-level static ECDH + per-message HKDF, does not provide strong forward secrecy. Consistent with e2eeManager.ts file header comment and THREAT_MODEL.md.
+
+#### Round 3 Third Security Audit Fixes
+
+- **chore: remove fileTransfer.ts dead code (315 lines)**
+  > Zero references across the project, init() never called, no file transfer UI in ChatView, entire module never initialized. Even calling sendFile would throw due to null channel. Removed to reduce maintenance burden and confusion.
+
+### 🛠️ Fixes
+
+#### Round 3 Third Security Audit Fixes
+
+- **fix(ui): RoomPanel room name input adds maxLength={50}**
+  > Consistent input limit with room code maxLength={9}, prevents users from entering excessively long room names.
 
 ---
 
