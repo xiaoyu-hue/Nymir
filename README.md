@@ -140,7 +140,7 @@ Nymir 站在这些开源项目的肩膀上。没有它们，一个零编程基�
 |------|------|------|
 | [TypeScript](https://www.typescriptlang.org) | Apache-2.0 | 类型系统 |
 | [Vite](https://vite.dev) | MIT | 构建工具 |
-| [Vitest](https://vitest.dev) | MIT | 测试框架（179 个测试） |
+| [Vitest](https://vitest.dev) | MIT | 测试框架（233 个测试） |
 | [Oxlint](https://oxc.rs) | MIT | 代码检查（CI 门禁） |
 | [vite-plugin-pwa](https://vite-pwa-org.netlify.app) | MIT | PWA 支持（可安装、离线可用） |
 | [jsdom](https://github.com/jsdom/jsdom) | MIT | DOM 测试环境 |
