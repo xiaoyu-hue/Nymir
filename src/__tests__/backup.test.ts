@@ -17,6 +17,8 @@ vi.mock('../persistence/db', () => ({
   getAllRooms: async () => [...memRooms],
   getMessagesByRoom: async (roomId: string) =>
     memMessages.filter((m) => m.roomId === roomId),
+  getRoom: async (id: string) => memRooms.find((r) => r.id === id),
+  getMessage: async (id: string) => memMessages.find((m) => m.id === id),
   saveRoom: async (room: StoredRoom) => {
     const i = memRooms.findIndex((r) => r.id === room.id)
     if (i >= 0) memRooms[i] = room
@@ -134,10 +136,12 @@ describe('backup.importBackup 往返', () => {
     expect(m1.roomId).toBe('r1')
   })
 
-  it('导入到已有数据的库不冲突（同 id 覆盖）', async () => {
+  it('导入到已有数据的库不覆盖（同 id 跳过，保护本地新数据）', async () => {
     const json = await exportBackup(PASSWORD)
     const result = await importBackup(json, PASSWORD)
-    expect(result).toEqual({ rooms: 2, messages: 3 })
+    // 所有条目都已存在，全部跳过，实际导入数量为 0
+    expect(result).toEqual({ rooms: 0, messages: 0 })
+    // 本地数据保持不变，不被旧备份覆盖
     expect(memRooms).toHaveLength(2)
     expect(memMessages).toHaveLength(3)
   })
