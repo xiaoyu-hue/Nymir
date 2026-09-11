@@ -58,14 +58,26 @@ async function deriveKey(password: string, salt: Uint8Array, iterations: number)
   )
 }
 
+/** 计算密码的 SHA-256 哈希（仅用于缓存比对，不用于密钥派生） */
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const digest = await crypto.subtle.digest('SHA-256', encoder.encode(password))
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
 // 会话级派生密钥缓存：同密码只派生一次（v3）
-let cachedKey: { password: string; key: CryptoKey } | null = null
+// 不存储原始密码字符串：仅存 SHA-256 哈希用于比对，减少明文密码在 JS 堆的驻留。
+// 密钥派生仍使用原始密码，派生完成后原始密码由调用方负责清理。
+let cachedKey: { passwordHash: string; key: CryptoKey } | null = null
 
 /** 获取（或派生并缓存）v3 会话密钥 */
 async function getOrDeriveSessionKey(password: string): Promise<CryptoKey> {
-  if (cachedKey && cachedKey.password === password) return cachedKey.key
+  const passwordHash = await hashPassword(password)
+  if (cachedKey && cachedKey.passwordHash === passwordHash) return cachedKey.key
   const key = await deriveKey(password, SESSION_SALT, PBKDF2_ITERATIONS_V2)
-  cachedKey = { password, key }
+  cachedKey = { passwordHash, key }
   return key
 }
 
