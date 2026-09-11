@@ -90,6 +90,7 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
                   onChange={(e) => setName(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder={t.room.namePlaceholder}
+                  maxLength={50}
                   className="room-panel-input room-panel-input-name"
                 />
                 <button
