@@ -92,3 +92,64 @@ describe('roomManager.leaveRoom 清理离线队列', () => {
     expect(clearRoomMock).not.toHaveBeenCalled()
   })
 })
+
+describe('roomManager 初始状态', () => {
+  it('未在房间时 inRoom 为 false', () => {
+    expect(roomManager.inRoom).toBe(false)
+  })
+
+  it('未在房间时 room 为 null', () => {
+    expect(roomManager.room).toBeNull()
+  })
+
+  it('初始状态 status 为 disconnected', () => {
+    expect(roomManager.status).toBe('disconnected')
+  })
+})
+
+describe('roomManager 事件订阅/退订', () => {
+  it('onEvent 订阅后返回退订函数', () => {
+    const cb = vi.fn()
+    const unsub = roomManager.onEvent(cb)
+    expect(typeof unsub).toBe('function')
+    unsub()
+  })
+})
+
+describe('roomManager getSavedRooms', () => {
+  it('getSavedRooms 返回房间列表（peers 为空数组）', async () => {
+    const { getAllRooms } = await import('../persistence/db')
+    vi.mocked(getAllRooms).mockResolvedValueOnce([
+      { id: 'room1', name: 'Room 1', createdAt: 12345 },
+      { id: 'room2', name: 'Room 2', createdAt: 67890 },
+    ])
+
+    const rooms = await roomManager.getSavedRooms()
+    expect(rooms).toHaveLength(2)
+    expect(rooms[0]).toEqual({ id: 'room1', name: 'Room 1', createdAt: 12345, peers: [] })
+    expect(rooms[1]).toEqual({ id: 'room2', name: 'Room 2', createdAt: 67890, peers: [] })
+  })
+
+  it('getSavedRooms 无房间时返回空数组', async () => {
+    const { getAllRooms } = await import('../persistence/db')
+    vi.mocked(getAllRooms).mockResolvedValueOnce([])
+    const rooms = await roomManager.getSavedRooms()
+    expect(rooms).toEqual([])
+  })
+})
+
+describe('roomManager deleteSavedRoom', () => {
+  it('deleteSavedRoom 调用 db.deleteRoom', async () => {
+    const { deleteRoom } = await import('../persistence/db')
+    await roomManager.deleteSavedRoom('room1')
+    expect(deleteRoom).toHaveBeenCalledWith('room1')
+  })
+})
+
+describe('roomManager secureReset（废弃方法）', () => {
+  it('secureReset 调用 leaveRoom 和 clearLocalStorage', async () => {
+    const { clearLocalStorage } = await import('../security/secureDelete')
+    await roomManager.secureReset()
+    expect(clearLocalStorage).toHaveBeenCalledWith('nymir')
+  })
+})
