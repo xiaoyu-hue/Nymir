@@ -39,7 +39,6 @@ class ConnectionMonitor {
   private bytesReceived = 0
   private peersConnected = 0
   private pingTimer: ReturnType<typeof setInterval> | null = null
-  private pendingPings = new Map<string, number>() // pingId -> sentAt
   private listeners: StatsListener[] = []
   private active = false
   private channel: MonitorChannel | null = null
@@ -63,7 +62,6 @@ class ConnectionMonitor {
       clearInterval(this.pingTimer)
       this.pingTimer = null
     }
-    this.pendingPings.clear()
     // 清理已注册的 onMessage，避免通道/房间重建后旧 handler 残留
     this.channelUnsub?.()
     this.channelUnsub = null
