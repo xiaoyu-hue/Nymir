@@ -37,12 +37,12 @@ const {
 })
 
 vi.mock('@trystero-p2p/torrent', () => ({
-  joinRoom: (...args: any[]) => joinTorrent(...args),
+  joinRoom: joinTorrent,
   selfId: torrentSelfId,
 }))
 
 vi.mock('@trystero-p2p/mqtt', () => ({
-  joinRoom: (...args: any[]) => joinMqtt(...args),
+  joinRoom: joinMqtt,
   selfId: mqttSelfId,
 }))
 

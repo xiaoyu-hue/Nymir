@@ -76,13 +76,13 @@ export default defineConfig({
         'src/utils/logger.ts',
       ],
       // 覆盖率阈值：低于此值则测试失败（CI 门禁）
-      // 当前基线设定为保守值（2026-09-11），后续可逐步提高
-      // 已知低覆盖区域：peer.ts(0%)、UI组件(大部分0%)、room.ts(35%)、message.ts(45%)
+      // 2026-09-11 第二轮调整：补 peer.ts(0%→67%) 和 room.ts(35%→47%) 测试后提升
+      // 已知低覆盖区域：UI组件(大部分0%)、message.ts(45%)、e2eeManager.ts(47%)
       thresholds: {
-        lines: 45,
-        functions: 35,
-        branches: 28,
-        statements: 44,
+        lines: 50,
+        functions: 45,
+        branches: 30,
+        statements: 50,
       },
     },
   },
