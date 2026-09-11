@@ -90,10 +90,9 @@ class OfflineQueue {
     const item = this.queue.find((q) => q.id === msgId)
     if (item) {
       item.status = 'delivered'
-      this.saveToStorage()
       this.emit(item, 'delivered')
 
-      // 移除已投递的消息
+      // 移除已投递的消息后持久化（无需在移除前保存一次，避免冗余写入）
       this.queue = this.queue.filter((q) => q.id !== msgId)
       this.saveToStorage()
     }
