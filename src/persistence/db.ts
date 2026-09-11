@@ -44,7 +44,9 @@ async function encryptField(value: string): Promise<string> {
 }
 
 async function decryptField(value: string): Promise<string> {
-  if (securityManager.isLocked) return value
+  // 锁定时抛错而非返回原值：原值可能是历史明文数据，
+  // 锁定状态下返回明文违反「锁定时不应暴露数据」原则。
+  if (securityManager.isLocked) throw new Error('Security: locked, cannot decrypt field')
   try {
     // 新数据：带 enc: 前缀，可靠识别
     if (value.startsWith(ENCRYPTED_PREFIX)) {
