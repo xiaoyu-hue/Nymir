@@ -6,6 +6,7 @@ import { useI18n } from '../../i18n'
 import { messageManager } from '../../core/message'
 import { getRoomDisplayName } from '../../security/pseudonym'
 import { EXIT_ANIMATION_MS } from '../../constants'
+import { error } from '../../utils/logger'
 import BurnTimer from './BurnTimer'
 
 type Props = {
@@ -45,9 +46,13 @@ function MessageBubbleInner({ message, roomId, onDestroy }: Props) {
   const readCount = message.readBy.length
 
   const handleRecall = async () => {
-    await messageManager.recall(message.id)
-    setShowRecall(false)
-    onDestroy?.()
+    try {
+      await messageManager.recall(message.id)
+      setShowRecall(false)
+      onDestroy?.()
+    } catch (err) {
+      error('[MessageBubble] Recall failed:', err)
+    }
   }
 
   return (

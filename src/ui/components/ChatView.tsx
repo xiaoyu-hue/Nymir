@@ -8,6 +8,7 @@ import { useRoom } from '../hooks/useRoom'
 import { useI18n } from '../../i18n'
 import { useKeyboard } from '../../App'
 import { COPY_FEEDBACK_MS } from '../../constants'
+import { error } from '../../utils/logger'
 import GlassCard from './GlassCard'
 import MessageBubble from './MessageBubble'
 
@@ -53,17 +54,20 @@ export default function ChatView() {
     const config: BurnConfig = {
       mode: burnMode,
       ...(burnMode === 'timed' && { burnAfter }),
-      ...(burnMode === 'scheduled' && { burnAt: Date.now() + burnAfter * 1000 }),
     }
 
-    await messageManager.send(input.trim(), config)
-    setInput('')
-    requestAnimationFrame(() => {
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto'
-      }
-      textareaRef.current?.focus()
-    })
+    try {
+      await messageManager.send(input.trim(), config)
+      setInput('')
+      requestAnimationFrame(() => {
+        if (textareaRef.current) {
+          textareaRef.current.style.height = 'auto'
+        }
+        textareaRef.current?.focus()
+      })
+    } catch (err) {
+      error('[ChatView] Send message failed:', err)
+    }
   }, [input, burnMode, burnAfter])
 
   const handleKeyDown = useCallback(

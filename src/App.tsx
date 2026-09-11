@@ -81,11 +81,19 @@ function AppContent() {
   }, [])
 
   const handleCreateRoom = async (name: string) => {
-    await roomManager.createRoom(name)
+    try {
+      await roomManager.createRoom(name)
+    } catch (err) {
+      error('[App] Create room failed:', err)
+    }
   }
 
   const handleJoinRoom = async (roomId: string) => {
-    await roomManager.joinRoom(roomId)
+    try {
+      await roomManager.joinRoom(roomId)
+    } catch (err) {
+      error('[App] Join room failed:', err)
+    }
   }
 
   const handleUnlocked = () => {
