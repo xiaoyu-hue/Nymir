@@ -30,6 +30,8 @@ export default function ChatView() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const readMsgIdsRef = useRef<Set<string>>(new Set())
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  // 防止 changed 状态重复自动弹窗
+  const autoOpenedRef = useRef(false)
 
   useEffect(() => {
     const unsub = messageManager.onMessage(() => {
@@ -57,6 +59,7 @@ export default function ChatView() {
 
   // 对端出现后，查询带外验证状态；公钥交换是异步的，稍后再补查一次
   useEffect(() => {
+    autoOpenedRef.current = false
     if (!peerId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setVerifyState('unverified')
@@ -65,7 +68,13 @@ export default function ChatView() {
     let cancelled = false
     const check = async () => {
       const st = await e2eeManager.getVerificationState(peerId)
-      if (!cancelled) setVerifyState(st)
+      if (cancelled) return
+      setVerifyState(st)
+      // 上次核对过但当前指纹变了：自动弹窗警告，不静默放过
+      if (st === 'changed' && !autoOpenedRef.current) {
+        autoOpenedRef.current = true
+        setSafetyOpen(true)
+      }
     }
     check()
     const t = setTimeout(check, 1500)
@@ -194,6 +203,38 @@ export default function ChatView() {
           </div>
         </div>
       </GlassCard>
+
+      {/* 未核对安全码时的黄色提示条（可点击直接打开核对弹窗） */}
+      {peerId && verifyState === 'unverified' && (
+        <div
+          className="safety-banner"
+          role="button"
+          tabIndex={0}
+          onClick={() => setSafetyOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              setSafetyOpen(true)
+            }
+          }}
+          style={{
+            margin: '8px 12px 0',
+            padding: '10px 14px',
+            borderRadius: '10px',
+            background: 'rgba(234, 179, 8, 0.15)',
+            border: '1px solid rgba(234, 179, 8, 0.35)',
+            color: '#fbbf24',
+            fontSize: '0.85rem',
+            display: 'flex',
+            gap: '8px',
+            alignItems: 'center',
+            cursor: 'pointer',
+          }}
+        >
+          <span aria-hidden="true">⚠️</span>
+          <span>{t.safety.unverifiedBanner}</span>
+        </div>
+      )}
 
       {/* Room code - hidden when keyboard open */}
       {room?.id && !keyboardOpen && (

@@ -104,6 +104,7 @@ const zh = {
     unconfirmed: '尚未核对',
     matchBtn: '我已核对一致',
     close: '关闭',
+    unverifiedBanner: '尚未核对安全码，对话可能被中间人监听',
   },
   error: {
     title: '应用发生错误',

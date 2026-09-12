@@ -106,6 +106,7 @@ const en: Translations = {
     unconfirmed: 'Not verified yet',
     matchBtn: 'I have verified',
     close: 'Close',
+    unverifiedBanner: 'Security code not verified — this conversation may be intercepted',
   },
   error: {
     title: 'Application Error',
