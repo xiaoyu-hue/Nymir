@@ -95,6 +95,16 @@ const zh = {
     cancel: '取消',
     confirm: '确认',
   },
+  safety: {
+    title: '安全码核对',
+    hint: '用电话、微信或当面，和对方核对下面这串数字是否完全一致。只要有任何一位不同，说明对话正被中间人监听。',
+    waiting: '等待对方完成密钥交换...',
+    verified: '✓ 已与对方核对一致',
+    changed: '⚠ 安全码与上次不同，对话可能被中间人监听',
+    unconfirmed: '尚未核对',
+    matchBtn: '我已核对一致',
+    close: '关闭',
+  },
   error: {
     title: '应用发生错误',
     reload: '重新加载',

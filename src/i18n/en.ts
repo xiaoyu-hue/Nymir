@@ -97,6 +97,16 @@ const en: Translations = {
     cancel: 'Cancel',
     confirm: 'Confirm',
   },
+  safety: {
+    title: 'Verify Security Code',
+    hint: 'Call, video chat, or meet in person, and compare the number below with your peer. If any digit differs, your conversation may be under a man-in-the-middle attack.',
+    waiting: 'Waiting for peer key exchange...',
+    verified: '✓ Verified with your peer',
+    changed: '⚠ Security code changed since last verification. You may be under attack.',
+    unconfirmed: 'Not verified yet',
+    matchBtn: 'I have verified',
+    close: 'Close',
+  },
   error: {
     title: 'Application Error',
     reload: 'Reload',

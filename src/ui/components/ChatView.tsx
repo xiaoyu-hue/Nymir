@@ -9,8 +9,10 @@ import { useI18n } from '../../i18n'
 import { useKeyboard } from '../../App'
 import { COPY_FEEDBACK_MS } from '../../constants'
 import { error } from '../../utils/logger'
+import { e2eeManager, type VerificationState } from '../../security/e2eeManager'
 import GlassCard from './GlassCard'
 import MessageBubble from './MessageBubble'
+import SafetyCheckDialog from './SafetyCheckDialog'
 
 export default function ChatView() {
   const { status, room } = useRoom()
@@ -23,6 +25,8 @@ export default function ChatView() {
   const [burnMode, setBurnMode] = useState<BurnMode>(BurnMode.PERSIST)
   const [burnAfter, setBurnAfter] = useState(60)
   const [copied, setCopied] = useState(false)
+  const [safetyOpen, setSafetyOpen] = useState(false)
+  const [verifyState, setVerifyState] = useState<VerificationState>('unverified')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const readMsgIdsRef = useRef<Set<string>>(new Set())
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -47,6 +51,29 @@ export default function ChatView() {
       }
     }
   }, [messages])
+
+  // 双人场景：对端即 peers[0]
+  const peerId = room?.peers?.[0] ?? null
+
+  // 对端出现后，查询带外验证状态；公钥交换是异步的，稍后再补查一次
+  useEffect(() => {
+    if (!peerId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setVerifyState('unverified')
+      return
+    }
+    let cancelled = false
+    const check = async () => {
+      const st = await e2eeManager.getVerificationState(peerId)
+      if (!cancelled) setVerifyState(st)
+    }
+    check()
+    const t = setTimeout(check, 1500)
+    return () => {
+      cancelled = true
+      clearTimeout(t)
+    }
+  }, [peerId])
 
   const handleSend = useCallback(async () => {
     if (!input.trim()) return
@@ -130,6 +157,34 @@ export default function ChatView() {
                     : t.room.disconnected}
               </span>
             </div>
+            {peerId && (
+              <button
+                onClick={() => setSafetyOpen(true)}
+                className="chat-safety-btn"
+                aria-label={t.safety.title}
+                title={
+                  verifyState === 'verified'
+                    ? t.safety.verified
+                    : verifyState === 'changed'
+                      ? t.safety.changed
+                      : t.safety.unconfirmed
+                }
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '1.1rem',
+                  cursor: 'pointer',
+                  filter:
+                    verifyState === 'verified'
+                      ? 'grayscale(0)'
+                      : verifyState === 'changed'
+                        ? 'hue-rotate(-40deg) saturate(3)'
+                        : 'grayscale(1) opacity(0.6)',
+                }}
+              >
+                {verifyState === 'changed' ? '⚠️' : '🛡️'}
+              </button>
+            )}
             <button
               onClick={handleLeave}
               className="chat-leave-btn"
@@ -246,6 +301,19 @@ export default function ChatView() {
           </span>
         </div>
       )}
+
+      {/* 安全码核对弹窗 */}
+      <SafetyCheckDialog
+        open={safetyOpen}
+        peerId={peerId}
+        onClose={() => {
+          setSafetyOpen(false)
+          // 关闭后刷新一次按钮状态（用户可能刚点了"我已核对一致"）
+          if (peerId) {
+            e2eeManager.getVerificationState(peerId).then(setVerifyState)
+          }
+        }}
+      />
     </div>
   )
 }
