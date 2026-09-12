@@ -12,12 +12,38 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { generateKeyPair, exportPublicKey } from '../security/e2ee'
 import { generateSignKeyPair, exportSignPublicKey } from '../security/sign'
 
+// mock db：身份持久化在这些单元测试里不需要真写 IndexedDB
+vi.mock('../persistence/db', () => ({
+  saveIdentity: vi.fn(async () => {}),
+  loadIdentity: vi.fn(async () => undefined),
+  clearAllData: vi.fn(async () => {}),
+}))
+
 const memoryStore: Record<string, string> = {}
 
 async function freshManager() {
   vi.resetModules()
-  const { e2eeManager } = await import('../security/e2eeManager')
+  // 每次重新 stub localStorage
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => memoryStore[key] ?? null,
+    setItem: (key: string, value: string) => { memoryStore[key] = value },
+    removeItem: (key: string) => { delete memoryStore[key] },
+    clear: () => { Object.keys(memoryStore).forEach((k) => delete memoryStore[k]) },
+    key: () => null,
+    length: 0,
+  })
+  vi.stubGlobal('sessionStorage', {
+    getItem: () => null,
+    setItem: () => {},
+    removeItem: () => {},
+    clear: () => {},
+  })
+  const mod = await import('../security')
+  const { e2eeManager, securityManager } = mod
   await e2eeManager.init()
+  // 模拟首次使用：设密码解锁，再生成/加载身份
+  await securityManager.setupPassword('test-password-123')
+  await e2eeManager.loadIdentity()
   return e2eeManager
 }
 

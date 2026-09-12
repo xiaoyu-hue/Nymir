@@ -19,6 +19,13 @@ import {
   clearAllSharedKeys,
 } from '../security/e2ee'
 
+// mock db：身份持久化在这些单元测试里不需要真写 IndexedDB
+vi.mock('../persistence/db', () => ({
+  saveIdentity: vi.fn(async () => {}),
+  loadIdentity: vi.fn(async () => undefined),
+  clearAllData: vi.fn(async () => {}),
+}))
+
 /** 计算 X25519 ECDH 共享密钥原始字节 */
 async function sharedSecret(
   privateKey: CryptoKey,
@@ -107,6 +114,12 @@ describe('方案 C 契约（自动轮换已关闭）', () => {
       key: () => null,
       length: 0,
     })
+    vi.stubGlobal('sessionStorage', {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {},
+      clear: () => {},
+    })
   })
 
   afterEach(() => {
@@ -118,8 +131,10 @@ describe('方案 C 契约（自动轮换已关闭）', () => {
    * 契约 A：累计大量发送记录后，公钥不得被自动轮换。
    */
   it('契约 A：recordMessageSent 100 次后本端公钥保持不变', async () => {
-    const { e2eeManager } = await import('../security/e2eeManager')
+    const { e2eeManager, securityManager } = await import('../security')
+    await securityManager.setupPassword('test-password-123')
     await e2eeManager.init()
+    await e2eeManager.loadIdentity()
 
     const pubBefore = e2eeManager.getOwnPublicKey()
     expect(pubBefore).toBeTruthy()
@@ -173,8 +188,10 @@ describe('方案 C 契约（自动轮换已关闭）', () => {
    * 双方仍基于同一对密钥得到一致的 ECDH 共享秘密（端到端不中断）。
    */
   it('契约 C：100 次 recordMessageSent 后双方共享密钥仍一致', async () => {
-    const { e2eeManager } = await import('../security/e2eeManager')
+    const { e2eeManager, securityManager } = await import('../security')
+    await securityManager.setupPassword('test-password-123')
     await e2eeManager.init()
+    await e2eeManager.loadIdentity()
 
     const peerA = await generateKeyPair()
     const peerB = await generateKeyPair()

@@ -20,14 +20,48 @@ export interface SignKeyPair {
 
 /**
  * 生成签名密钥对
+ * extractable: true — 允许导出，与 X25519 密钥对一起加密持久化
  */
 export async function generateSignKeyPair(): Promise<SignKeyPair> {
   const keyPair = await crypto.subtle.generateKey(
     { name: SIGN_ALGO },
-    false, // 私钥不可导出，防止 XSS 时私钥被窃取；仅公钥需要导出
+    true,
     ['sign', 'verify'],
   )
   return keyPair as SignKeyPair
+}
+
+/** 持久化签名密钥对：导出公私钥 */
+export interface PersistedSignKeyPair {
+  privateKey: string // pkcs8
+  publicKey: string // raw
+}
+
+export async function exportSignKeyPair(keyPair: SignKeyPair): Promise<PersistedSignKeyPair> {
+  const privRaw = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey)
+  const pubRaw = await crypto.subtle.exportKey('raw', keyPair.publicKey)
+  return {
+    privateKey: uint8ToBase64(new Uint8Array(privRaw)),
+    publicKey: uint8ToBase64(new Uint8Array(pubRaw)),
+  }
+}
+
+export async function importSignKeyPair(persisted: PersistedSignKeyPair): Promise<SignKeyPair> {
+  const privateKey = await crypto.subtle.importKey(
+    'pkcs8',
+    base64ToUint8(persisted.privateKey),
+    { name: SIGN_ALGO },
+    true,
+    ['sign', 'verify'],
+  )
+  const publicKey = await crypto.subtle.importKey(
+    'raw',
+    base64ToUint8(persisted.publicKey),
+    { name: SIGN_ALGO },
+    true,
+    ['verify'],
+  )
+  return { publicKey, privateKey }
 }
 
 /**

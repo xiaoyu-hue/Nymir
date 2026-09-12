@@ -39,6 +39,7 @@ function AppContent() {
       .then(async () => {
         setLocked(securityManager.isLocked)
         setSecurityReady(true)
+        // 只初始化状态，不生成密钥对。密钥对在解锁后由 loadIdentity() 加载。
         await e2eeManager.init()
       })
       .catch((err) => {
@@ -48,6 +49,12 @@ function AppContent() {
 
     const unsub = securityManager.onLockChange((isLocked) => {
       setLocked(isLocked)
+      if (!isLocked) {
+        // 解锁后加载持久化身份密钥
+        e2eeManager.loadIdentity().catch((err) =>
+          error('[App] loadIdentity failed:', err),
+        )
+      }
     })
 
     const resetTimer = () => securityManager.resetLockTimer()

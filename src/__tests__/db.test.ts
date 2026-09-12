@@ -21,6 +21,7 @@ vi.mock('../security', () => securityMock)
 const stores = vi.hoisted(() => ({
   rooms: new Map<string, unknown>(),
   messages: new Map<string, unknown>(),
+  identity: new Map<string, unknown>(),
 }) as Record<string, Map<string, unknown>>)
 
 vi.mock('idb', () => ({

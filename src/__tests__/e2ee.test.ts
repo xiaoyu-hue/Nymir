@@ -23,12 +23,13 @@ import {
 } from '../security/e2ee'
 
 describe('e2ee — 密钥生成与导出', () => {
-  it('generateKeyPair: 公钥可导出，私钥不可导出', async () => {
+  it('generateKeyPair: 公私钥均可导出（用于加密持久化）', async () => {
     const keyPair = await generateKeyPair()
     expect(keyPair.publicKey).toBeDefined()
     expect(keyPair.privateKey).toBeDefined()
     expect(keyPair.publicKey.extractable).toBe(true)
-    expect(keyPair.privateKey.extractable).toBe(false)
+    // v4 起私钥可导出，用于加密后持久化到 IndexedDB
+    expect(keyPair.privateKey.extractable).toBe(true)
   })
 
   it('exportPublicKey 返回稳定的 base64 字符串', async () => {

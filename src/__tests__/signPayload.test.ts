@@ -12,6 +12,14 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+
+// mock db：身份持久化在单元测试里不需要真写 IndexedDB
+vi.mock('../persistence/db', () => ({
+  saveIdentity: vi.fn(async () => {}),
+  loadIdentity: vi.fn(async () => undefined),
+  clearAllData: vi.fn(async () => {}),
+}))
+
 import {
   generateSignKeyPair,
   exportSignPublicKey,
@@ -95,6 +103,12 @@ describe('e2eeManager 层：明文签名可被 verify 确认（缺陷在协议�
       key: () => null,
       length: 0,
     })
+    vi.stubGlobal('sessionStorage', {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {},
+      clear: () => {},
+    })
     vi.resetModules()
   })
 
@@ -103,8 +117,11 @@ describe('e2eeManager 层：明文签名可被 verify 确认（缺陷在协议�
   })
 
   it('若对明文 sign，对端 verify(明文) 成功——这是字典攻击的前提', async () => {
-    const { e2eeManager } = await import('../security/e2eeManager')
+    const mod = await import('../security')
+    const { e2eeManager, securityManager } = mod
+    await securityManager.setupPassword('test-password-123')
     await e2eeManager.init()
+    await e2eeManager.loadIdentity()
 
     const peerId = 'attacker-peer'
     const signPub = e2eeManager.getOwnSignPublicKey()

@@ -51,15 +51,55 @@ function evictOldestSharedKey(): void {
 }
 
 /**
- * 生成临时密钥对
+ * 生成 X25519 密钥对
+ *
+ * extractable: true — 允许导出原始私钥材料，用于加密持久化到 IndexedDB。
+ * 权衡：之前 false 时私钥永远不离开 WebCrypto；改为 true 后，解锁状态下
+ * XSS 可通过已加载的 CryptoKey 对象做 ECDH（与之前等价），但额外获得了
+ * "导出加密后的私钥副本"能力。换来的是跨刷新持久身份（TOFU 长期有效）。
  */
 export async function generateKeyPair(): Promise<KeyPair> {
   const keyPair = await crypto.subtle.generateKey(
     { name: KEY_TYPE },
-    false, // 私钥不可导出，防止 XSS 时私钥被窃取；仅公钥需要导出
+    true, // 可导出，用于加密持久化
     ['deriveKey', 'deriveBits'],
   )
   return keyPair as KeyPair
+}
+
+/** 持久化身份：同时导出公私钥（base64） */
+export interface PersistedKeyPair {
+  privateKey: string // pkcs8
+  publicKey: string // raw
+}
+
+/** 导出密钥对供加密持久化 */
+export async function exportKeyPair(keyPair: KeyPair): Promise<PersistedKeyPair> {
+  const privRaw = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey)
+  const pubRaw = await crypto.subtle.exportKey('raw', keyPair.publicKey)
+  return {
+    privateKey: uint8ToBase64(new Uint8Array(privRaw)),
+    publicKey: uint8ToBase64(new Uint8Array(pubRaw)),
+  }
+}
+
+/** 从持久化数据导入密钥对 */
+export async function importKeyPair(persisted: PersistedKeyPair): Promise<KeyPair> {
+  const privateKey = await crypto.subtle.importKey(
+    'pkcs8',
+    base64ToUint8(persisted.privateKey),
+    { name: KEY_TYPE },
+    true,
+    ['deriveKey', 'deriveBits'],
+  )
+  const publicKey = await crypto.subtle.importKey(
+    'raw',
+    base64ToUint8(persisted.publicKey),
+    { name: KEY_TYPE },
+    true,
+    [],
+  )
+  return { publicKey, privateKey }
 }
 
 /**

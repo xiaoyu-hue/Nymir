@@ -12,6 +12,8 @@ import {
   generateKeyPair,
   exportPublicKey,
   importPeerPublicKey,
+  exportKeyPair,
+  importKeyPair,
   encryptMessage,
   decryptMessage,
   encryptFile,
@@ -25,6 +27,8 @@ import {
   generateSignKeyPair,
   exportSignPublicKey,
   importPeerSignPublicKey,
+  exportSignKeyPair,
+  importSignKeyPair,
   signMessage,
   verifySignature,
   type SignKeyPair,
@@ -38,6 +42,8 @@ import {
 
 import { log, error } from '../utils/logger'
 import { uint8ToBase64 } from '../utils/base64'
+import { saveIdentity, loadIdentity } from '../persistence/db'
+import { securityManager } from './manager'
 
 export type E2EEStatus = 'initializing' | 'ready' | 'error'
 
@@ -136,20 +142,47 @@ class E2EEManager {
   }
 
   /**
-   * 初始化 E2EE
+   * 初始化 E2EE 管理器（不生成密钥对）
+   * 密钥对在 loadIdentity() 中加载或创建，需在解锁后调用。
    */
   async init(): Promise<void> {
+    this.status = 'initializing'
+  }
+
+  /**
+   * 加载或创建持久化身份密钥。
+   * - 解锁后调用：从 IndexedDB 读加密密钥，用锁屏密码解密
+   * - 首次使用：生成新密钥对，加密后存 IndexedDB
+   *
+   * 持久化后，刷新页面身份不变，TOFU/verified 状态长期有效。
+   */
+  async loadIdentity(): Promise<void> {
     try {
-      this.keyPair = await generateKeyPair()
+      const stored = await loadIdentity()
+      if (stored) {
+        // 解密持久化的密钥材料
+        const encKeypairJson = await securityManager.decrypt(stored.encKeypair)
+        const signKeypairJson = await securityManager.decrypt(stored.signKeypair)
+        this.keyPair = await importKeyPair(JSON.parse(encKeypairJson))
+        this.signKeyPair = await importSignKeyPair(JSON.parse(signKeypairJson))
+      } else {
+        // 首次使用：生成新身份
+        this.keyPair = await generateKeyPair()
+        this.signKeyPair = await generateSignKeyPair()
+        // 加密持久化
+        const encKeypair = JSON.stringify(await exportKeyPair(this.keyPair))
+        const signKeypair = JSON.stringify(await exportSignKeyPair(this.signKeyPair))
+        await saveIdentity(
+          await securityManager.encrypt(encKeypair),
+          await securityManager.encrypt(signKeypair),
+        )
+      }
       this._publicKeyString = await exportPublicKey(this.keyPair)
-
-      this.signKeyPair = await generateSignKeyPair()
       this._signPublicKeyString = await exportSignPublicKey(this.signKeyPair)
-
       this.status = 'ready'
-      log('[E2EE] Initialized with encryption + signing')
+      log('[E2EE] Identity loaded (persistent)')
     } catch (e) {
-      error('[E2EE] Init failed:', e)
+      error('[E2EE] loadIdentity failed:', e)
       this.status = 'error'
     }
   }
@@ -170,6 +203,9 @@ class E2EEManager {
 
   /**
    * 处理接收到的对端公钥（带 TOFU 验证）
+   *
+   * TOFU key 是对方公钥的 SHA-256 哈希（不是临时 peerId）。
+   * 这样刷新页面后 peerId 变了，但只要对方公钥没变，TOFU 仍然有效。
    */
   async handlePeerPublicKey(
     peerId: string,
@@ -183,12 +219,7 @@ class E2EEManager {
       const hashBuffer = await crypto.subtle.digest('SHA-256', keyBytes)
       const keyHash = uint8ToBase64(new Uint8Array(hashBuffer))
 
-      const storedHash = this.tofuStore.get(peerId)
-      if (storedHash && storedHash !== keyHash) {
-        error('[E2EE] TOFU: Peer key changed for', peerId)
-        return 'untrusted'
-      }
-
+      // 导入对端公钥（按 peerId 存，用于本次会话的消息路由）
       const peerKey = await importPeerPublicKey(publicKeyStr)
       this.peerPublicKeys.set(peerId, peerKey)
       this.peerPublicKeyStrings.set(peerId, publicKeyStr)
@@ -199,9 +230,10 @@ class E2EEManager {
         this.peerSignPublicKeyStrings.set(peerId, signPublicKeyStr)
       }
 
-      // 首次连接：存储公钥哈希
-      if (!storedHash) {
-        this.tofuStore.set(peerId, keyHash)
+      // TOFU：按公钥哈希钉住（跨会话持久）
+      const pinned = this.tofuStore.has(keyHash)
+      if (!pinned) {
+        this.tofuStore.set(keyHash, 'pinned')
         saveTOFU(this.tofuStore)
         log('[E2EE] TOFU: Pinned new peer key')
         return 'new'

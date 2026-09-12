@@ -4,7 +4,7 @@ import type { StoredMessage, StoredRoom } from './types'
 import { warn } from '../utils/logger'
 
 const DB_NAME = 'nymir-treehole'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 interface NymirDB {
   rooms: {
@@ -16,6 +16,10 @@ interface NymirDB {
     value: StoredMessage
     indexes: { roomId: string }
   }
+  identity: {
+    key: string
+    value: { id: string; encKeypair: string; signKeypair: string }
+  }
 }
 
 let dbInstance: IDBPDatabase<NymirDB> | null = null
@@ -23,10 +27,15 @@ let dbInstance: IDBPDatabase<NymirDB> | null = null
 async function getDB(): Promise<IDBPDatabase<NymirDB>> {
   if (dbInstance) return dbInstance
   dbInstance = await openDB<NymirDB>(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      db.createObjectStore('rooms', { keyPath: 'id' })
-      const msgStore = db.createObjectStore('messages', { keyPath: 'id' })
-      msgStore.createIndex('roomId', 'roomId')
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
+        db.createObjectStore('rooms', { keyPath: 'id' })
+        const msgStore = db.createObjectStore('messages', { keyPath: 'id' })
+        msgStore.createIndex('roomId', 'roomId')
+      }
+      if (oldVersion < 2) {
+        db.createObjectStore('identity', { keyPath: 'id' })
+      }
     },
   })
   return dbInstance
@@ -171,10 +180,28 @@ export async function markMessageRead(id: string, peerId: string): Promise<void>
  */
 export async function clearAllData(): Promise<void> {
   const db = await getDB()
-  const tx = db.transaction(['rooms', 'messages'], 'readwrite')
+  const tx = db.transaction(['rooms', 'messages', 'identity'], 'readwrite')
   await Promise.all([
     tx.objectStore('rooms').clear(),
     tx.objectStore('messages').clear(),
+    tx.objectStore('identity').clear(),
     tx.done,
   ])
+}
+
+// --- 身份密钥持久化（v4 起）---
+
+const IDENTITY_KEY = 'default'
+
+/** 保存加密后的身份密钥对（调用方负责用锁屏密码加密） */
+export async function saveIdentity(encKeypair: string, signKeypair: string): Promise<void> {
+  const db = await getDB()
+  await db.put('identity', { id: IDENTITY_KEY, encKeypair, signKeypair })
+}
+
+/** 读取加密后的身份密钥对；不存在返回 undefined */
+export async function loadIdentity(): Promise<{ encKeypair: string; signKeypair: string } | undefined> {
+  const db = await getDB()
+  const row = await db.get('identity', IDENTITY_KEY)
+  return row ? { encKeypair: row.encKeypair, signKeypair: row.signKeypair } : undefined
 }
