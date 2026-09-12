@@ -57,7 +57,7 @@ export type VerificationState = 'verified' | 'unverified' | 'changed'
 
 // 历史：曾在每 100 条消息时自动 rotateKeys，因无对端通知与 TOFU 衔接已关闭。
 const TOFU_STORAGE_KEY = 'nymir_tofu'
-// 用户手动核对过的安全码指纹，按 peerId 存当前会话内的钉住值。
+// 用户手动核对过的安全码指纹，按对方公钥 SHA-256 哈希存（跨会话持久）。
 const VERIFIED_STORAGE_KEY = 'nymir_verified'
 
 interface VerifiedRecord {
@@ -472,18 +472,13 @@ class E2EEManager {
    * 主动清除某 peer 的已验证记录。
    * 用于用户点"不再信任"，或指纹变化后需要重新核对的场景。
    */
-  unverifyPeer(peerId: string): void {
-    // peerId → 公钥字符串 → 哈希
-    const pubKeyStr = this.peerPublicKeyStrings.get(peerId)
-    if (!pubKeyStr) return
-    const encoder = new TextEncoder()
-    crypto.subtle.digest('SHA-256', encoder.encode(pubKeyStr)).then((hashBuffer) => {
-      const keyHash = uint8ToBase64(new Uint8Array(hashBuffer))
-      if (this.verifiedStore.delete(keyHash)) {
-        saveVerified(this.verifiedStore)
-        log('[E2EE] Peer verification cleared:', peerId)
-      }
-    })
+  async unverifyPeer(peerId: string): Promise<void> {
+    const keyHash = await this.getKeyHashForPeer(peerId)
+    if (!keyHash) return
+    if (this.verifiedStore.delete(keyHash)) {
+      saveVerified(this.verifiedStore)
+      log('[E2EE] Peer verification cleared:', peerId)
+    }
   }
 
   /** 根据 peerId 查对方公钥字符串的 SHA-256 哈希（verifiedStore 的 key） */
