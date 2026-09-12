@@ -162,4 +162,19 @@ describe('带外身份核对（verified store）', () => {
     // 应当写入 nymir_verified
     expect(memoryStore['nymir_verified']).toBeTruthy()
   })
+
+  it('clearAll() 清空对方公钥字符串，但保留 verified 记录', async () => {
+    const m = await freshManager()
+    const peer = await makePeerKeys()
+    await m.handlePeerPublicKey('peer-J', peer.encPub, peer.signPub)
+    await m.markPeerVerified('peer-J')
+    expect(m.getPeerIdentityKeys('peer-J')).not.toBeNull()
+
+    m.clearAll()
+
+    // 字符串 Map 被清
+    expect(m.getPeerIdentityKeys('peer-J')).toBeNull()
+    // verified 记录仍在（离开房间不应遗忘上次核对）
+    expect(memoryStore['nymir_verified']).toBeTruthy()
+  })
 })

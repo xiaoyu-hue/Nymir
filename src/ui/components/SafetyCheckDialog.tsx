@@ -4,6 +4,7 @@ import GlassCard from './GlassCard'
 import { useI18n } from '../../i18n'
 import { e2eeManager, type VerificationState } from '../../security/e2eeManager'
 import type { Fingerprint } from '../../security/fingerprint'
+import { error } from '../../utils/logger'
 
 type Props = {
   open: boolean
@@ -67,8 +68,14 @@ export default function SafetyCheckDialog({ open, peerId, onClose }: Props) {
   const handleConfirm = useCallback(async () => {
     if (!peerId || !fingerprint) return
     setBusy(true)
-    await e2eeManager.markPeerVerified(peerId)
-    setBusy(false)
+    try {
+      await e2eeManager.markPeerVerified(peerId)
+    } catch (e) {
+      // localStorage 写失败（隐私模式/配额满）等情况：不卡死按钮，让用户可关闭
+      error('[SafetyCheck] markPeerVerified failed:', e)
+    } finally {
+      setBusy(false)
+    }
     onClose()
   }, [peerId, fingerprint, onClose])
 

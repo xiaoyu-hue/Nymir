@@ -351,7 +351,12 @@ export default function ChatView() {
           setSafetyOpen(false)
           // 关闭后刷新一次按钮状态（用户可能刚点了"我已核对一致"）
           if (peerId) {
-            e2eeManager.getVerificationState(peerId).then(setVerifyState)
+            e2eeManager
+              .getVerificationState(peerId)
+              .then(setVerifyState)
+              .catch(() => {
+                /* 状态查询失败不打扰用户 */
+              })
           }
         }}
       />

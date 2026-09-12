@@ -314,6 +314,8 @@ class E2EEManager {
   clearAll(): void {
     this.peerPublicKeys.clear()
     this.peerSignPublicKeys.clear()
+    this.peerPublicKeyStrings.clear()
+    this.peerSignPublicKeyStrings.clear()
     clearAllSharedKeys()
   }
 

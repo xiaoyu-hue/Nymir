@@ -95,4 +95,17 @@ describe('SafetyCheckDialog 交互', () => {
     fireEvent.click(closeBtn)
     expect(e2eeManager.markPeerVerified).not.toHaveBeenCalled()
   })
+
+  it('markPeerVerified 失败时仍调用 onClose（不卡死按钮）', async () => {
+    vi.mocked(e2eeManager.computePeerFingerprint).mockResolvedValue(fakeFingerprint)
+    vi.mocked(e2eeManager.getVerificationState).mockResolvedValue('unverified')
+    vi.mocked(e2eeManager.markPeerVerified).mockRejectedValue(new Error('storage full'))
+    const onClose = vi.fn()
+    renderDialog({ open: true, onClose })
+
+    const confirmBtn = await screen.findByText('我已核对一致')
+    fireEvent.click(confirmBtn)
+    // 等 promise 微任务跑完
+    await vi.waitFor(() => expect(onClose).toHaveBeenCalled())
+  })
 })
