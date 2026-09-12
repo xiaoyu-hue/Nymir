@@ -42,7 +42,6 @@ export class PeerManager {
   private peerKeyCallbacks: PeerCallback[] = []
   private roomNameCallbacks: RoomNameCallback[] = []
   private currentStrategy: Strategy = 'mqtt'
-  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private strategyFallbackTimer: ReturnType<typeof setTimeout> | null = null
   private e2eeChannel: Channel<E2EEPayload> | null = null
   private roomMetaChannel: Channel<RoomMetaPayload> | null = null
@@ -226,10 +225,6 @@ export class PeerManager {
         clearTimeout(this.strategyFallbackTimer)
         this.strategyFallbackTimer = null
       }
-      if (this.reconnectTimer) {
-        clearTimeout(this.reconnectTimer)
-        this.reconnectTimer = null
-      }
       if (this.room) {
         this.room.leave()
         this.room = null
@@ -270,10 +265,6 @@ export class PeerManager {
   }
 
   leave(): void {
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer)
-      this.reconnectTimer = null
-    }
     if (this.strategyFallbackTimer) {
       clearTimeout(this.strategyFallbackTimer)
       this.strategyFallbackTimer = null
