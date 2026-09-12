@@ -32,6 +32,8 @@ function AppContent() {
   const [securityReady, setSecurityReady] = useState(false)
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   const [viewportHeight, setViewportHeight] = useState('100dvh')
+  const [identityLoading, setIdentityLoading] = useState(false)
+  const [identityError, setIdentityError] = useState(false)
 
   useEffect(() => {
     securityManager
@@ -47,13 +49,24 @@ function AppContent() {
         setSecurityReady(true)
       })
 
-    const unsub = securityManager.onLockChange((isLocked) => {
+    const unsub = securityManager.onLockChange(async (isLocked) => {
       setLocked(isLocked)
       if (!isLocked) {
-        // 解锁后加载持久化身份密钥
-        e2eeManager.loadIdentity().catch((err) =>
-          error('[App] loadIdentity failed:', err),
-        )
+        // 解锁后加载持久化身份密钥——等待完成再显示主界面，
+        // 避免用户在密钥未就绪时进房发消息
+        setIdentityError(false)
+        setIdentityLoading(true)
+        try {
+          await e2eeManager.loadIdentity()
+          if (e2eeManager.getOwnPublicKey() === null) {
+            setIdentityError(true)
+          }
+        } catch (err) {
+          error('[App] loadIdentity failed:', err)
+          setIdentityError(true)
+        } finally {
+          setIdentityLoading(false)
+        }
       }
     })
 
@@ -123,6 +136,29 @@ function AppContent() {
         <Starfield />
         <LockScreen onUnlocked={handleUnlocked} />
       </>
+    )
+  }
+
+  // 身份密钥加载中：解锁后等待密钥就绪，避免发消息时公钥为空
+  if (identityLoading) {
+    return (
+      <div role="status" aria-live="polite" className="overlay-enter app-loading">
+        <div className="app-loading-spinner" />
+        <span className="app-loading-text">Loading secure identity...</span>
+      </div>
+    )
+  }
+
+  // 身份加载失败：提示用户，不能继续使用
+  if (identityError) {
+    return (
+      <div className="overlay-enter app-loading" style={{ maxWidth: 420, margin: '0 auto', padding: 24, textAlign: 'center' }}>
+        <span style={{ fontSize: 18, marginBottom: 12 }}>⚠️ 安全身份加载失败</span>
+        <p style={{ color: '#888', fontSize: 14, lineHeight: 1.6 }}>
+          无法加载您的加密身份密钥。这通常是浏览器存储损坏导致的。
+          您可以重置数据重新开始，但当前聊天记录将被清除。
+        </p>
+      </div>
     )
   }
 
