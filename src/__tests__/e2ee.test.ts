@@ -5,8 +5,6 @@
  * - 消息内容机密性（双端往返）
  * - 每消息 HKDF 密钥派生（不同 messageId → 不同密文）
  * - 错误密钥 / 错误 peer 解密失败
- * - 私钥不可导出
- * - 文件加解密往返
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
@@ -17,8 +15,6 @@ import {
   decryptMessage,
   clearSharedKey,
   clearAllSharedKeys,
-  encryptFile,
-  decryptFile,
   type KeyPair,
 } from '../security/e2ee'
 
@@ -236,54 +232,3 @@ describe('e2ee — 共享密钥 LRU 缓存上限', () => {
   })
 })
 
-describe('e2ee — 文件加解密', () => {
-  beforeEach(() => {
-    clearAllSharedKeys()
-  })
-
-  it('小文件往返正确', async () => {
-    const alice = await generateKeyPair()
-    const bob = await generateKeyPair()
-    const bobPub = await importPeerPublicKey(await exportPublicKey(bob))
-    const alicePub = await importPeerPublicKey(await exportPublicKey(alice))
-
-    const original = new TextEncoder().encode('file content bytes').buffer
-    const encrypted = await encryptFile(original, 'bob', alice.privateKey, bobPub)
-    expect(encrypted).not.toBeNull()
-    expect(encrypted!.byteLength).toBeGreaterThan(original.byteLength)
-
-    const decrypted = await decryptFile(encrypted!, 'alice', bob.privateKey, alicePub)
-    expect(decrypted).not.toBeNull()
-    expect(new TextDecoder().decode(decrypted!)).toBe('file content bytes')
-  })
-
-  it('空文件往返正确', async () => {
-    const alice = await generateKeyPair()
-    const bob = await generateKeyPair()
-    const bobPub = await importPeerPublicKey(await exportPublicKey(bob))
-    const alicePub = await importPeerPublicKey(await exportPublicKey(alice))
-
-    const original = new ArrayBuffer(0)
-    const encrypted = await encryptFile(original, 'bob', alice.privateKey, bobPub)
-    expect(encrypted).not.toBeNull()
-
-    const decrypted = await decryptFile(encrypted!, 'alice', bob.privateKey, alicePub)
-    expect(decrypted).not.toBeNull()
-    expect(decrypted!.byteLength).toBe(0)
-  })
-
-  it('错误密钥解密文件返回 null', async () => {
-    const alice = await generateKeyPair()
-    const bob = await generateKeyPair()
-    const attacker = await generateKeyPair()
-    const bobPub = await importPeerPublicKey(await exportPublicKey(bob))
-    const alicePub = await importPeerPublicKey(await exportPublicKey(alice))
-
-    const original = new TextEncoder().encode('secret-file').buffer
-    const encrypted = await encryptFile(original, 'bob', alice.privateKey, bobPub)
-    expect(encrypted).not.toBeNull()
-
-    const result = await decryptFile(encrypted!, 'alice', attacker.privateKey, alicePub)
-    expect(result).toBeNull()
-  })
-})

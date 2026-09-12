@@ -16,8 +16,6 @@ import {
   importKeyPair,
   encryptMessage,
   decryptMessage,
-  encryptFile,
-  decryptFile,
   clearSharedKey,
   clearAllSharedKeys,
   type KeyPair,
@@ -349,26 +347,6 @@ class E2EEManager {
     this.peerPublicKeyStrings.clear()
     this.peerSignPublicKeyStrings.clear()
     clearAllSharedKeys()
-  }
-
-  /**
-   * 加密文件（使用 E2EE 共享密钥保护文件密钥）
-   */
-  async encryptFile(data: ArrayBuffer, peerId: string): Promise<ArrayBuffer | null> {
-    if (!this.keyPair) return null
-    const peerKey = this.peerPublicKeys.get(peerId)
-    if (!peerKey) return null
-    return encryptFile(data, peerId, this.keyPair.privateKey, peerKey)
-  }
-
-  /**
-   * 解密文件（使用 E2EE 共享密钥解密文件密钥）
-   */
-  async decryptFile(data: ArrayBuffer, peerId: string): Promise<ArrayBuffer | null> {
-    if (!this.keyPair) return null
-    const peerKey = this.peerPublicKeys.get(peerId)
-    if (!peerKey) return null
-    return decryptFile(data, peerId, this.keyPair.privateKey, peerKey)
   }
 
   /**
