@@ -70,13 +70,14 @@ export class MessageManager {
         }
       }),
 
-      this.readChannel.onMessage(async (data) => {
+      this.readChannel.onMessage(async (data, { peerId }) => {
         try {
           if (data.type === 'read') {
             const msg = this.messageStore.get(data.msgId)
-            if (msg && !msg.readBy.includes(data.peerId)) {
-              msg.readBy.push(data.peerId)
-              await markMessageRead(data.msgId, data.peerId)
+            // 用 trystero 提供的真实 peerId，不信任 payload 里自报的 peerId
+            if (msg && !msg.readBy.includes(peerId)) {
+              msg.readBy.push(peerId)
+              await markMessageRead(data.msgId, peerId)
               this.notifyListeners(msg)
             }
           }
@@ -88,11 +89,12 @@ export class MessageManager {
         }
       }),
 
-      this.recallChannel.onMessage(async (data) => {
+      this.recallChannel.onMessage(async (data, { peerId }) => {
         try {
           if (data.type === 'recall') {
             const msg = this.messageStore.get(data.msgId)
-            if (msg && data.peerId === msg.sender) {
+            // 用 trystero 提供的真实 peerId，不信任 payload 里自报的 peerId
+            if (msg && peerId === msg.sender) {
               await this.burn(msg)
             }
           }
@@ -407,7 +409,7 @@ export class MessageManager {
   async recall(msgId: string): Promise<boolean> {
     const msg = this.messageStore.get(msgId)
     if (!msg || msg.sender !== peerManager.id) return false
-    this.recallChannel?.send({ type: 'recall', msgId, peerId: peerManager.id })
+    this.recallChannel?.send({ type: 'recall', msgId })
     await this.burn(msg)
     return true
   }
@@ -427,7 +429,6 @@ export class MessageManager {
       this.readChannel?.send({
         type: 'read',
         msgId,
-        peerId: peerManager.id,
       })
 
       if (shouldDestroy(msg)) {
