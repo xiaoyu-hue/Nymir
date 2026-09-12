@@ -1,14 +1,18 @@
 /**
  * Nymir 端到端加密模块
- * 
- * 使用 X25519 密钥交换 + AES-256-GCM + HKDF 前向保密
- * 
+ *
+ * 使用 X25519 密钥交换 + AES-256-GCM + 每消息 HKDF 派生
+ *
  * 流程：
  * 1. 每个 peer 生成临时 X25519 密钥对
  * 2. 连接时交换公钥
  * 3. ECDH 计算共享密钥
  * 4. 使用 HKDF 为每条消息派生独立密钥
  * 5. 用消息密钥加密消息
+ *
+ * 安全边界：本方案是会话级静态 ECDH + 每消息 HKDF，
+ * 私钥泄露可影响本场已截获密文，不提供强前向保密（forward secrecy）。
+ * 详见 e2eeManager.ts 文件头注释与 docs/THREAT_MODEL.md。
  */
 
 const KEY_TYPE = 'X25519'
@@ -155,7 +159,7 @@ async function deriveMessageKey(
 }
 
 /**
- * 加密消息（带前向保密）
+ * 加密消息（会话级静态 ECDH + 每消息 HKDF，非强前向保密）
  */
 export async function encryptMessage(
   plaintext: string,
@@ -182,7 +186,7 @@ export async function encryptMessage(
 }
 
 /**
- * 解密消息（带前向保密）
+ * 解密消息（会话级静态 ECDH + 每消息 HKDF，非强前向保密）
  */
 export async function decryptMessage(
   payload: EncryptedPayload,

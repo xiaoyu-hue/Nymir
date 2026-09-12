@@ -223,7 +223,7 @@ class E2EEManager {
   }
 
   /**
-   * 加密发送给指定 peer 的消息（带前向保密）
+   * 加密发送给指定 peer 的消息（会话级静态 ECDH + 每消息 HKDF，非强前向保密）
    */
   async encrypt(plaintext: string, peerId: string, messageId: string): Promise<string | null> {
     if (!this.keyPair) return null
@@ -246,7 +246,7 @@ class E2EEManager {
   }
 
   /**
-   * 解密来自指定 peer 的消息（带前向保密）
+   * 解密来自指定 peer 的消息（会话级静态 ECDH + 每消息 HKDF，非强前向保密）
    */
   async decrypt(ciphertext: string, peerId: string, messageId: string): Promise<string | null> {
     if (!this.keyPair) return null

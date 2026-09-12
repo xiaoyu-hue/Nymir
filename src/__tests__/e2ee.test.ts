@@ -3,7 +3,7 @@
  *
  * 覆盖威胁模型中的关键不变量：
  * - 消息内容机密性（双端往返）
- * - 每消息 HKDF 前向保密（不同 messageId → 不同密文）
+ * - 每消息 HKDF 密钥派生（不同 messageId → 不同密文）
  * - 错误密钥 / 错误 peer 解密失败
  * - 私钥不可导出
  * - 文件加解密往返
@@ -141,7 +141,7 @@ describe('e2ee — 消息加解密往返（机密性）', () => {
   })
 })
 
-describe('e2ee — 每消息 HKDF 前向保密', () => {
+describe('e2ee — 每消息 HKDF 密钥派生', () => {
   beforeEach(() => {
     clearAllSharedKeys()
   })
