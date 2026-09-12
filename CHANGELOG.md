@@ -7,6 +7,48 @@
 
 ---
 
+## 第四~六轮审查修复 - 2026-09-13
+
+> 在前三轮安全审计基础上，继续从代码安全、代码质量、测试覆盖、UI/UX 四个维度审查。264 测试全过。
+
+### 🛡️ 安全修复
+
+- **fix(security): recall/read 通道用真实 peerId 替代 payload 自报 peerId**
+  > 之前撤回和已读回执的 payload 里带 peerId 字段，接收方信任这个自报值——恶意 peer 可以伪造撤回别人的消息或伪造已读回执。改为用 trystero 传输层的真实 peerId，payload 不再携带 peerId。
+
+- **fix(security): verifiedStore key 从临时 peerId 改为公钥 SHA-256 哈希**
+  > 之前按 trystero 临时 peerId 存"已核对"状态，切换传输策略（mqtt→torrent）或刷新页面后 peerId 变了，已核对状态丢失。改为按对方公钥哈希存，跨会话跨传输稳定。
+
+- **refactor: 删除 encryptFile/decryptFile/deriveFileWrapKey 死代码**
+  > 文件加密函数从未被调用（约 200 行），且密钥派生方式与主加密路径不一致，留着是安全隐患。
+
+- **fix: unverifyPeer 从 fire-and-forget 改为 async await**
+  > 消除连续调用时的竞态窗口。
+
+### 🧹 代码清理
+
+- **refactor: 删除 peerManager.reconnectTimer 死字段**
+- **refactor: offlineQueue payload 类型收紧为 Record<string, never>**
+- **refactor: 内联样式迁移 CSS（ChatView 安全按钮 + safety-banner）**
+
+### 🎨 UI/UX
+
+- **fix(a11y): MessageBubble 去掉 wrapper 的 role=button/tabIndex**
+  > 之前整条消息气泡被屏幕阅读器朗读为按钮，但对端消息不可交互。改为只有撤回按钮是可交互元素。
+
+- **feat(i18n): Loading/身份错误提示走 i18n**
+  > 之前硬编码中英文，现在中英文用户都看到对应语言。
+
+- **feat(ux): 创建/加入房间失败时显示红色错误提示**
+  > 之前点按钮失败只打日志，用户毫无反馈。
+
+### ✅ 测试
+
+- **test(noise): 补 start/stop 噪声生成测试（5 用例）**
+  > 覆盖间隔发送、stop 停止、重复 start 防护、噪声特征验证、stop 后再 start。噪声模块覆盖率从 21% 提升。
+
+---
+
 ## 三轮安全审计修复 - 2026-09-11
 
 > 包含第一轮、第二轮、第三轮安全审计发现的代码缺陷修复。每项修复均单独提交，提交前运行全量测试（179 用例全部通过）。

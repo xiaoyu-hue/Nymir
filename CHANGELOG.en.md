@@ -7,6 +7,44 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## Rounds 4-6 Review Fixes - 2026-09-13
+
+> After the first three rounds of security audit, continued reviewing across four dimensions: code security, code quality, test coverage, and UI/UX. 264 tests passing.
+
+### 🛡️ Security
+
+- **fix(security): recall/read channels use real peerId from transport**
+  > Previously the payload carried a self-reported peerId field, allowing a malicious peer to forge recall or read receipts for others. Now uses the real peerId from the trystero transport layer.
+
+- **fix(security): verifiedStore key changed from temp peerId to public key SHA-256 hash**
+  > Previously stored verification state by trystero temp peerId, so switching transport (mqtt→torrent) or refreshing lost verified status. Now keyed by peer public key hash, stable across sessions and transports.
+
+- **refactor: Remove dead encryptFile/decryptFile/deriveFileWrapKey (~200 lines)**
+  > File encryption functions were never called and used inconsistent key derivation.
+
+- **fix: unverifyPeer changed from fire-and-forget to async/await**
+
+### 🧹 Code Cleanup
+
+- **refactor: Remove dead peerManager.reconnectTimer field**
+- **refactor: offlineQueue payload type tightened to Record<string, never>**
+- **refactor: Inline styles moved to CSS (ChatView safety button + banner)**
+
+### 🎨 UI/UX
+
+- **fix(a11y): Remove role=button/tabIndex from MessageBubble wrapper**
+  > Screen readers no longer announce every message as a button when non-self messages are not interactive.
+
+- **feat(i18n): Loading/identity error strings now localized**
+- **feat(ux): Show red error toast when create/join room fails**
+
+### ✅ Tests
+
+- **test(noise): Add start/stop noise generation tests (5 cases)**
+  > Interval sending, stop, duplicate start guard, noise feature verification, restart after stop. Coverage improved from 21%.
+
+---
+
 ## Three Rounds of Security Audit Fixes - 2026-09-11
 
 > Includes code defect fixes discovered during the first, second, and third rounds of security audit. Each fix is committed separately, with full test suite run before commit (179 test cases all passing).

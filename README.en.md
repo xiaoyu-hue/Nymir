@@ -135,7 +135,7 @@ Nymir stands on the shoulders of these open-source projects. Without them, a zer
 |---------|---------|-------|
 | [TypeScript](https://www.typescriptlang.org) | Apache-2.0 | Type system |
 | [Vite](https://vite.dev) | MIT | Build tool |
-| [Vitest](https://vitest.dev) | MIT | Test framework (262 tests) |
+| [Vitest](https://vitest.dev) | MIT | Test framework (264 tests) |
 | [Oxlint](https://oxc.rs) | MIT | Linter (CI gate) |
 | [vite-plugin-pwa](https://vite-pwa-org.netlify.app) | MIT | PWA support (installable, offline-capable) |
 | [jsdom](https://github.com/jsdom/jsdom) | MIT | DOM test environment |
