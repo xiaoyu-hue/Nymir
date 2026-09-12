@@ -223,3 +223,59 @@ export async function verifyPassword(encryptedData: string, password: string): P
     return false
   }
 }
+
+// ─── 备份专用：内嵌盐加解密（跨设备可恢复） ──────────────────────────
+//
+// 日常加密（encrypt/decrypt）用 per-install 盐，盐存在 localStorage。
+// 备份文件必须自带盐——否则换设备后盐不同，解不开。
+// 这两个函数用调用方传入的盐，不读 localStorage。
+
+const VERSION_BYTE_V5 = 0x05 // 备份专用：自带盐，与 v4 同迭代数
+
+/**
+ * 用指定盐加密（备份专用）。返回 base64(0x05 + iv + ciphertext)。
+ * 盐由调用方生成并随密文一起存储。
+ */
+export async function encryptWithSalt(
+  plaintext: string,
+  password: string,
+  salt: Uint8Array,
+): Promise<string> {
+  const encoder = new TextEncoder()
+  const key = await deriveKey(password, salt, PBKDF2_ITERATIONS_V2)
+  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH))
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    encoder.encode(plaintext),
+  )
+  const combined = new Uint8Array(1 + iv.length + ciphertext.byteLength)
+  combined[0] = VERSION_BYTE_V5
+  combined.set(iv, 1)
+  combined.set(new Uint8Array(ciphertext), 1 + iv.length)
+  return uint8ToBase64(combined)
+}
+
+/**
+ * 用指定盐解密（备份专用）。输入须为 encryptWithSalt 的输出。
+ */
+export async function decryptWithSalt(
+  ciphertext: string,
+  password: string,
+  salt: Uint8Array,
+): Promise<string> {
+  const decoder = new TextDecoder()
+  const combined = base64ToUint8(ciphertext)
+  if (combined.length === 0 || combined[0] !== VERSION_BYTE_V5) {
+    throw new Error('Not a salt-embedded ciphertext (v5)')
+  }
+  const key = await deriveKey(password, salt, PBKDF2_ITERATIONS_V2)
+  const iv = combined.slice(1, 1 + IV_LENGTH)
+  const data = combined.slice(1 + IV_LENGTH)
+  const plaintext = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    data,
+  )
+  return decoder.decode(plaintext)
+}

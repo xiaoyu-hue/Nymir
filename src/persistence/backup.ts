@@ -8,22 +8,29 @@
  */
 
 import { getAllRooms, getMessagesByRoom, saveRoom, saveMessage, getRoom, getMessage } from './db'
-import { encrypt, decrypt, verifyPassword } from '../security/crypto'
+import { decrypt, verifyPassword, encryptWithSalt, decryptWithSalt } from '../security/crypto'
+import { uint8ToBase64, base64ToUint8 } from '../utils/base64'
 import type { BackupData } from './types'
 
-const BACKUP_VERSION = 2
-const BACKUP_MAGIC = 'NYMIR_ENC_V2'
+const BACKUP_VERSION = 3
+const BACKUP_MAGIC = 'NYMIR_ENC_V3'
+const BACKUP_SALT_LENGTH = 16
 
 export interface EncryptedBackup {
   version: number
   encrypted: boolean
   magic: string
   data: string // 加密后的 JSON 或明文 JSON
+  /** V3+ 备份自带的随机盐（base64），跨设备恢复用 */
+  salt?: string
   exportedAt: number
 }
 
 /**
  * 导出备份（加密）
+ *
+ * V3：备份文件自带随机盐（16 字节），不依赖安装盐。
+ * 这样备份可以在任意设备上用同一密码恢复。
  */
 export async function exportBackup(password: string): Promise<string> {
   const rooms = await getAllRooms()
@@ -41,13 +48,16 @@ export async function exportBackup(password: string): Promise<string> {
   }
 
   const json = JSON.stringify(data)
-  const encrypted = await encrypt(json, password)
+  // 为本次备份生成独立的随机盐，随文件一起导出
+  const salt = crypto.getRandomValues(new Uint8Array(BACKUP_SALT_LENGTH))
+  const encrypted = await encryptWithSalt(json, password, salt)
 
   const backup: EncryptedBackup = {
     version: BACKUP_VERSION,
     encrypted: true,
     magic: BACKUP_MAGIC,
     data: encrypted,
+    salt: uint8ToBase64(salt),
     exportedAt: Date.now(),
   }
 
@@ -71,14 +81,30 @@ export function downloadBackup(json: string, filename?: string): void {
 
 /**
  * 验证备份密码
+ * V3+：用备份内嵌的盐解密；V2 旧格式：用安装盐（仅同设备）
  */
 export async function verifyBackupPassword(json: string, password: string): Promise<boolean> {
   try {
     const backup: EncryptedBackup = JSON.parse(json)
-    if (backup.magic !== BACKUP_MAGIC || !backup.encrypted) {
-      return false
+    if (!backup.encrypted) return false
+
+    // V3+：备份自带盐
+    if (backup.salt && backup.magic === BACKUP_MAGIC) {
+      try {
+        const salt = base64ToUint8(backup.salt)
+        await decryptWithSalt(backup.data, password, salt)
+        return true
+      } catch {
+        return false
+      }
     }
-    return await verifyPassword(backup.data, password)
+
+    // V2 旧格式：用安装盐（只能在导出设备上验证）
+    if (backup.magic === 'NYMIR_ENC_V2') {
+      return await verifyPassword(backup.data, password)
+    }
+
+    return false
   } catch {
     return false
   }
@@ -98,12 +124,17 @@ export async function importBackup(
     throw new Error('Invalid backup file format')
   }
 
-  // 验证备份格式
-  if (backup.magic !== BACKUP_MAGIC) {
+  // 验证备份格式：接受 V2 和 V3
+  const isV3 = backup.magic === BACKUP_MAGIC
+  const isV2 = backup.magic === 'NYMIR_ENC_V2'
+  if (!isV3 && !isV2) {
     throw new Error('Invalid backup file: not a Nymir backup')
   }
 
-  if (backup.version !== BACKUP_VERSION) {
+  if (isV2 && backup.version !== 2) {
+    throw new Error(`Unsupported backup version: ${backup.version}`)
+  }
+  if (isV3 && backup.version !== BACKUP_VERSION) {
     throw new Error(`Unsupported backup version: ${backup.version}`)
   }
 
@@ -114,7 +145,14 @@ export async function importBackup(
   // 解密
   let decrypted: string
   try {
-    decrypted = await decrypt(backup.data, password)
+    if (backup.salt) {
+      // V3+：用备份内嵌的盐（跨设备恢复）
+      const salt = base64ToUint8(backup.salt)
+      decrypted = await decryptWithSalt(backup.data, password, salt)
+    } else {
+      // V2 旧格式：用安装盐（只能在导出设备上恢复）
+      decrypted = await decrypt(backup.data, password)
+    }
   } catch {
     throw new Error('Wrong password or corrupted backup')
   }

@@ -76,11 +76,14 @@ describe('backup.exportBackup', () => {
   it('导出为合法 JSON，带 magic/version/encrypted 标记', async () => {
     const json = await exportBackup(PASSWORD)
     const backup: EncryptedBackup = JSON.parse(json)
-    expect(backup.magic).toBe('NYMIR_ENC_V2')
-    expect(backup.version).toBe(2)
+    expect(backup.magic).toBe('NYMIR_ENC_V3')
+    expect(backup.version).toBe(3)
     expect(backup.encrypted).toBe(true)
     expect(typeof backup.exportedAt).toBe('number')
     expect(backup.data.length).toBeGreaterThan(0)
+    // V3 备份自带盐（base64），跨设备恢复用
+    expect(typeof backup.salt).toBe('string')
+    expect(backup.salt!.length).toBeGreaterThan(0)
   })
 
   it('导出数据是密文：不包含任何明文房间名/消息内容', async () => {
