@@ -130,7 +130,7 @@ Nymir stands on the shoulders of these open-source projects. Without them, a zer
 |---------|---------|-------|
 | [TypeScript](https://www.typescriptlang.org) | Apache-2.0 | Type system |
 | [Vite](https://vite.dev) | MIT | Build tool |
-| [Vitest](https://vitest.dev) | MIT | Test framework (233 tests) |
+| [Vitest](https://vitest.dev) | MIT | Test framework (260 tests) |
 | [Oxlint](https://oxc.rs) | MIT | Linter (CI gate) |
 | [vite-plugin-pwa](https://vite-pwa-org.netlify.app) | MIT | PWA support (installable, offline-capable) |
 | [jsdom](https://github.com/jsdom/jsdom) | MIT | DOM test environment |
@@ -140,6 +140,16 @@ Nymir stands on the shoulders of these open-source projects. Without them, a zer
 
 - **WebCrypto API** (W3C standard, built into browsers) — X25519 key agreement, AES-256-GCM encryption, HKDF key derivation, and Ed25519 signing all rely on it. Nymir does not implement any cryptographic primitives itself; it only calls the browser's audited built-in implementation.
 - **Everyone who contributes code, documentation, and time to the open-source community.**
+
+### Design inspiration for the security code
+
+The "verify security code" feature did not appear out of thin air; it draws on proven ideas from mainstream end-to-end encrypted messengers:
+
+- **Signal Safety Numbers / WhatsApp Security Codes** — deriving a human-comparable short code from both parties' identity keys and comparing it out-of-band. This core idea is carried over.
+- **Matrix / Element SAS (Short Authentication String)** — the "15 decimal digits in three groups" format follows Matrix's decimal verification method.
+- **Telegram call emoji keys, Matrix's 7-emoji verification** — inspiration for the emoji visual aid.
+
+We also learned from their mistakes: the Matrix community has already proposed [deprecating emoji verification in MSC4405](https://github.com/matrix-org/matrix-spec-proposals/pull/4405) (inconsistent rendering across platforms). Nymir therefore treats **the 15-digit number as the sole primary verification means**, with emojis only as a quick visual cue. We did not copy code or emoji tables from any of the above; the derivation and the 64-emoji table are implemented independently.
 
 ## ✦ Contributing
 

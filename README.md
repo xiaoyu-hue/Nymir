@@ -141,7 +141,7 @@ Nymir 站在这些开源项目的肩膀上。没有它们，一个零编程基�
 |------|------|------|
 | [TypeScript](https://www.typescriptlang.org) | Apache-2.0 | 类型系统 |
 | [Vite](https://vite.dev) | MIT | 构建工具 |
-| [Vitest](https://vitest.dev) | MIT | 测试框架（233 个测试） |
+| [Vitest](https://vitest.dev) | MIT | 测试框架（260 个测试） |
 | [Oxlint](https://oxc.rs) | MIT | 代码检查（CI 门禁） |
 | [vite-plugin-pwa](https://vite-pwa-org.netlify.app) | MIT | PWA 支持（可安装、离线可用） |
 | [jsdom](https://github.com/jsdom/jsdom) | MIT | DOM 测试环境 |
@@ -151,6 +151,16 @@ Nymir 站在这些开源项目的肩膀上。没有它们，一个零编程基�
 
 - **WebCrypto API**（W3C 标准，浏览器内置）—— X25519 密钥协商、AES-256-GCM 加解密、HKDF 密钥派生、Ed25519 签名全部基于此。Nymir 不实现任何密码学原语，只调用浏览器经过审计的内置实现。
 - **所有为开源社区贡献代码、文档和时间的人。**
+
+### 安全码设计灵感
+
+"安全码核对"这一功能并非凭空设计，而是借鉴了主流端到端加密通讯工具的成熟思路：
+
+- **Signal 的 Safety Number / WhatsApp 的 Security Code**——把双方身份公钥派生为人类可比对的短码，再通过带外渠道核对。这一基本思路被直接沿用。
+- **Matrix / Element 的 SAS（Short Authentication String）**——"15 位十进制数字分 3 组显示"的形式，参考自 Matrix 的 decimal 验证方式。
+- **Telegram 通话的 emoji 密钥、Matrix 的 7-emoji 验证**——为 emoji 视觉辅助提供了灵感。
+
+我们也吸收了它们的教训：Matrix 社区已在 [MSC4405](https://github.com/matrix-org/matrix-spec-proposals/pull/4405) 中提议弃用 emoji 验证（不同操作系统渲染不一致），因此 Nymir 把 **15 位数字作为唯一主验证手段**，emoji 仅作扫一眼的视觉辅助。我们未直接复用上述项目的代码或 emoji 表，派生公式与 64 个 emoji 均为独立实现。
 
 ## ✦ 贡献
 
