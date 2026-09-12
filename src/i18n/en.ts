@@ -28,6 +28,8 @@ const en: Translations = {
     copied: 'Copied',
     copyHint: 'Click to copy room code',
     invalidCode: 'Invalid room code',
+    joinFailed: 'Failed to join room. Check your network or room code.',
+    createFailed: 'Failed to create room. Check your network.',
   },
   message: {
     placeholder: 'Say something...',
@@ -111,6 +113,10 @@ const en: Translations = {
   error: {
     title: 'Application Error',
     reload: 'Reload',
+    loading: 'Loading...',
+    loadingIdentity: 'Loading secure identity...',
+    identityErrorTitle: 'Secure Identity Failed',
+    identityErrorDesc: 'Could not load your encryption identity keys. This is usually caused by corrupted browser storage. Resetting data will start fresh, but all chat history will be lost.',
   },
   install: {
     close: 'Close',

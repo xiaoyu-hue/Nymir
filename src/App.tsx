@@ -34,6 +34,7 @@ function AppContent() {
   const [viewportHeight, setViewportHeight] = useState('100dvh')
   const [identityLoading, setIdentityLoading] = useState(false)
   const [identityError, setIdentityError] = useState(false)
+  const [roomError, setRoomError] = useState('')
 
   useEffect(() => {
     securityManager
@@ -101,18 +102,22 @@ function AppContent() {
   }, [])
 
   const handleCreateRoom = async (name: string) => {
+    setRoomError('')
     try {
       await roomManager.createRoom(name)
     } catch (err) {
       error('[App] Create room failed:', err)
+      setRoomError(t.room.createFailed)
     }
   }
 
   const handleJoinRoom = async (roomId: string) => {
+    setRoomError('')
     try {
       await roomManager.joinRoom(roomId)
     } catch (err) {
       error('[App] Join room failed:', err)
+      setRoomError(t.room.joinFailed)
     }
   }
 
@@ -125,7 +130,7 @@ function AppContent() {
     return (
       <div role="status" aria-live="polite" className="overlay-enter app-loading">
         <div className="app-loading-spinner" />
-        <span className="app-loading-text">Loading...</span>
+        <span className="app-loading-text">{t.error.loading}</span>
       </div>
     )
   }
@@ -144,7 +149,7 @@ function AppContent() {
     return (
       <div role="status" aria-live="polite" className="overlay-enter app-loading">
         <div className="app-loading-spinner" />
-        <span className="app-loading-text">Loading secure identity...</span>
+        <span className="app-loading-text">{t.error.loadingIdentity}</span>
       </div>
     )
   }
@@ -153,10 +158,9 @@ function AppContent() {
   if (identityError) {
     return (
       <div className="overlay-enter app-loading" style={{ maxWidth: 420, margin: '0 auto', padding: 24, textAlign: 'center' }}>
-        <span style={{ fontSize: 18, marginBottom: 12 }}>⚠️ 安全身份加载失败</span>
+        <span style={{ fontSize: 18, marginBottom: 12 }}>⚠️ {t.error.identityErrorTitle}</span>
         <p style={{ color: '#888', fontSize: 14, lineHeight: 1.6 }}>
-          无法加载您的加密身份密钥。这通常是浏览器存储损坏导致的。
-          您可以重置数据重新开始，但当前聊天记录将被清除。
+          {t.error.identityErrorDesc}
         </p>
       </div>
     )
@@ -168,7 +172,7 @@ function AppContent() {
         <Starfield />
 
         {!inRoom ? (
-          <RoomPanel onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} />
+          <RoomPanel onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} error={roomError} />
         ) : (
           <Suspense fallback={<LoadingFallback />}>
             <ChatView />

@@ -26,6 +26,8 @@ const zh = {
     copied: '已复制',
     copyHint: '点击复制房间代码',
     invalidCode: '无效的房间代码',
+    joinFailed: '加入房间失败，请检查网络或房间代码',
+    createFailed: '创建房间失败，请检查网络',
   },
   message: {
     placeholder: '说点什么...',
@@ -109,6 +111,10 @@ const zh = {
   error: {
     title: '应用发生错误',
     reload: '重新加载',
+    loading: '加载中...',
+    loadingIdentity: '正在加载安全身份...',
+    identityErrorTitle: '安全身份加载失败',
+    identityErrorDesc: '无法加载您的加密身份密钥，通常是浏览器存储损坏导致。重置数据可重新开始，但当前聊天记录将被清除。',
   },
   install: {
     close: '关闭',

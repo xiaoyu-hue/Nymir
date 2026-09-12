@@ -5,9 +5,10 @@ import GlassCard from './GlassCard'
 type Props = {
   onCreateRoom: (name: string) => void
   onJoinRoom: (code: string) => void
+  error?: string
 }
 
-export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
+export default function RoomPanel({ onCreateRoom, onJoinRoom, error }: Props) {
   const { t } = useI18n()
   const [tab, setTab] = useState<'create' | 'join'>('create')
   const [name, setName] = useState('')
@@ -101,6 +102,9 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom }: Props) {
                   {t.room.create}
                 </button>
               </div>
+            )}
+            {error && (
+              <p className="room-panel-error" role="alert">{error}</p>
             )}
           </div>
         </div>
