@@ -5,7 +5,7 @@
  * 覆盖：open=false 不渲染、open=true 渲染 message、点击取消/确认按钮、
  * 点击遮罩层取消、按 Escape 取消。
  */
-import { fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import ConfirmDialog from '../ui/components/ConfirmDialog'
 import { I18nProvider } from '../i18n'
@@ -25,7 +25,7 @@ function renderDialog(props: Partial<React.ComponentProps<typeof ConfirmDialog>>
 }
 
 afterEach(() => {
-  document.body.innerHTML = ''
+  cleanup()
   vi.restoreAllMocks()
 })
 

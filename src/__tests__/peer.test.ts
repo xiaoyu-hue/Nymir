@@ -29,8 +29,8 @@ const {
   }
   return {
     mockRoom: room,
-    joinTorrent: vi.fn(() => room),
-    joinMqtt: vi.fn(() => room),
+    joinTorrent: vi.fn((..._args: unknown[]) => room),
+    joinMqtt: vi.fn((..._args: unknown[]) => room),
     torrentSelfId: 'torrent-self-id',
     mqttSelfId: 'mqtt-self-id',
   }
