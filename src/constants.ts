@@ -1,6 +1,6 @@
 // Security
 export const LOCK_TIMEOUT_MS = 5 * 60 * 1000
-export const MIN_PASSWORD_LENGTH = 6
+export const MIN_PASSWORD_LENGTH = 10
 
 // Messages
 export const READ_ONCE_AUTO_DESTROY_MS = 30 * 60 * 1000

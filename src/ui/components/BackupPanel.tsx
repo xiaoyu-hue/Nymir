@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { exportBackup, downloadBackup, importBackup, verifyBackupPassword } from '../../persistence/backup'
 import { useI18n } from '../../i18n'
+import { MIN_PASSWORD_LENGTH } from '../../constants'
 import GlassCard from './GlassCard'
 
 type Props = {
@@ -31,7 +32,7 @@ export default function BackupPanel({ onClose }: Props) {
   }, [onClose])
 
   const handleExport = async () => {
-    if (!password || password.length < 6) {
+    if (!password || password.length < MIN_PASSWORD_LENGTH) {
       setStatus(t.backup.passwordRequired)
       return
     }
