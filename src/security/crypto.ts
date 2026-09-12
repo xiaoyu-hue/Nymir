@@ -1,33 +1,39 @@
 /**
  * Nymir 加密模块
- * 
+ *
  * 使用 Web Crypto API 实现：
  * - PBKDF2 密钥派生 (600k rounds, SHA-256, NIST推荐)
  * - AES-256-GCM 加密/解密
- * 
+ *
  * 安全策略：
  * - 忘记密码 = 永久丢失数据
  * - 不存储密码或密钥
  * - 每次加密使用随机 IV
- * 
+ *
  * 版本迁移：
- * - v1: 100K iterations，无版本字节（旧版）
- * - v2: 600K iterations，随机盐（当前）
- * - v3: 600K iterations，固定盐 + 会话级派生密钥缓存（当前）
- *   每条消息不再重复 600k 次 PBKDF2：同一密码只会派生一次，之后仅用随机 IV。
- *   代价：固定盐使不同安装的同一密码派生出同一密钥（防彩虹表的收益消失，
- *   密码强度与 600k 迭代的保护不变）。旧 v1/v2 数据解密走 legacy 路径。
+ * - v1: 100K iterations，无版本字节（最旧）
+ * - v2: 600K iterations，随机内嵌盐
+ * - v3: 600K iterations，全零固定盐 + 会话级派生密钥缓存
+ *   代价：不同安装的同一密码派生出同一密钥，失去 per-install 盐防护
+ * - v4: 600K iterations，per-install 随机盐（存 localStorage）+ 会话缓存
+ *   第一次设密码时生成随机盐，所有安装的盐各不相同，
+ *   恢复 per-install 盐对彩虹表/批量破解的防护。
+ *   旧 v1/v2/v3 数据解锁后自动迁移到 v4。
  */
 
 const PBKDF2_ITERATIONS_V1 = 100_000
 const PBKDF2_ITERATIONS_V2 = 600_000
 const SALT_LENGTH = 16
 const IV_LENGTH = 12
-const VERSION_BYTE_V2 = 0x02 // v2 = 600K，随机盐
-const VERSION_BYTE_V3 = 0x03 // v3 = 600K，固定盐 + 会话缓存
+const VERSION_BYTE_V2 = 0x02 // v2 = 600K，随机内嵌盐
+const VERSION_BYTE_V3 = 0x03 // v3 = 600K，全零固定盐 + 会话缓存
+const VERSION_BYTE_V4 = 0x04 // v4 = 600K，per-install 随机盐 + 会话缓存
 
-/** v3 固定盐：公开常量，配合随机 IV 保证 GCM 安全 */
-const SESSION_SALT = new Uint8Array(SALT_LENGTH)
+/** v3 legacy 固定盐（全零）：仅用于解密旧 v3 数据 */
+const V3_LEGACY_SALT = new Uint8Array(SALT_LENGTH)
+
+/** v4 per-install 盐的 localStorage key */
+const SALT_STORAGE_KEY = 'nymir_install_salt'
 
 import { uint8ToBase64, base64ToUint8 } from '../utils/base64'
 
@@ -67,22 +73,46 @@ async function hashPassword(password: string): Promise<string> {
     .join('')
 }
 
-// 会话级派生密钥缓存：同密码只派生一次（v3）
+/**
+ * 获取（或首次生成）per-install 随机盐。
+ * 盐不是秘密——它只用于让不同安装的相同密码派生出不同密钥，
+ * 防止彩虹表/批量破解。存 localStorage 即可。
+ */
+function getInstallSalt(): Uint8Array {
+  try {
+    const stored = localStorage.getItem(SALT_STORAGE_KEY)
+    if (stored) {
+      const parsed = base64ToUint8(stored)
+      if (parsed.length === SALT_LENGTH) return parsed
+    }
+  } catch {
+    // localStorage 不可用或数据损坏，fall through 到新生成
+  }
+  const newSalt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH))
+  try {
+    localStorage.setItem(SALT_STORAGE_KEY, uint8ToBase64(newSalt))
+  } catch {
+    // localStorage 写不进去（隐私模式/配额满）：本次会话用内存盐即可
+  }
+  return newSalt
+}
+
+// 会话级派生密钥缓存：同密码只派生一次（v4）
 // 不存储原始密码字符串：仅存 SHA-256 哈希用于比对，减少明文密码在 JS 堆的驻留。
-// 密钥派生仍使用原始密码，派生完成后原始密码由调用方负责清理。
 let cachedKey: { passwordHash: string; key: CryptoKey } | null = null
 
-/** 获取（或派生并缓存）v3 会话密钥 */
+/** 获取（或派生并缓存）v4 会话密钥（per-install 盐） */
 async function getOrDeriveSessionKey(password: string): Promise<CryptoKey> {
   const passwordHash = await hashPassword(password)
   if (cachedKey && cachedKey.passwordHash === passwordHash) return cachedKey.key
-  const key = await deriveKey(password, SESSION_SALT, PBKDF2_ITERATIONS_V2)
+  const salt = getInstallSalt()
+  const key = await deriveKey(password, salt, PBKDF2_ITERATIONS_V2)
   cachedKey = { passwordHash, key }
   return key
 }
 
 /**
- * 清除会话级派生密钥缓存（锁定/重置时调用，避免派生密钥常驻内存）
+ * 清除会话级派生密钥缓存（锁定/重置/迁移时调用）
  */
 export function clearCryptoCache(): void {
   cachedKey = null
@@ -90,7 +120,7 @@ export function clearCryptoCache(): void {
 
 /**
  * 加密字符串
- * 返回格式: base64(version + iv + ciphertext)   (v3，盐固定)
+ * 返回格式: base64(0x04 + iv + ciphertext)   (v4，per-install 盐)
  */
 export async function encrypt(plaintext: string, password: string): Promise<string> {
   const encoder = new TextEncoder()
@@ -103,9 +133,8 @@ export async function encrypt(plaintext: string, password: string): Promise<stri
     encoder.encode(plaintext),
   )
 
-  // 合并 version + iv + ciphertext
   const combined = new Uint8Array(1 + iv.length + ciphertext.byteLength)
-  combined[0] = VERSION_BYTE_V3
+  combined[0] = VERSION_BYTE_V4
   combined.set(iv, 1)
   combined.set(new Uint8Array(ciphertext), 1 + iv.length)
 
@@ -115,7 +144,8 @@ export async function encrypt(plaintext: string, password: string): Promise<stri
 /**
  * 解密字符串
  * 输入格式:
- * - v3: base64(0x03 + iv + ciphertext)
+ * - v4: base64(0x04 + iv + ciphertext)（per-install 盐，从 localStorage 读）
+ * - v3: base64(0x03 + iv + ciphertext)（全零固定盐，legacy）
  * - v2: base64(0x02 + salt + iv + ciphertext)
  * - v1: base64(salt + iv + ciphertext)
  */
@@ -123,9 +153,22 @@ export async function decrypt(ciphertext: string, password: string): Promise<str
   const decoder = new TextDecoder()
   const combined = base64ToUint8(ciphertext)
 
-  // v3：固定盐 + 会话密钥（缓存命中则跳过 600k 派生）
-  if (combined.length > 0 && combined[0] === VERSION_BYTE_V3) {
+  // v4：per-install 盐 + 会话密钥缓存
+  if (combined.length > 0 && combined[0] === VERSION_BYTE_V4) {
     const key = await getOrDeriveSessionKey(password)
+    const iv = combined.slice(1, 1 + IV_LENGTH)
+    const data = combined.slice(1 + IV_LENGTH)
+    const plaintext = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      data,
+    )
+    return decoder.decode(plaintext)
+  }
+
+  // v3 legacy：全零固定盐，不走 v4 缓存（盐不同）
+  if (combined.length > 0 && combined[0] === VERSION_BYTE_V3) {
+    const key = await deriveKey(password, V3_LEGACY_SALT, PBKDF2_ITERATIONS_V2)
     const iv = combined.slice(1, 1 + IV_LENGTH)
     const data = combined.slice(1 + IV_LENGTH)
     const plaintext = await crypto.subtle.decrypt(
@@ -157,14 +200,13 @@ export async function decrypt(ciphertext: string, password: string): Promise<str
 }
 
 /**
- * 检查是否需要迁移到 v3（固定盐 + 会话缓存）
- * v1/v2 均为旧格式，返回 true
+ * 检查是否需要迁移到 v4（per-install 盐）
+ * v1/v2/v3 均为旧格式，返回 true
  */
 export function needsMigration(encryptedData: string): boolean {
   try {
     const combined = base64ToUint8(encryptedData)
-    // 与 decrypt() 中的 v3 检测保持一致：长度 > 0 即可读取版本字节
-    return !(combined.length > 0 && combined[0] === VERSION_BYTE_V3)
+    return !(combined.length > 0 && combined[0] === VERSION_BYTE_V4)
   } catch {
     return false
   }

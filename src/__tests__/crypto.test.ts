@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   encrypt,
@@ -113,7 +114,7 @@ describe('crypto', () => {
     expect(await verifyPassword(encrypted, 'wrong')).toBe(false)
   })
 
-  it('needsMigration returns false for v3 data (fresh encrypt)', async () => {
+  it('needsMigration returns false for v4 data (fresh encrypt)', async () => {
     const encrypted = await encrypt('data', password)
     expect(needsMigration(encrypted)).toBe(false)
   })
@@ -147,6 +148,48 @@ describe('crypto', () => {
     const legacy = await makeLegacyV2('legacy-v2', password)
     expect(await decrypt(legacy, password)).toBe('legacy-v2')
     expect(needsMigration(legacy)).toBe(true)
+  })
+
+  it('v3 旧格式（600k 全零固定盐）仍可解密，且 needsMigration 为 true', async () => {
+    // v3 格式：0x03 + iv + ciphertext，盐为全零
+    const encoder = new TextEncoder()
+    const zeroSalt = new Uint8Array(SALT_LENGTH)
+    const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH))
+    const key = await deriveLegacyKey(password, zeroSalt, PBKDF2_ITERATIONS_V2)
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      encoder.encode('legacy-v3'),
+    )
+    const combined = new Uint8Array(1 + IV_LENGTH + ciphertext.byteLength)
+    combined[0] = 0x03
+    combined.set(iv, 1)
+    combined.set(new Uint8Array(ciphertext), 1 + IV_LENGTH)
+    const legacy = uint8ToBase64(combined)
+
+    expect(await decrypt(legacy, password)).toBe('legacy-v3')
+    expect(needsMigration(legacy)).toBe(true)
+  })
+
+  it('v4 per-install 盐：不同盐使同密码派生出不同密钥', async () => {
+    // 模拟两个"安装"：不同的 localStorage 盐
+    clearCryptoCache()
+    localStorage.clear()
+    await encrypt('install-a', password)
+    const ciphertextA = await encrypt('probe', password)
+
+    clearCryptoCache()
+    localStorage.clear()
+    await encrypt('install-b', password)
+    const ciphertextB = await encrypt('probe', password)
+
+    // 两次加密用不同盐，派生密钥不同 → 同明文不同密文
+    // （IV 也不同，但核心断言是：A 的密文不能在 B 的盐下解密）
+    await expect(decrypt(ciphertextA, password)).rejects.toThrow()
+    expect(await decrypt(ciphertextB, password)).toBe('probe')
+
+    localStorage.clear()
+    clearCryptoCache()
   })
 
   it('同密码多次 encrypt 只派生一次密钥（会话缓存生效）', async () => {
