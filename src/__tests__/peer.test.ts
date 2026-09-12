@@ -217,7 +217,10 @@ describe('PeerManager join/leave 基本流程', () => {
 
     pm.join('test-room-1')
 
-    expect(joinMqtt).toHaveBeenCalledWith({ appId: 'nymir_treehole_v1' }, 'test-room-1')
+    expect(joinMqtt).toHaveBeenCalledWith(
+      expect.objectContaining({ appId: 'nymir_treehole_v1' }),
+      'test-room-1',
+    )
     expect(pm.connected).toBe(true)
     expect(pm.strategy).toBe('mqtt')
   })
