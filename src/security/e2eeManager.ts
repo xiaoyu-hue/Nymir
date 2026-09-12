@@ -440,7 +440,9 @@ class E2EEManager {
   async markPeerVerified(peerId: string): Promise<void> {
     const fp = await this.computePeerFingerprint(peerId)
     if (!fp) return
-    this.verifiedStore.set(peerId, {
+    const keyHash = await this.getKeyHashForPeer(peerId)
+    if (!keyHash) return
+    this.verifiedStore.set(keyHash, {
       fingerprint: fp.decimal,
       verifiedAt: Date.now(),
     })
@@ -453,9 +455,13 @@ class E2EEManager {
    * - 从未核对过 → 'unverified'
    * - 当前指纹与上次核对一致 → 'verified'
    * - 上次核对过但当前指纹变了 → 'changed'（疑似中间人换钥，或对方换设备）
+   *
+   * key 用公钥哈希（不是临时 peerId），切换传输策略/刷新后仍有效。
    */
   async getVerificationState(peerId: string): Promise<VerificationState> {
-    const record = this.verifiedStore.get(peerId)
+    const keyHash = await this.getKeyHashForPeer(peerId)
+    if (!keyHash) return 'unverified'
+    const record = this.verifiedStore.get(keyHash)
     if (!record) return 'unverified'
     const fp = await this.computePeerFingerprint(peerId)
     if (!fp) return 'unverified'
@@ -467,10 +473,26 @@ class E2EEManager {
    * 用于用户点"不再信任"，或指纹变化后需要重新核对的场景。
    */
   unverifyPeer(peerId: string): void {
-    if (this.verifiedStore.delete(peerId)) {
-      saveVerified(this.verifiedStore)
-      log('[E2EE] Peer verification cleared:', peerId)
-    }
+    // peerId → 公钥字符串 → 哈希
+    const pubKeyStr = this.peerPublicKeyStrings.get(peerId)
+    if (!pubKeyStr) return
+    const encoder = new TextEncoder()
+    crypto.subtle.digest('SHA-256', encoder.encode(pubKeyStr)).then((hashBuffer) => {
+      const keyHash = uint8ToBase64(new Uint8Array(hashBuffer))
+      if (this.verifiedStore.delete(keyHash)) {
+        saveVerified(this.verifiedStore)
+        log('[E2EE] Peer verification cleared:', peerId)
+      }
+    })
+  }
+
+  /** 根据 peerId 查对方公钥字符串的 SHA-256 哈希（verifiedStore 的 key） */
+  private async getKeyHashForPeer(peerId: string): Promise<string | null> {
+    const pubKeyStr = this.peerPublicKeyStrings.get(peerId)
+    if (!pubKeyStr) return null
+    const encoder = new TextEncoder()
+    const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(pubKeyStr))
+    return uint8ToBase64(new Uint8Array(hashBuffer))
   }
 }
 
