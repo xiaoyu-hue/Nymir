@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { isNoiseMessage } from '../security/noise'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { isNoiseMessage, startNoiseGeneration, stopNoiseGeneration } from '../security/noise'
+import { NOISE_INTERVAL_MS, FAKE_ID_LENGTH } from '../constants'
 
 describe('isNoiseMessage', () => {
   it('returns false when sender field is present', () => {
@@ -93,5 +94,77 @@ describe('isNoiseMessage — 真实消息与恶意构造', () => {
       sig: 2,
     }
     expect(isNoiseMessage(malicious)).toBe(false)
+  })
+})
+
+describe('startNoiseGeneration / stopNoiseGeneration', () => {
+  afterEach(() => {
+    stopNoiseGeneration()
+    vi.useRealTimers()
+  })
+
+  it('启动后按间隔发送噪声消息', () => {
+    vi.useFakeTimers()
+    const sendFn = vi.fn()
+    startNoiseGeneration(sendFn)
+
+    // 间隔内不应发送
+    expect(sendFn).not.toHaveBeenCalled()
+
+    // 推进一个间隔
+    vi.advanceTimersByTime(NOISE_INTERVAL_MS)
+    expect(sendFn).toHaveBeenCalledTimes(1)
+
+    // 再推进一个
+    vi.advanceTimersByTime(NOISE_INTERVAL_MS)
+    expect(sendFn).toHaveBeenCalledTimes(2)
+  })
+
+  it('stop 后不再发送', () => {
+    vi.useFakeTimers()
+    const sendFn = vi.fn()
+    startNoiseGeneration(sendFn)
+
+    vi.advanceTimersByTime(NOISE_INTERVAL_MS)
+    expect(sendFn).toHaveBeenCalledTimes(1)
+
+    stopNoiseGeneration()
+    vi.advanceTimersByTime(NOISE_INTERVAL_MS)
+    expect(sendFn).toHaveBeenCalledTimes(1)
+  })
+
+  it('重复 start 不会创建多个定时器', () => {
+    vi.useFakeTimers()
+    const sendFn = vi.fn()
+    startNoiseGeneration(sendFn)
+    startNoiseGeneration(sendFn) // 第二次应被忽略
+
+    vi.advanceTimersByTime(NOISE_INTERVAL_MS)
+    expect(sendFn).toHaveBeenCalledTimes(1)
+  })
+
+  it('生成的噪声消息符合噪声特征（可被 isNoiseMessage 识别）', () => {
+    vi.useFakeTimers()
+    const sendFn = vi.fn()
+    startNoiseGeneration(sendFn)
+    vi.advanceTimersByTime(NOISE_INTERVAL_MS)
+
+    const sent = sendFn.mock.calls[0][0] as Record<string, unknown>
+    expect(isNoiseMessage(sent)).toBe(true)
+    expect(typeof sent.id).toBe('string')
+    expect((sent.id as string).length).toBe(FAKE_ID_LENGTH)
+  })
+
+  it('stop 后再 start 可以重新发送', () => {
+    vi.useFakeTimers()
+    const sendFn = vi.fn()
+    startNoiseGeneration(sendFn)
+    vi.advanceTimersByTime(NOISE_INTERVAL_MS)
+    expect(sendFn).toHaveBeenCalledTimes(1)
+
+    stopNoiseGeneration()
+    startNoiseGeneration(sendFn)
+    vi.advanceTimersByTime(NOISE_INTERVAL_MS)
+    expect(sendFn).toHaveBeenCalledTimes(2)
   })
 })

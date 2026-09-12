@@ -169,7 +169,7 @@ export default function ChatView() {
             {peerId && (
               <button
                 onClick={() => setSafetyOpen(true)}
-                className="chat-safety-btn"
+                className={`chat-safety-btn ${verifyState}`}
                 aria-label={t.safety.title}
                 title={
                   verifyState === 'verified'
@@ -178,18 +178,6 @@ export default function ChatView() {
                       ? t.safety.changed
                       : t.safety.unconfirmed
                 }
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  fontSize: '1.1rem',
-                  cursor: 'pointer',
-                  filter:
-                    verifyState === 'verified'
-                      ? 'grayscale(0)'
-                      : verifyState === 'changed'
-                        ? 'hue-rotate(-40deg) saturate(3)'
-                        : 'grayscale(1) opacity(0.6)',
-                }}
               >
                 {verifyState === 'changed' ? '⚠️' : '🛡️'}
               </button>
@@ -216,19 +204,6 @@ export default function ChatView() {
               e.preventDefault()
               setSafetyOpen(true)
             }
-          }}
-          style={{
-            margin: '8px 12px 0',
-            padding: '10px 14px',
-            borderRadius: '10px',
-            background: 'rgba(234, 179, 8, 0.15)',
-            border: '1px solid rgba(234, 179, 8, 0.35)',
-            color: '#fbbf24',
-            fontSize: '0.85rem',
-            display: 'flex',
-            gap: '8px',
-            alignItems: 'center',
-            cursor: 'pointer',
           }}
         >
           <span aria-hidden="true">⚠️</span>

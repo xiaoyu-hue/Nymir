@@ -1204,3 +1204,35 @@ select {
   width: 100%;
   max-width: 400px;
 }
+
+/* 安全按钮状态（ChatView header） */
+.chat-safety-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.chat-safety-btn.verified {
+  filter: grayscale(0);
+}
+.chat-safety-btn.changed {
+  filter: hue-rotate(-40deg) saturate(3);
+}
+.chat-safety-btn.unverified {
+  filter: grayscale(1) opacity(0.6);
+}
+
+/* 未核对安全码提示条 */
+.safety-banner {
+  margin: 8px 12px 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(234, 179, 8, 0.15);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  color: #fbbf24;
+  font-size: 0.85rem;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  cursor: pointer;
+}
