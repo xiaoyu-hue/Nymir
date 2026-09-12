@@ -30,45 +30,46 @@ beforeEach(() => {
 
 describe('offlineQueue', () => {
   it('无 peer 场景：消息可入队且 getPending 能取回', () => {
-    offlineQueue.enqueue('msg-1', 'room-a', { content: 'hello', id: 'msg-1' }, [])
+    offlineQueue.enqueue('msg-1', 'room-a', {}, [])
     const pending = offlineQueue.getPending('room-a')
     expect(pending).toHaveLength(1)
     expect(pending[0].id).toBe('msg-1')
     expect(pending[0].status).toBe('pending')
-    expect(pending[0].payload).toMatchObject({ content: 'hello' })
+    // payload 不存明文内容（设计如此，防 localStorage 泄露）
+    expect(pending[0].payload).toEqual({})
   })
 
   it('相同 msgId 重复 enqueue 不会产生第二条', () => {
-    offlineQueue.enqueue('msg-1', 'room-a', { content: 'a' }, [])
-    offlineQueue.enqueue('msg-1', 'room-a', { content: 'b' }, [])
+    offlineQueue.enqueue('msg-1', 'room-a', {}, [])
+    offlineQueue.enqueue('msg-1', 'room-a', {}, [])
     expect(offlineQueue.getPending('room-a')).toHaveLength(1)
     expect(offlineQueue.getStats().total).toBe(1)
   })
 
   it('markSent 后不再出现在 getPending（attempts 仍 < 3 但 status 已非 pending）', () => {
-    offlineQueue.enqueue('msg-2', 'room-a', { content: 'x' }, [])
+    offlineQueue.enqueue('msg-2', 'room-a', {}, [])
     offlineQueue.markSent('msg-2')
     expect(offlineQueue.getPending('room-a')).toHaveLength(0)
     expect(offlineQueue.getStats().sent).toBe(1)
   })
 
   it('markDelivered 后从队列移除，不残留 id', () => {
-    offlineQueue.enqueue('msg-3', 'room-a', { content: 'y' }, [])
+    offlineQueue.enqueue('msg-3', 'room-a', {}, [])
     offlineQueue.markDelivered('msg-3')
     expect(offlineQueue.getStats().total).toBe(0)
     expect(offlineQueue.getPending('room-a')).toHaveLength(0)
   })
 
   it('clear() 清空内存与 localStorage 中的队列', () => {
-    offlineQueue.enqueue('msg-4', 'room-a', { content: 'secret' }, [])
+    offlineQueue.enqueue('msg-4', 'room-a', {}, [])
     offlineQueue.clear()
     expect(offlineQueue.getStats().total).toBe(0)
     expect(localStorage.getItem('nymir_offline_queue')).toBe('[]')
   })
 
   it('clearRoom 只清理指定房间的条目，其他房间保留', () => {
-    offlineQueue.enqueue('a-1', 'room-a', { content: 'secret-a' }, [])
-    offlineQueue.enqueue('b-1', 'room-b', { content: 'secret-b' }, [])
+    offlineQueue.enqueue('a-1', 'room-a', {}, [])
+    offlineQueue.enqueue('b-1', 'room-b', {}, [])
 
     offlineQueue.clearRoom('room-a')
 
@@ -81,7 +82,7 @@ describe('offlineQueue', () => {
   })
 
   it('clearRoom 对不存在的房间是幂等的，不报错', () => {
-    offlineQueue.enqueue('a-1', 'room-a', { content: 'x' }, [])
+    offlineQueue.enqueue('a-1', 'room-a', {}, [])
     expect(() => offlineQueue.clearRoom('no-such-room')).not.toThrow()
     expect(offlineQueue.getStats().total).toBe(1)
   })

@@ -8,6 +8,7 @@ export function shouldDestroy(msg: Message): boolean {
     const elapsed = Date.now() - msg.timestamp
     if (elapsed >= msg.burnAfter * 1000) return true
   }
+  // scheduled：仅用于接收旧版/对端客户端发来的消息，当前 UI 不发送此模式
   if (msg.burnMode === 'scheduled' && msg.burnAt) {
     if (Date.now() >= msg.burnAt) return true
   }
@@ -23,6 +24,7 @@ export function getRemainingMs(msg: Message): number {
     const end = msg.timestamp + msg.burnAfter * 1000
     return Math.max(0, end - Date.now())
   }
+  // scheduled：协议兼容，当前 UI 不发送
   if (msg.burnMode === 'scheduled' && msg.burnAt) {
     return Math.max(0, msg.burnAt - Date.now())
   }

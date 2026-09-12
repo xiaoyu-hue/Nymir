@@ -19,7 +19,12 @@ export type DeliveryStatus = 'pending' | 'sent' | 'delivered' | 'expired' | 'fai
 export interface QueuedMessage {
   id: string
   roomId: string
-  payload: Record<string, unknown>
+  /**
+   * 载荷占位——设计上不存明文内容。
+   * message.ts 入队时传空对象 {}，仅保留元数据用于重发。
+   * 类型收紧为空对象，防止未来误传明文导致 localStorage 泄露。
+   */
+  payload: Record<string, never>
   targetPeers: string[]
   createdAt: number
   attempts: number
@@ -43,7 +48,7 @@ class OfflineQueue {
   enqueue(
     msgId: string,
     roomId: string,
-    payload: Record<string, unknown>,
+    payload: Record<string, never>,
     targetPeers: string[],
   ): void {
     // 检查是否已存在
