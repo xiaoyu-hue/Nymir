@@ -161,6 +161,48 @@
 
 ---
 
+## 第六轮安全修复——身份持久化与备份跨设备恢复 - 2026-09-12
+
+> 在第五轮审查基础上，用户要求全面代码自审查后发现的问题修复。每项单独提交，262 用例全过。
+
+### 🛡️ 安全修复
+
+- **fix(security): v4 加密格式——per-install 随机盐替代 v3 全零固定盐**
+  > v3 用全零固定盐，所有用相同密码的安装派生出相同密钥，失去防彩虹表/批量破解能力。v4 首次设密码时生成 16 字节随机盐存 localStorage，旧 v1/v2/v3 数据解锁后自动迁移。
+
+- **feat(security): 身份密钥持久化——刷新后身份不变，TOFU 长期有效**
+  > 之前每次刷新都生成新密钥对，TOFU/verified 按 trystero 临时 peerId 存储，刷新后信任关系全部失效。密钥对改为 extractable:true，用锁屏密码加密后存 IndexedDB（DB_VERSION 2 新增 identity store）。TOFU key 从临时 peerId 改为对方公钥 SHA-256 哈希。
+
+- **fix(security): 跨设备备份恢复——备份文件内嵌随机盐**
+  > v4 per-install 盐导致备份导出到另一台设备后盐不同、解密失败（v3 全零盐时代可工作）。备份格式升级到 V3（NYMIR_ENC_V3），备份文件自带 16 字节随机盐，盐跟着文件走，到哪台设备都能解开。旧 V2 备份仍可导入（仅同设备）。
+
+- **feat(security): 最小密码长度 6→10 位**
+  > 6 位纯数字离线破解约 28 小时，10 位要几十年。统一常量 MIN_PASSWORD_LENGTH=10，i18n 和 BackupPanel 同步更新。
+
+### 🐛 Bug 修复
+
+- **fix(security): 解锁后等待身份密钥加载完成再进主界面**
+  > 之前 onLockChange 回调里 fire-and-forget 调 loadIdentity()，慢设备上用户可能在密钥未就绪时进房发消息。改为 async 等待完成，加载期间显示过渡屏，失败显示错误提示。
+
+- **fix(test): 修 peer.test mock 类型 + ConfirmDialog unhandled errors**
+  > peer.test 的 vi.fn mock 类型从 `vi.fn(() => room)` 改为 `vi.fn((..._args: unknown[]) => room)` 解决 oxlint no-explicit-any 报错；ConfirmDialog 测试补 cleanup 避免未处理错误。
+
+- **docs(security): 诚实降级注释——移除残留的"前向保密"表述**
+  > e2eeManager 文件头注释仍声称"前向保密"，与实际实现（会话级静态 ECDH + 每消息 HKDF）不符。改为诚实描述。
+
+### 🧹 代码清理
+
+- **refactor: 收紧 offlineQueue payload 类型**
+  > QueuedMessage.payload 从 Record<string, unknown> 改为 Record<string, never>，从类型层面禁止塞明文，防止未来误改导致 localStorage 泄露。
+- **burn.ts scheduled 分支加注释**：协议兼容层（接收旧版客户端消息），当前 UI 不发送。
+
+### 📝 文档
+
+- **docs(threat-model): 记录 ping/pong 监控消息不加密的元数据泄露**
+- **docs(readme): 双语 README 同步更新安全特性、已知局限、路线图、测试数**
+
+---
+
 ## 早期变更
 
 > 文档类变更：README 双语修订、顶部风险提示、英文版行为准则 CODE_OF_CONDUCT.en.md、双语贡献指南 CONTRIBUTING.md、威胁模型文档 THREAT_MODEL.md 同步 v3 加密格式、AGENTS.md 规范更新。

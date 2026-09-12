@@ -47,16 +47,19 @@ Encryption and signing happen entirely in your browser. Intermediate nodes (incl
 - ✅ **Per-message keys** — HKDF derived per message, different keys for different messages
 - ✅ **Encrypt-then-sign** — Ed25519 over ciphertext; verification failure means no display
 - ✅ **Visible signature failures** — shown on the bubble, never silent
+- ✅ **Out-of-band security code verification** — shield icon in chat header shows a 15-digit number + 7 emoji derived from both parties' public keys; verify via another channel to detect MITM. After verification, keys are pinned; any future change triggers a red warning
 - ✅ **P2P Direct** — no app-server message store
-- ✅ **Encrypted local storage** — IndexedDB field-level encryption (AES-256-GCM, password-derived key)
+- ✅ **Encrypted local storage** — IndexedDB field-level encryption (AES-256-GCM, PBKDF2 600k iterations, v4 per-install random salt)
+- ✅ **Persistent identity** — encryption identity survives page refresh; TOFU/security-code verification stays valid long-term (since v4)
 - ✅ **Read-once / timed burn**
-- ✅ **Encrypted Backup** — AES-256-GCM
+- ✅ **Encrypted Backup (V3)** — AES-256-GCM with self-contained random salt; restorable across devices
 
 ### Security Considerations
 
-- **TOFU**: a MITM on **first** key exchange cannot be detected by the protocol alone
+- **TOFU**: a MITM on **first** key exchange cannot be detected by the protocol alone. **Tap the shield to verify the security code** — verification is user-optional; skipping it means you're unprotected
+- **Password must be at least 10 characters** — the lock-screen password derives the encryption key; short passwords can be brute-forced offline
 - Read-and-burn does not stop screenshots or copy-paste
-- **Forgot lock-screen password** may mean permanent loss of locally encrypted data
+- **Forgot lock-screen password** may mean permanent loss of locally encrypted data (backup files also require the same password to restore)
 
 ### Known Limitations
 
@@ -66,8 +69,8 @@ Encryption and signing happen entirely in your browser. Intermediate nodes (incl
 - **Automatic key rotation is currently disabled** — per-message HKDF remains; verifiable rotation is on the roadmap
 - **Pseudonyms are device-local**
 - **Realtime depends on browser and NAT**
-- **Public-key exchange over public signaling, no out-of-band fingerprint check** — TOFU pins the first key; a MITM who injects a fake key **on first contact** cannot be detected by the protocol alone; no safety-number / QR verification
 - **Traffic obfuscation is weak** — noise about every 30 seconds with a fixed ~48-byte payload; regular interval and size can themselves be a fingerprint; **does not** resist serious traffic analysis
+- **Ping/pong monitoring messages are unencrypted** — connection-quality heartbeats (timestamps only) go over the P2P channel every 5 seconds; no content leak but online-status metadata is visible
 
 ### When Nymir is NOT a good fit
 
@@ -75,7 +78,7 @@ To be honest, Nymir is not a universal privacy tool. Please think twice or choos
 
 - **High-risk communication** (journalists, activists, whistleblowers facing state-level adversaries) — weak traffic obfuscation, TOFU vulnerability, no offline inbox; not suitable against serious traffic analysis
 - **Long-term retention of important records** — read-and-burn actively destroys messages; if you forget the lock-screen password, locally encrypted data is **permanently unrecoverable**
-- **Multi-device / cross-device sync** — no multi-device sync currently; messages only live in the current browser
+- **Real-time multi-device sync** — no real-time multi-device sync currently; messages only live in the current browser. Use backup export/import to migrate between devices (requires the same lock-screen password)
 - **Public or shared devices** — local data lives in the browser profile; anyone using the same browser can access it (unless a lock-screen password is set)
 
 ---
@@ -86,6 +89,8 @@ To be honest, Nymir is not a universal privacy tool. Please think twice or choos
 
 - [x] P2P realtime, read-and-burn, local storage, encrypted backup
 - [x] E2EE, encrypt-then-sign, per-message HKDF, visible verify failures
+- [x] Persistent identity keys (survive refresh, TOFU stays valid) + v4 per-install random salt
+- [x] Cross-device backup restore (V3 backup file embeds its own salt)
 - [x] localStorage key removal (**`removeItem` only**; no overwrite; browsers do not guarantee physical erase)
 - [x] CI test gate (typecheck + lint + test)
 
@@ -130,7 +135,7 @@ Nymir stands on the shoulders of these open-source projects. Without them, a zer
 |---------|---------|-------|
 | [TypeScript](https://www.typescriptlang.org) | Apache-2.0 | Type system |
 | [Vite](https://vite.dev) | MIT | Build tool |
-| [Vitest](https://vitest.dev) | MIT | Test framework (260 tests) |
+| [Vitest](https://vitest.dev) | MIT | Test framework (262 tests) |
 | [Oxlint](https://oxc.rs) | MIT | Linter (CI gate) |
 | [vite-plugin-pwa](https://vite-pwa-org.netlify.app) | MIT | PWA support (installable, offline-capable) |
 | [jsdom](https://github.com/jsdom/jsdom) | MIT | DOM test environment |
