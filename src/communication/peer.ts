@@ -122,7 +122,22 @@ export class PeerManager {
 
   private joinWithStrategy(roomId: string, strategy: Strategy): Room {
     const joinFn = strategy === 'torrent' ? joinTorrent : joinMqtt
-    const room = joinFn({ appId: APP_ID }, roomId)
+    // 国内可用的公共 STUN（trystero 默认用 Google STUN，在大陆网络下不通）。
+    // 这些地址来自多源交叉验证（小米/B站/腾讯），仅用于 NAT 穿透，不中转数据。
+    const room = joinFn(
+      {
+        appId: APP_ID,
+        rtcConfig: {
+          iceServers: [
+            { urls: 'stun:stun.miwifi.com:3478' },
+            { urls: 'stun:stun.chat.bilibili.com:3478' },
+            { urls: 'stun:stun.qq.com:3478' },
+            { urls: 'stun:stun.cloudflare.com:3478' },
+          ],
+        },
+      },
+      roomId,
+    )
     room.onPeerJoin = (peerId: string) => {
       this.peers.add(peerId)
       connectionMonitor.setPeerCount(this.peers.size)
