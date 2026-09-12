@@ -30,6 +30,12 @@ import {
   type SignKeyPair,
 } from './sign'
 
+import {
+  buildFingerprint,
+  type IdentityKeys,
+  type Fingerprint,
+} from './fingerprint'
+
 import { log, error } from '../utils/logger'
 import { uint8ToBase64 } from '../utils/base64'
 
@@ -37,8 +43,25 @@ export type E2EEStatus = 'initializing' | 'ready' | 'error'
 
 export type TOFUStatus = 'trusted' | 'untrusted' | 'new'
 
+/**
+ * 带外验证状态：
+ * - unverified：从未核对过安全码
+ * - verified：当前指纹与上次核对时一致
+ * - changed：上次核对过，但当前指纹变了（疑似中间人换钥或对方重装）
+ */
+export type VerificationState = 'verified' | 'unverified' | 'changed'
+
 // 历史：曾在每 100 条消息时自动 rotateKeys，因无对端通知与 TOFU 衔接已关闭。
 const TOFU_STORAGE_KEY = 'nymir_tofu'
+// 用户手动核对过的安全码指纹，按 peerId 存当前会话内的钉住值。
+const VERIFIED_STORAGE_KEY = 'nymir_verified'
+
+interface VerifiedRecord {
+  /** 上次核对时的 decimal 指纹（15 位数字） */
+  fingerprint: string
+  /** 核对时间戳（ms） */
+  verifiedAt: number
+}
 
 function loadTOFU(): Map<string, string> {
   try {
@@ -63,17 +86,42 @@ function saveTOFU(map: Map<string, string>): void {
   localStorage.setItem(TOFU_STORAGE_KEY, btoa(jsonStr))
 }
 
+function loadVerified(): Map<string, VerifiedRecord> {
+  try {
+    const raw = localStorage.getItem(VERIFIED_STORAGE_KEY)
+    if (!raw) return new Map()
+    let jsonStr: string
+    try {
+      jsonStr = atob(raw)
+    } catch {
+      jsonStr = raw
+    }
+    return new Map(Object.entries(JSON.parse(jsonStr)))
+  } catch {
+    return new Map()
+  }
+}
+
+function saveVerified(map: Map<string, VerifiedRecord>): void {
+  const jsonStr = JSON.stringify(Object.fromEntries(map))
+  localStorage.setItem(VERIFIED_STORAGE_KEY, btoa(jsonStr))
+}
+
 class E2EEManager {
   private keyPair: KeyPair | null = null
   private signKeyPair: SignKeyPair | null = null
   private peerPublicKeys = new Map<string, CryptoKey>()
   private peerSignPublicKeys = new Map<string, CryptoKey>()
+  // 对方公钥的原始 base64 字符串（peerPublicKeys 只存 import 后的 CryptoKey，无法反推原文）
+  private peerPublicKeyStrings = new Map<string, string>()
+  private peerSignPublicKeyStrings = new Map<string, string>()
   private status: E2EEStatus = 'initializing'
   private _publicKeyString: string | null = null
   private _signPublicKeyString: string | null = null
   private messageCount = 0
   private onKeyRotationCallback: (() => void) | null = null
   private tofuStore = loadTOFU()
+  private verifiedStore = loadVerified()
 
   get currentStatus(): E2EEStatus {
     return this.status
@@ -143,10 +191,12 @@ class E2EEManager {
 
       const peerKey = await importPeerPublicKey(publicKeyStr)
       this.peerPublicKeys.set(peerId, peerKey)
+      this.peerPublicKeyStrings.set(peerId, publicKeyStr)
 
       if (signPublicKeyStr) {
         const peerSignKey = await importPeerSignPublicKey(signPublicKeyStr)
         this.peerSignPublicKeys.set(peerId, peerSignKey)
+        this.peerSignPublicKeyStrings.set(peerId, signPublicKeyStr)
       }
 
       // 首次连接：存储公钥哈希
@@ -245,11 +295,16 @@ class E2EEManager {
   }
 
   /**
-   * 清除某个 peer 的密钥
+   * 清除某个 peer 的密钥。
+   * 注意：verifiedStore 不在此处清除——用户"已验证"的是身份指纹，
+   * 不应因 peerId 临时离开房间就遗忘；若公钥真的变了，
+   * getVerificationState 会自动落到 'changed'。
    */
   removePeerKey(peerId: string): void {
     this.peerPublicKeys.delete(peerId)
     this.peerSignPublicKeys.delete(peerId)
+    this.peerPublicKeyStrings.delete(peerId)
+    this.peerSignPublicKeyStrings.delete(peerId)
     clearSharedKey(peerId)
   }
 
@@ -326,6 +381,84 @@ class E2EEManager {
    */
   onKeyRotation(cb: () => void): void {
     this.onKeyRotationCallback = cb
+  }
+
+  // ------------------------------------------------------------------
+  // 带外身份核对（安全码指纹）
+  // ------------------------------------------------------------------
+
+  /**
+   * 获取自己的两个身份公钥（供指纹计算）。
+   */
+  getOwnIdentityKeys(): IdentityKeys | null {
+    if (!this._publicKeyString || !this._signPublicKeyString) return null
+    return { encPub: this._publicKeyString, signPub: this._signPublicKeyString }
+  }
+
+  /**
+   * 获取某 peer 的两个身份公钥（供指纹计算）。
+   * 若对方尚未交换公钥，或未提供签名公钥，返回 null。
+   */
+  getPeerIdentityKeys(peerId: string): IdentityKeys | null {
+    const enc = this.peerPublicKeyStrings.get(peerId)
+    const sign = this.peerSignPublicKeyStrings.get(peerId)
+    if (!enc || !sign) return null
+    return { encPub: enc, signPub: sign }
+  }
+
+  /**
+   * 计算与某 peer 的共同安全码指纹。
+   * 任一侧公钥未就绪时返回 null（例如尚未完成公钥交换）。
+   */
+  async computePeerFingerprint(peerId: string): Promise<Fingerprint | null> {
+    const own = this.getOwnIdentityKeys()
+    const peer = this.getPeerIdentityKeys(peerId)
+    if (!own || !peer) return null
+    try {
+      return await buildFingerprint(own, peer)
+    } catch (e) {
+      error('[E2EE] computePeerFingerprint failed:', e)
+      return null
+    }
+  }
+
+  /**
+   * 用户在 UI 上确认"已和对方带外核对一致"后调用，把当前指纹钉住。
+   */
+  async markPeerVerified(peerId: string): Promise<void> {
+    const fp = await this.computePeerFingerprint(peerId)
+    if (!fp) return
+    this.verifiedStore.set(peerId, {
+      fingerprint: fp.decimal,
+      verifiedAt: Date.now(),
+    })
+    saveVerified(this.verifiedStore)
+    log('[E2EE] Peer marked as verified:', peerId)
+  }
+
+  /**
+   * 查询与某 peer 的带外验证状态。
+   * - 从未核对过 → 'unverified'
+   * - 当前指纹与上次核对一致 → 'verified'
+   * - 上次核对过但当前指纹变了 → 'changed'（疑似中间人换钥，或对方换设备）
+   */
+  async getVerificationState(peerId: string): Promise<VerificationState> {
+    const record = this.verifiedStore.get(peerId)
+    if (!record) return 'unverified'
+    const fp = await this.computePeerFingerprint(peerId)
+    if (!fp) return 'unverified'
+    return record.fingerprint === fp.decimal ? 'verified' : 'changed'
+  }
+
+  /**
+   * 主动清除某 peer 的已验证记录。
+   * 用于用户点"不再信任"，或指纹变化后需要重新核对的场景。
+   */
+  unverifyPeer(peerId: string): void {
+    if (this.verifiedStore.delete(peerId)) {
+      saveVerified(this.verifiedStore)
+      log('[E2EE] Peer verification cleared:', peerId)
+    }
   }
 }
 
