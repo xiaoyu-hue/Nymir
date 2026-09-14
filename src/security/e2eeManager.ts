@@ -55,6 +55,33 @@ export type TOFUStatus = 'trusted' | 'untrusted' | 'new'
  */
 export type VerificationState = 'verified' | 'unverified' | 'changed'
 
+/**
+ * 可验证密钥轮换证明（签名衔接协议，ADR-007）。
+ *
+ * 语义：换钥时用「旧签名私钥」对「新公钥材料」签名，对端用已固定的旧签名
+ * 公钥验签通过后才接受新公钥——证明新旧身份是同一实体，防中间人直接注入假新钥。
+ */
+export interface KeyRotationNotice {
+  /** 不含签名的证明体 JSON（被签名的对象） */
+  proof: string
+  /** 用旧签名私钥对 proof 的签名（base64） */
+  signature: string
+}
+
+/** 证明体内部结构（v1） */
+interface KeyRotationBody {
+  v: 1
+  /** 发起端轮换前的签名公钥（对端用它验签） */
+  oldSignPub: string
+  /** 新 E2EE 加密公钥 */
+  newEncPub: string
+  /** 新签名公钥 */
+  newSignPub: string
+  rotatedAt: number
+}
+
+export type KeyRotationResult = 'accepted' | 'rejected' | 'ignored' | 'no-peer-key'
+
 // 历史：曾在每 100 条消息时自动 rotateKeys，因无对端通知与 TOFU 衔接已关闭。
 const TOFU_STORAGE_KEY = 'nymir_tofu'
 // 用户手动核对过的安全码指纹，按对方公钥 SHA-256 哈希存（跨会话持久）。
@@ -123,7 +150,7 @@ class E2EEManager {
   private _publicKeyString: string | null = null
   private _signPublicKeyString: string | null = null
   private messageCount = 0
-  private onKeyRotationCallback: (() => void) | null = null
+  private onKeyRotationCallback: ((notice: KeyRotationNotice | null) => void) | null = null
   private tofuStore = loadTOFU()
   private verifiedStore = loadVerified()
 
@@ -366,7 +393,7 @@ class E2EEManager {
   }
 
   /**
-   * 显式轮换密钥对（当前无自动调用）。
+   * 显式轮换密钥对（向后兼容；不产生可验证证明，生产路径请用 rotateKeysVerifiable）。
    *
    * 警告：调用前必须确保已通过 onKeyRotation 注册“向所有 peer 广播新公钥”
    * 的回调，且对端能验证并 re-pin。否则对端仍持旧公钥，消息将无法解密。
@@ -381,17 +408,153 @@ class E2EEManager {
       this.messageCount = 0
       clearAllSharedKeys()
       log('[E2EE] Keys rotated')
-      this.onKeyRotationCallback?.()
+      this.onKeyRotationCallback?.(null)
     } catch (e) {
       error('[E2EE] Key rotation failed:', e)
     }
   }
 
   /**
-   * 注册密钥轮换回调（用于通知 peer 新公钥）。
-   * 自动轮换关闭期间仍保留接口，供日后可验证轮换使用。
+   * 可验证密钥轮换（签名衔接协议，ADR-007）。
+   *
+   * 1. 生成新加密/签名密钥对；
+   * 2. 用旧签名私钥对「新公钥材料」签名，形成 KeyRotationNotice；
+   * 3. 应用并持久化新身份（刷新后仍为新钥）；
+   * 4. 触发 onKeyRotation 回调，由通信层把证明广播给所有 peer。
+   *
+   * 对端 handleKeyRotation 验签通过才 re-pin；生产路径应调用本方法而非 rotateKeys()。
    */
-  onKeyRotation(cb: () => void): void {
+  async rotateKeysVerifiable(): Promise<KeyRotationNotice | null> {
+    const oldSignKeyPair = this.signKeyPair
+    const oldSignPub = this._signPublicKeyString
+    if (!this.keyPair || !oldSignKeyPair || !oldSignPub) {
+      error('[E2EE] Key rotation skipped: identity not loaded')
+      return null
+    }
+
+    const newEncPair = await generateKeyPair()
+    const newSignPair = await generateSignKeyPair()
+    const newEncPub = await exportPublicKey(newEncPair)
+    const newSignPub = await exportSignPublicKey(newSignPair)
+
+    const body: KeyRotationBody = {
+      v: 1,
+      oldSignPub,
+      newEncPub,
+      newSignPub,
+      rotatedAt: Date.now(),
+    }
+    const proof = JSON.stringify(body)
+    const signature = await signMessage(proof, oldSignKeyPair.privateKey)
+
+    // 应用新身份
+    this.keyPair = newEncPair
+    this.signKeyPair = newSignPair
+    this._publicKeyString = newEncPub
+    this._signPublicKeyString = newSignPub
+    this.messageCount = 0
+    clearAllSharedKeys()
+
+    // 持久化新身份（刷新页面后仍为新钥）
+    try {
+      const encKeypair = JSON.stringify(await exportKeyPair(newEncPair))
+      const signKeypair = JSON.stringify(await exportSignKeyPair(newSignPair))
+      await saveIdentity(
+        await securityManager.encrypt(encKeypair),
+        await securityManager.encrypt(signKeypair),
+      )
+    } catch (e) {
+      error('[E2EE] Failed to persist rotated identity:', e)
+    }
+
+    log('[E2EE] Keys rotated (verifiable)')
+    this.onKeyRotationCallback?.({ proof, signature })
+    return { proof, signature }
+  }
+
+  /**
+   * 处理对端的可验证密钥轮换通知。
+   *
+   * - 无已固定的旧签名公钥 → 'no-peer-key'（首次交换请走 handlePeerPublicKey）
+   * - 证明格式非法 / oldSignPub 与已固定旧钥不符 / 验签失败 → 'rejected'（不更新任何状态）
+   * - 新公钥与当前一致（重复广播）→ 'ignored'
+   * - 验签通过 → 更新对端公钥 + TOFU re-pin + 迁移已验证记录（保留旧指纹，
+   *   getVerificationState 因此自然返回 'changed'，UI 提示重新核对）→ 'accepted'
+   */
+  async handleKeyRotation(
+    peerId: string,
+    notice: KeyRotationNotice,
+  ): Promise<KeyRotationResult> {
+    const oldSignKey = this.peerSignPublicKeys.get(peerId)
+    const oldEncStr = this.peerPublicKeyStrings.get(peerId)
+    if (!oldSignKey || !oldEncStr) {
+      log('[E2EE] Key rotation rejected: no pinned old keys for peer', peerId)
+      return 'no-peer-key'
+    }
+
+    let body: KeyRotationBody
+    try {
+      body = JSON.parse(notice.proof)
+    } catch {
+      return 'rejected'
+    }
+    if (
+      body.v !== 1 ||
+      typeof body.newEncPub !== 'string' ||
+      typeof body.newSignPub !== 'string' ||
+      typeof body.oldSignPub !== 'string'
+    ) {
+      return 'rejected'
+    }
+    // 重复广播：新加密公钥与当前一致 → 忽略。
+    // 必须放在最前：若已接受过一次，本端固定的公钥已更新，重放同一证明
+    // 会因 oldSignPub/验签检查误判 rejected；且此处不改变任何状态，安全。
+    if (body.newEncPub === oldEncStr) return 'ignored'
+
+    // 旧签名公钥必须与本端已固定的旧钥一致（防伪造来源：新公钥必须由上一代签名）
+    if (body.oldSignPub !== this.peerSignPublicKeyStrings.get(peerId)) {
+      return 'rejected'
+    }
+
+    const ok = await verifySignature(notice.proof, notice.signature, oldSignKey)
+    if (!ok) {
+      log('[E2EE] Key rotation REJECTED (signature failed) for peer', peerId)
+      return 'rejected'
+    }
+
+    // 验签通过：计算新旧公钥哈希（先算旧的，map 更新后拿不到）
+    const oldKeyHash = await this.hashPubKey(oldEncStr)
+    const newKeyHash = await this.hashPubKey(body.newEncPub)
+
+    // 更新对端公钥
+    const newEncKey = await importPeerPublicKey(body.newEncPub)
+    const newSignKey = await importPeerSignPublicKey(body.newSignPub)
+    this.peerPublicKeys.set(peerId, newEncKey)
+    this.peerPublicKeyStrings.set(peerId, body.newEncPub)
+    this.peerSignPublicKeys.set(peerId, newSignKey)
+    this.peerSignPublicKeyStrings.set(peerId, body.newSignPub)
+
+    // TOFU re-pin：新公钥哈希钉住（身份延续已由签名证明）
+    this.tofuStore.set(newKeyHash, 'pinned')
+    saveTOFU(this.tofuStore)
+
+    // verified 迁移：保留"曾核对"历史（旧指纹 → 状态自然变 'changed'，UI 提示重新核对）
+    const verified = this.verifiedStore.get(oldKeyHash)
+    if (verified) {
+      this.verifiedStore.delete(oldKeyHash)
+      this.verifiedStore.set(newKeyHash, verified)
+      saveVerified(this.verifiedStore)
+    }
+
+    log('[E2EE] Key rotation ACCEPTED for peer', peerId)
+    return 'accepted'
+  }
+
+  /**
+   * 注册密钥轮换回调（通知通信层向所有 peer 广播新公钥证明）。
+   * notice 为 null 表示非可验证轮换（旧 rotateKeys），调用方应只处理 notice 非空的情况。
+   */
+  onKeyRotation(cb: (notice: KeyRotationNotice | null) => void): void {
     this.onKeyRotationCallback = cb
   }
 
@@ -485,6 +648,11 @@ class E2EEManager {
   private async getKeyHashForPeer(peerId: string): Promise<string | null> {
     const pubKeyStr = this.peerPublicKeyStrings.get(peerId)
     if (!pubKeyStr) return null
+    return this.hashPubKey(pubKeyStr)
+  }
+
+  /** 公钥字符串 → SHA-256 哈希（TOFU / verifiedStore 的 key） */
+  private async hashPubKey(pubKeyStr: string): Promise<string> {
     const encoder = new TextEncoder()
     const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(pubKeyStr))
     return uint8ToBase64(new Uint8Array(hashBuffer))
