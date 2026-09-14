@@ -110,6 +110,15 @@ const en: Translations = {
     close: 'Close',
     unverifiedBanner: 'Security code not verified — this conversation may be intercepted',
   },
+  keyRotation: {
+    title: 'Rotate Keys',
+    confirmMsg: 'A new encryption key pair will be generated and securely announced to your peer. Both sides must re-verify the security code afterwards. Continue?',
+    busy: 'Rotating...',
+    success: 'Keys rotated — please re-verify the security code',
+    fail: 'Rotation failed: peer offline or did not confirm',
+    cancel: 'Cancel',
+    confirm: 'Rotate keys',
+  },
   error: {
     title: 'Application Error',
     reload: 'Reload',

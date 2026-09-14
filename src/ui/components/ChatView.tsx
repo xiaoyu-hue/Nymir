@@ -13,11 +13,13 @@ import { e2eeManager, type VerificationState } from '../../security/e2eeManager'
 import GlassCard from './GlassCard'
 import MessageBubble from './MessageBubble'
 import SafetyCheckDialog from './SafetyCheckDialog'
+import { useConfirm } from './useConfirm'
 
 export default function ChatView() {
   const { status, room } = useRoom()
   const { t } = useI18n()
   const { keyboardOpen, viewportHeight } = useKeyboard()
+  const { confirm, ConfirmDialog } = useConfirm()
   const [messages, setMessages] = useState<Message[]>(() =>
     messageManager.getMessages(),
   )
@@ -27,6 +29,8 @@ export default function ChatView() {
   const [copied, setCopied] = useState(false)
   const [safetyOpen, setSafetyOpen] = useState(false)
   const [verifyState, setVerifyState] = useState<VerificationState>('unverified')
+  const [rotateState, setRotateState] = useState<'idle' | 'busy' | 'success' | 'fail'>('idle')
+  const rotateTimerRef = useRef<ReturnType<typeof setTimeout>>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const readMsgIdsRef = useRef<Set<string>>(new Set())
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -116,6 +120,21 @@ export default function ChatView() {
     [handleSend],
   )
 
+  // 可验证密钥轮换：确认后生成新钥对并安全广播，对端验签通过才 re-pin
+  const handleRotateKeys = useCallback(async () => {
+    const ok = await confirm(t.keyRotation.confirmMsg)
+    if (!ok) return
+    if (rotateTimerRef.current) clearTimeout(rotateTimerRef.current)
+    setRotateState('busy')
+    try {
+      const rotated = await messageManager.rotateKeys()
+      setRotateState(rotated ? 'success' : 'fail')
+    } catch {
+      setRotateState('fail')
+    }
+    rotateTimerRef.current = setTimeout(() => setRotateState('idle'), 4000)
+  }, [confirm, t])
+
   const handleInput = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value)
     const ta = e.target
@@ -182,6 +201,17 @@ export default function ChatView() {
                 {verifyState === 'changed' ? '⚠️' : '🛡️'}
               </button>
             )}
+            {peerId && (
+              <button
+                onClick={handleRotateKeys}
+                className={`chat-rotate-btn ${rotateState}`}
+                aria-label={t.keyRotation.title}
+                title={t.keyRotation.title}
+                disabled={rotateState === 'busy'}
+              >
+                {rotateState === 'busy' ? '⏳' : '🔑'}
+              </button>
+            )}
             <button
               onClick={handleLeave}
               className="chat-leave-btn"
@@ -208,6 +238,19 @@ export default function ChatView() {
         >
           <span aria-hidden="true">⚠️</span>
           <span>{t.safety.unverifiedBanner}</span>
+        </div>
+      )}
+
+      {/* 密钥轮换结果横幅 */}
+      {(rotateState === 'success' || rotateState === 'fail') && (
+        <div
+          className={`rotate-banner ${rotateState === 'success' ? 'rotate-banner-ok' : 'rotate-banner-fail'}`}
+          role="status"
+        >
+          <span aria-hidden="true">{rotateState === 'success' ? '✅' : '❌'}</span>
+          <span>
+            {rotateState === 'success' ? t.keyRotation.success : t.keyRotation.fail}
+          </span>
         </div>
       )}
 
@@ -335,6 +378,9 @@ export default function ChatView() {
           }
         }}
       />
+
+      {/* 密钥轮换确认弹窗 */}
+      <ConfirmDialog />
     </div>
   )
 }
