@@ -1,8 +1,8 @@
 name: "Socket"
 
+# 待定：官方集成需 SOCKET_SECURITY_API_KEY（注册 socket.dev 免费账号）。
+# 注册后按官方文档恢复 push 触发；当前仅手动触发，避免 CI 红。
 on:
-  push:
-    branches: [master]
   workflow_dispatch:
 
 jobs:
@@ -13,9 +13,4 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Socket GitHub Action
-        uses: socketsecurity/socket-github-action@main
-        with:
-          args: --compact
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
