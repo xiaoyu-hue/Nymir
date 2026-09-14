@@ -65,6 +65,8 @@ export default defineConfig({
   ],
   test: {
     setupFiles: ['./src/__tests__/setup.ts'],
+    // e2e/*.spec.js 由 Playwright 跑，vitest 不扫描
+    exclude: ['e2e/**', '**/node_modules/**', '**/dist/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

@@ -12,6 +12,8 @@
 > 🔐 自动密钥轮换为应用功能变更，其余为文档/协作规则变更；功能落地后统一 bump 发版。
 
 - **自动密钥轮换策略（ADR-007 协议就绪后启用）**：每发送 100 条消息自动触发一次可验证轮换（`rotateKeysVerifiable`，签名衔接证明经 key-rotation 通道广播，对端验签通过才 re-pin）；仅在至少一个对端在线时触发，对端离线时计数累计、待在线后补触发；轮换后计数清零。早期"每 100 条自动换"无通知/无签名导致解密失败的缺陷已由协议解决。
+- **E2E 三端测试（Playwright）**：新增 `e2e/`（冒烟 + 响应式）、`playwright.config.js`、`test:e2e` 脚本与 CI job（Chromium 桌面 + WebKit 手机/平板）。冒烟覆盖：零错误加载 / CSP 零违规 / 首次设置密码 / 创建房间进入聊天；响应式覆盖三端渲染。
+- **CSP 修复（E2E 发现的安全问题）**：①移除 `connect-src` 中无效的 `stun:` 源（WebRTC 底层不受 CSP 约束，此前仅产生浏览器警告）；②移除 `<meta>` 中无效的 `frame-ancestors`（meta 不生效），改由 `public/_headers` 的 `X-Frame-Options: DENY` 在 Pages 部署时真正生效；③补齐 trystero 备用 MQTT broker 白名单（`test.mosquitto.org`、`public.cloud.shiftr.io`）——此前被 CSP 拦截，容错降级失效。
 - **决策审查体系**：AGENTS.md 新增「决策协作规范」章节——不可逆 / 花钱 / 对外发布 / 影响项目走向的操作，AI 必须先答"决策三问"（坏处/代价、不做的后果、后悔条件）等作者拍板才能执行；配套新增 `docs/DECISION_REVIEW.md`（决策前反问清单 + 拍板记录模板）。
 - **文档与版本同步规范**：AGENTS.md 新增「文档与版本同步（发布必查）」章节；配套新增 `docs/DOC_SYNC.md`（唯一真源原则：版本号问 package.json、数字问测试输出、描述问代码；同步清单 + SemVer 判定表 + 发布前验证 + 同步检查模板）。含中英双语一致性、依赖 ↔ README 致谢表同步项。
 - **部署收口**：移除 Cloudflare Workers 在线地址（`*.workers.dev` 不可用）；**GitHub Pages（https://xiaoyu-hue.github.io/Nymir/）为主站，Cloudflare Pages（https://nymir.pages.dev/）为备用副站**（两站互为独立入口，域名隔离身份，主备关系已在 README 中英文标注）。1.3.0 中记录的 `Workers Builds: nymir` 已知事项随 Workers 部署移除不再适用。
