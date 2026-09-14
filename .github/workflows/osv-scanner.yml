@@ -22,17 +22,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          URL="https://github.com/google/osv-scanner/releases/download/v2.6.0/osv-scanner_linux_amd64"
-          # release-asset 下载偶发被限流/签名 URL 过期返回 HTML，重试并校验 ELF 魔数
-          for i in 1 2 3; do
-            curl -sSL "$URL" -o /usr/local/bin/osv-scanner
-            if head -c 4 /usr/local/bin/osv-scanner | od -An -tx1 | grep -q '7f 45 4c 46'; then
-              chmod +x /usr/local/bin/osv-scanner
-              echo "OK: valid ELF binary (attempt $i)"
-              break
-            fi
-            echo "WARN: download not an ELF binary (attempt $i), retrying..."
-            sleep 10
-          done
-          head -c 4 /usr/local/bin/osv-scanner | od -An -tx1 | grep -q '7f 45 4c 46' || { echo "ERROR: failed to download valid osv-scanner binary"; exit 1; }
+          # 用 gh CLI 走 API 认证下载，避免 release-asset 直接 curl 被限流返回 HTML
+          gh release download v2.6.0 -R google/osv-scanner -p osv-scanner_linux_amd64 --output /usr/local/bin/osv-scanner --clobber
+          chmod +x /usr/local/bin/osv-scanner
+          # 保险：校验 ELF 魔数
+          head -c 4 /usr/local/bin/osv-scanner | od -An -tx1 | grep -q '7f 45 4c 46' || { echo "ERROR: downloaded file is not a valid ELF binary"; exit 1; }
           osv-scanner scan source -r .
