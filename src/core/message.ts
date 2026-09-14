@@ -394,7 +394,8 @@ export class MessageManager {
           }
         }
         if (delivered > 0) {
-          e2eeManager.recordMessageSent()
+          // 传入在线对端数：自动轮换仅在至少一个对端在线时触发（对端离线轮换会导致其无法解密）
+          e2eeManager.recordMessageSent(peerManager.peerList.length)
         } else {
           // 入队仅存元数据，绝不携带明文 content（离线队列持久化到 localStorage）
           offlineQueue.enqueue(msg.id, this.roomId, {}, [])

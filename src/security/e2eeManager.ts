@@ -43,6 +43,9 @@ import { uint8ToBase64 } from '../utils/base64'
 import { saveIdentity, loadIdentity } from '../persistence/db'
 import { securityManager } from './manager'
 
+/** 自动密钥轮换阈值：每发送 N 条消息触发一次可验证轮换（ADR-007） */
+export const AUTO_ROTATION_INTERVAL = 100
+
 export type E2EEStatus = 'initializing' | 'ready' | 'error'
 
 export type TOFUStatus = 'trusted' | 'untrusted' | 'new'
@@ -377,19 +380,29 @@ class E2EEManager {
   }
 
   /**
-   * 记录消息发送。
+   * 记录消息发送并检查自动轮换阈值。
    *
-   * 注意：自动密钥轮换已禁用（方案 C）。
-   * 原因：轮换后未通知对端、TOFU 按临时 peerId 固定且无签名衔接，
-   * 会导致长对话从约第 100 条起全部解密失败。
-   * messageCount 仍累计，供日后实现可验证轮换时使用。
-   * 前向保密现状：会话级静态 ECDH + 每条消息 HKDF(messageId)，
-   * 私钥泄露可影响本场已截获密文——不提供强前向保密。
+   * 可验证自动轮换（ADR-007 协议就绪后重新启用）：
+   * - 每发送 AUTO_ROTATION_INTERVAL（默认 100）条消息触发一次 rotateKeysVerifiable()——
+   *   签名衔接证明经 key-rotation 通道广播，对端验签通过才 re-pin。
+   *   （早期"每 100 条自动换"因无对端通知、无签名衔接导致解密失败，缺陷已由协议解决。）
+   * - 仅在至少一个对端在线时触发（onlinePeerCount > 0）：轮换证明需要实时广播，
+   *   对端离线时轮换会导致其仍持旧公钥、后续消息无法解密（ADR-007 已知后果）。
+   * - 对端离线时跳过本次触发，计数继续累计，待下次发消息且对端在线时补触发。
+   *
+   * @param onlinePeerCount 当前在线对端数（由通信层传入 peerManager.getPeers().length）
+   * @returns 是否触发了自动轮换
    */
-  recordMessageSent(): void {
+  recordMessageSent(onlinePeerCount = 0): boolean {
     this.messageCount++
-    // 自动轮换已关闭。勿在此处调用 rotateKeys()。
-    // 若重新启用，必须先具备：对端通知 + 旧签名钥衔接 + TOFU re-pin 协议。
+    if (this.messageCount >= AUTO_ROTATION_INTERVAL && onlinePeerCount > 0) {
+      // 先清零避免异步轮换期间重入触发；rotateKeysVerifiable 内部也会清零（幂等）。
+      this.messageCount = 0
+      log('[E2EE] Auto rotation threshold reached, rotating keys (verifiable)')
+      void this.rotateKeysVerifiable()
+      return true
+    }
+    return false
   }
 
   /**
