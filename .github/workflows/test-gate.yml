@@ -39,3 +39,27 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  e2e:
+    name: E2E Smoke (三端：Chromium 桌面 + WebKit 手机/平板)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers (with system deps)
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Run E2E
+        run: npx playwright test

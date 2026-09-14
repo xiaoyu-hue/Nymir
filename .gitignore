@@ -26,3 +26,7 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+
+# Playwright 测试产物
+test-results/
+playwright-report/
