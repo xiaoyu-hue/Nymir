@@ -7,6 +7,17 @@
 
 ---
 
+## 未发布（安全基建：分支保护 + 扫描管线收口）
+
+> ⚙️ 工程/CI 变更，无应用功能变化。
+
+- **启用 master 分支保护**：必须 PR 合并 + 必检全绿（CodeQL `Analyze (javascript-typescript)` / Semgrep `security-audit + owasp-top-ten` / Test Gate `audit · typecheck · lint · test · build`）+ 分支需最新（strict）+ 管理员不绕过（enforce_admins）+ 禁止强推/删除分支 + 线性历史。直推 master 被拒，全部改动走 PR。
+- **停用 Dependabot 常规版本升级**（删除 dependabot.yml）：不再自动开升级 PR（避免分支/PR 杂乱）；保留 Dependabot alerts（漏洞告警）+ security updates（高危漏洞自动修复 PR）——由仓库设置控制，不受影响。
+- **移除冗余 socket.yml**：Socket Security GitHub App 已安装并接管供应链扫描（产生 `Socket Security: Project Report` 检查），自建 workflow 删除。
+- **已知事项**：Cloudflare Workers 构建检查（`Workers Builds: nymir`）偶发 0 秒失败，属 Cloudflare 侧配置/认证问题，不在分支保护必检清单内，不影响合并；待登录 Cloudflare 后台核查。
+
+---
+
 ## 1.2.0 - 2026-09-14（可验证密钥轮换）
 
 > 安全增强：可验证密钥轮换（签名衔接协议，ADR-007）。无破坏性变更。
