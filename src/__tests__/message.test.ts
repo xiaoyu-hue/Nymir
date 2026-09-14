@@ -42,6 +42,9 @@ vi.mock('../security/e2eeManager', () => ({
     encrypt: vi.fn(),
     sign: vi.fn(),
     recordMessageSent: vi.fn(),
+    onKeyRotation: vi.fn(),
+    handleKeyRotation: vi.fn(async () => 'accepted'),
+    rotateKeysVerifiable: vi.fn(async () => null),
   },
 }))
 
@@ -225,16 +228,16 @@ describe('messageManager 接收路径', () => {
 
 describe('messageManager 发送路径（离线队列不入明文）', () => {
   it('重复 init（房间重建）会退订旧通道的 handler，防重复注册', () => {
-    // beforeEach 已 init 一次：注册 messages/read-receipts/recall 三个通道
-    const firstBatch = channelUnsubs.slice(0, 3)
-    expect(firstBatch).toHaveLength(3)
+    // beforeEach 已 init 一次：注册 messages/read-receipts/recall/key-rotation 四个通道
+    const firstBatch = channelUnsubs.slice(0, 4)
+    expect(firstBatch).toHaveLength(4)
 
     messageManager.init('room-rebuilt')
 
     for (const unsub of firstBatch) {
       expect(unsub).toHaveBeenCalledTimes(1)
     }
-    expect(channelUnsubs).toHaveLength(6)
+    expect(channelUnsubs).toHaveLength(8)
   })
 
   it('无 peer 时入队离线队列，payload 不携带明文 content', async () => {

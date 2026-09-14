@@ -27,6 +27,7 @@ export class MessageManager {
   private channel: Channel<AnyPayload> | null = null
   private readChannel: Channel<AnyPayload> | null = null
   private recallChannel: Channel<AnyPayload> | null = null
+  private keyRotationChannel: Channel<AnyPayload> | null = null
   private listeners: MessageListener[] = []
   private messageStore = new Map<string, Message>()
   private burnTimers = new Map<string, ReturnType<typeof setTimeout>>()
@@ -39,6 +40,17 @@ export class MessageManager {
     this.roomId = roomId
     this.bindChannels()
 
+    // 可验证密钥轮换：e2eeManager 轮换成功后自动向所有 peer 广播证明。
+    // onKeyRotation 是单回调，重复 init 覆盖即可（无泄漏）。
+    e2eeManager.onKeyRotation((notice) => {
+      if (!notice) return
+      try {
+        this.keyRotationChannel?.send({ type: 'key-rotation', ...notice })
+      } catch (err) {
+        logError('keyRotation broadcast error', err, { roomId: this.roomId })
+      }
+    })
+
     // 传输策略切换会重建底层 room，必须重绑业务 channel，否则收不到实时消息
     this.unsubRoomRebuilt?.()
     this.unsubRoomRebuilt = peerManager.onRoomRebuilt(() => {
@@ -47,7 +59,7 @@ export class MessageManager {
     })
   }
 
-  /** 在当前 peer room 上绑定 messages/read/recall 通道 */
+  /** 在当前 peer room 上绑定 messages/read/recall/key-rotation 通道 */
   private bindChannels(): void {
     // 先退订旧通道的 onMessage：房间重建/重复 init 时旧 handler 不再残留
     for (const unsub of this.channelUnsubs) unsub()
@@ -56,6 +68,7 @@ export class MessageManager {
     this.channel = peerManager.makeChannel<AnyPayload>('messages')
     this.readChannel = peerManager.makeChannel<AnyPayload>('read-receipts')
     this.recallChannel = peerManager.makeChannel<AnyPayload>('recall')
+    this.keyRotationChannel = peerManager.makeChannel<AnyPayload>('key-rotation')
 
     this.channelUnsubs.push(
       this.channel.onMessage(async (data, { peerId }) => {
@@ -105,11 +118,57 @@ export class MessageManager {
           })
         }
       }),
+
+      this.keyRotationChannel.onMessage(async (data, { peerId }) => {
+        try {
+          if (
+            data.type !== 'key-rotation' ||
+            typeof data.proof !== 'string' ||
+            typeof data.signature !== 'string'
+          ) {
+            warn('[Message] Ignoring malformed key-rotation payload', {
+              roomId: this.roomId,
+              peerId,
+            })
+            return
+          }
+          const result = await e2eeManager.handleKeyRotation(peerId, {
+            proof: data.proof,
+            signature: data.signature,
+          })
+          log('[Message] Key rotation result:', {
+            roomId: this.roomId,
+            peerId,
+            result,
+          })
+          if (result === 'rejected' || result === 'no-peer-key') {
+            warn('[Message] Peer key rotation rejected', {
+              roomId: this.roomId,
+              peerId,
+              result,
+            })
+          }
+        } catch (err) {
+          logError('keyRotationChannel handler error', err, {
+            roomId: this.roomId,
+            peerId,
+          })
+        }
+      }),
     )
 
     startNoiseGeneration((noise) => {
       this.channel?.send(noise)
     })
+  }
+
+  /**
+   * 可验证密钥轮换入口（显式调用）。
+   * 轮换成功后 onKeyRotation 回调自动向所有 peer 广播证明，无需手动发送。
+   */
+  async rotateKeys(): Promise<boolean> {
+    const notice = await e2eeManager.rotateKeysVerifiable()
+    return notice !== null
   }
 
   private async handleIncomingMessage(data: AnyPayload, peerId: string): Promise<void> {
