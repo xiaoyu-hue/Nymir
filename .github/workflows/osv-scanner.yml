@@ -19,7 +19,20 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
       - name: Run OSV-Scanner (v2.6.0 release binary)
+        shell: bash
         run: |
-          curl -sSL "https://github.com/google/osv-scanner/releases/download/v2.6.0/osv-scanner_linux_amd64" -o /usr/local/bin/osv-scanner
-          chmod +x /usr/local/bin/osv-scanner
+          set -euo pipefail
+          URL="https://github.com/google/osv-scanner/releases/download/v2.6.0/osv-scanner_linux_amd64"
+          # release-asset 下载偶发被限流/签名 URL 过期返回 HTML，重试并校验 ELF 魔数
+          for i in 1 2 3; do
+            curl -sSL "$URL" -o /usr/local/bin/osv-scanner
+            if head -c 4 /usr/local/bin/osv-scanner | od -An -tx1 | grep -q '7f 45 4c 46'; then
+              chmod +x /usr/local/bin/osv-scanner
+              echo "OK: valid ELF binary (attempt $i)"
+              break
+            fi
+            echo "WARN: download not an ELF binary (attempt $i), retrying..."
+            sleep 10
+          done
+          head -c 4 /usr/local/bin/osv-scanner | od -An -tx1 | grep -q '7f 45 4c 46' || { echo "ERROR: failed to download valid osv-scanner binary"; exit 1; }
           osv-scanner scan source -r .
