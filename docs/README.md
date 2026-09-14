@@ -12,6 +12,7 @@ This folder holds Nymir's project documents. Only GitHub-convention files (READM
 | [ARCHITECTURE.en.md](./ARCHITECTURE.en.md) | Current architecture (English) · 当前架构（英文版） |
 | [THREAT_MODEL.md](./THREAT_MODEL.md) | 威胁模型：资产、攻击者、信任边界、主要威胁与残余风险 · Threat model (assets, adversaries, trust boundaries, residual risks) |
 | [DECISION_REVIEW.md](./DECISION_REVIEW.md) | 决策审查清单：不可逆/花钱/发布前必答的"决策三问"与拍板记录模板 · Pre-decision review checklist |
+| [DOC_SYNC.md](./DOC_SYNC.md) | 文档与版本同步规范：版本号/测试数等唯一真源、同步清单与发布前验证 · Doc & version sync checklist |
 | [Nymir-项目版本史与架构演化.md](./Nymir-项目版本史与架构演化.md) | 项目发展历史、版本演化脉络与未来架构方向（Local-First / P2P / E2EE） · Project history, version evolution and future architecture direction |
 | [adr/](./adr/README.md) | 架构决策记录：为什么这样做（Trystero 选型、AGPL、信令、加密格式等） · Architecture decision records |
 | [AUTHOR.md](./AUTHOR.md) | 关于作者（中文） · About the author (Chinese) |
