@@ -19,7 +19,7 @@
 
 <br>
 
-**[🔗 Live demo](https://nymir.xyyovo520.workers.dev/) · [GitHub Pages](https://xiaoyu-hue.github.io/Nymir/)**
+**[🔗 Live demo (GitHub Pages primary)](https://xiaoyu-hue.github.io/Nymir/)**
 
 </div>
 
