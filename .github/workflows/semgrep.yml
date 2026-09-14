@@ -1,0 +1,27 @@
+name: "Semgrep"
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  schedule:
+    # 每周二凌晨 3 点例行扫描
+    - cron: '0 3 * * 2'
+
+jobs:
+  semgrep:
+    name: Scan (security-audit + owasp-top-ten)
+    runs-on: ubuntu-latest
+    container:
+      image: returntocorp/semgrep
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep community rules
+        run: |
+          semgrep ci \
+            --config p/security-audit \
+            --config p/owasp-top-ten \
+            --oss-only \
+            --quiet
