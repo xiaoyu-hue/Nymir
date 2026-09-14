@@ -15,8 +15,11 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   webServer: {
-    command: 'npm run build && npx vite preview --port 4173 --strictPort',
-    port: 4173,
+    // --host 127.0.0.1：CI runner 上 vite preview 默认 localhost 可能只绑 IPv6（::1），
+    // Playwright baseURL 用 127.0.0.1 会连接被拒；显式绑定保证双栈环境一致
+    command:
+      'npm run build && npx vite preview --host 127.0.0.1 --port 4173 --strictPort',
+    url: 'http://127.0.0.1:4173',
     reuseExistingServer: true,
     timeout: 240000,
   },
