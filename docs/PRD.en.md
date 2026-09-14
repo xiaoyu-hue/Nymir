@@ -1,7 +1,7 @@
 # Nymir Product Requirements Document (PRD)
 
-> Version: v1.2.0
-> Status: v1.2.0 is the current development version (see [CHANGELOG.md](../CHANGELOG.md))
+> Version: v1.3.0
+> Status: v1.3.0 is the current development version (see [CHANGELOG.md](../CHANGELOG.md))
 > Document principle: this document describes the **current implementation's** product behavior and security boundary and stays in sync with the code. The security capability boundary is defined by [THREAT_MODEL.md](./THREAT_MODEL.md) — never claim capabilities beyond the implementation.
 
 ---
@@ -134,7 +134,7 @@ The full threat boundary is in [THREAT_MODEL.md](./THREAT_MODEL.md).
 6. Tampered/forged messages (test-injected) cause visible signature-verification failure, never silent display.
 7. Messages sent while offline enter the queue and are re-sent after reconnect.
 8. Chinese/English switching works without missing translations.
-9. Engineering gates pass: `npm run typecheck`, `npm run lint`, `npm test` (264 tests).
+9. Engineering gates pass: `npm run typecheck`, `npm run lint`, `npm test` (283 tests).
 10. Security-related changes must not break the trust boundary declared in [THREAT_MODEL.md](./THREAT_MODEL.md).
 
 ---
