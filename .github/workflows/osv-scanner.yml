@@ -1,0 +1,26 @@
+name: "OSV-Scanner"
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  schedule:
+    # 每周一凌晨 3 点例行扫描
+    - cron: '0 3 * * 1'
+
+jobs:
+  osv-scan:
+    name: OSV (dependency vuln aggregation)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Run OSV-Scanner
+        uses: google/osv-scanner-action@a345acffa64b0eaede81a3d9aae6141214d9c8fc
+        with:
+          scan-args: |-
+            --recursive
+            .
