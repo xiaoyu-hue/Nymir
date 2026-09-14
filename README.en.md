@@ -2,6 +2,8 @@
 
 <img src="https://img.shields.io/badge/version-1.1.0-7c6aef?style=for-the-badge" alt="version">
 <img src="https://img.shields.io/badge/license-AGPL--3.0-22c55e?style=for-the-badge" alt="license">
+<img src="https://img.shields.io/badge/tests-264_passing-2ea44f?style=for-the-badge" alt="tests">
+<img src="https://github.com/xiaoyu-hue/Nymir/actions/workflows/test-gate.yml/badge.svg" alt="CI">
 
 **English · [中文](./README.md)**
 
