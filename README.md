@@ -3,7 +3,7 @@
 <img src="https://img.shields.io/github/v/release/xiaoyu-hue/Nymir?style=for-the-badge" alt="release">
 <img src="https://img.shields.io/github/last-commit/xiaoyu-hue/Nymir?style=for-the-badge" alt="last commit">
 <img src="https://img.shields.io/badge/license-AGPL--3.0-22c55e?style=for-the-badge" alt="license">
-<img src="https://img.shields.io/badge/tests-264_passing-2ea44f?style=for-the-badge" alt="tests">
+<img src="https://img.shields.io/badge/tests-283_passing-2ea44f?style=for-the-badge" alt="tests">
 <img src="https://github.com/xiaoyu-hue/Nymir/actions/workflows/test-gate.yml/badge.svg" alt="CI">
 <img src="https://github.com/xiaoyu-hue/Nymir/actions/workflows/deploy.yml/badge.svg" alt="Deploy">
 
@@ -150,11 +150,21 @@ Nymir 站在这些开源项目的肩膀上。没有它们，一个零编程基�
 |------|------|------|
 | [TypeScript](https://www.typescriptlang.org) | Apache-2.0 | 类型系统 |
 | [Vite](https://vite.dev) | MIT | 构建工具 |
-| [Vitest](https://vitest.dev) | MIT | 测试框架（264 个测试） |
+| [Vitest](https://vitest.dev) | MIT | 测试框架（283 个测试） |
 | [Oxlint](https://oxc.rs) | MIT | 代码检查（CI 门禁） |
 | [vite-plugin-pwa](https://vite-pwa-org.netlify.app) | MIT | PWA 支持（可安装、离线可用） |
 | [jsdom](https://github.com/jsdom/jsdom) | MIT | DOM 测试环境 |
 | [@testing-library/react](https://testing-library.com) | MIT | React 组件测试 |
+
+### 安全扫描与审计（CI 门禁）
+
+| 项目 | 协议 | 说明 |
+|------|------|------|
+| [GitHub CodeQL](https://codeql.github.com) | — | 代码安全分析（必检门禁） |
+| [Semgrep](https://semgrep.dev) | LGPL-2.1 | 静态应用安全测试，SAST 规则（必检门禁） |
+| [OSV-Scanner](https://google.github.io/osv-scanner/) | Apache-2.0 | 依赖漏洞聚合扫描（OSV 数据库） |
+| [Socket Security](https://socket.dev) | — | 供应链依赖安全扫描（GitHub App） |
+| [Dependabot](https://github.com/dependabot) | — | 依赖漏洞告警与自动安全修复 |
 
 ### 特别致谢
 

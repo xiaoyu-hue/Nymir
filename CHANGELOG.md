@@ -7,10 +7,14 @@
 
 ---
 
-## 未发布（安全基建：分支保护 + 扫描管线收口）
+## 1.3.0 - 2026-09-14（密钥轮换 UI + 安全基建收口）
 
-> ⚙️ 工程/CI 变更，无应用功能变化。
+> 新功能：密钥轮换界面入口；工程/CI：分支保护 + 扫描管线收口。无破坏性变更。
 
+### ✨ 新功能
+- **密钥轮换 UI**：ChatView 工具栏新增 🔑 换钥按钮（有对端时显示）。点击后经确认弹窗二次确认，调用 `messageManager.rotateKeys()`（可验证轮换协议，见 ADR-007），成功/失败横幅反馈（4 秒后自动消失）。轮换后安全码自动变为"已变更"，提示双方重新核对。i18n 中英双语。新增 4 例组件测试。
+
+### ⚙️ 工程/CI
 - **启用 master 分支保护**：必须 PR 合并 + 必检全绿（CodeQL `Analyze (javascript-typescript)` / Semgrep `security-audit + owasp-top-ten` / Test Gate `audit · typecheck · lint · test · build`）+ 分支需最新（strict）+ 管理员不绕过（enforce_admins）+ 禁止强推/删除分支 + 线性历史。直推 master 被拒，全部改动走 PR。
 - **停用 Dependabot 常规版本升级**（删除 dependabot.yml）：不再自动开升级 PR（避免分支/PR 杂乱）；保留 Dependabot alerts（漏洞告警）+ security updates（高危漏洞自动修复 PR）——由仓库设置控制，不受影响。
 - **移除冗余 socket.yml**：Socket Security GitHub App 已安装并接管供应链扫描（产生 `Socket Security: Project Report` 检查），自建 workflow 删除。
