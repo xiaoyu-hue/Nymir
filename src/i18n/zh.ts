@@ -108,6 +108,15 @@ const zh = {
     close: '关闭',
     unverifiedBanner: '尚未核对安全码，对话可能被中间人监听',
   },
+  keyRotation: {
+    title: '安全换钥',
+    confirmMsg: '将生成新的加密密钥并安全地通知对方。换钥后双方需重新核对安全码。是否继续？',
+    busy: '换钥中...',
+    success: '密钥已轮换，请重新核对安全码',
+    fail: '换钥失败：对方不在线或未确认',
+    cancel: '取消',
+    confirm: '确认换钥',
+  },
   error: {
     title: '应用发生错误',
     reload: '重新加载',
