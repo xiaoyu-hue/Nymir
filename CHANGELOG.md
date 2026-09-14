@@ -13,7 +13,7 @@
 
 - **决策审查体系**：AGENTS.md 新增「决策协作规范」章节——不可逆 / 花钱 / 对外发布 / 影响项目走向的操作，AI 必须先答"决策三问"（坏处/代价、不做的后果、后悔条件）等作者拍板才能执行；配套新增 `docs/DECISION_REVIEW.md`（决策前反问清单 + 拍板记录模板）。
 - **文档与版本同步规范**：AGENTS.md 新增「文档与版本同步（发布必查）」章节；配套新增 `docs/DOC_SYNC.md`（唯一真源原则：版本号问 package.json、数字问测试输出、描述问代码；同步清单 + SemVer 判定表 + 发布前验证 + 同步检查模板）。含中英双语一致性、依赖 ↔ README 致谢表同步项。
-- **部署收口**：移除 Cloudflare Workers 在线地址（`*.workers.dev` 不可用），**GitHub Pages（https://xiaoyu-hue.github.io/Nymir/）为唯一主站**；README 中英"在线体验"入口同步更新。1.3.0 中记录的 `Workers Builds: nymir` 已知事项随部署移除不再适用。
+- **部署收口**：移除 Cloudflare Workers 在线地址（`*.workers.dev` 不可用）；**GitHub Pages（https://xiaoyu-hue.github.io/Nymir/）为主站，Cloudflare Pages（https://nymir.pages.dev/）为备用副站**（两站互为独立入口，域名隔离身份，主备关系已在 README 中英文标注）。1.3.0 中记录的 `Workers Builds: nymir` 已知事项随 Workers 部署移除不再适用。
 
 ---
 

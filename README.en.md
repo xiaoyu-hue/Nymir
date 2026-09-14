@@ -19,7 +19,7 @@
 
 <br>
 
-**[🔗 Live demo (GitHub Pages primary)](https://xiaoyu-hue.github.io/Nymir/)**
+**[🔗 Live demo (GitHub Pages primary)](https://xiaoyu-hue.github.io/Nymir/) · [Backup mirror (Cloudflare Pages)](https://nymir.pages.dev/)**
 
 </div>
 
