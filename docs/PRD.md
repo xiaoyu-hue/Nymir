@@ -134,7 +134,7 @@ Nymir（树洞）是一款**基于 P2P 的匿名即时通讯工具**：消息通
 6. 篡改/伪造消息（测试注入）导致验签失败时，UI 明确标示失败，不静默展示。
 7. 断线后发送消息进入离线队列，重连后自动补发。
 8. 中/英文界面可切换，无缺字/漏译。
-9. 工程验收：`npm run typecheck`、`npm run lint`、`npm test`（270+ 项）均通过。
+9. 工程验收：`npm run typecheck`、`npm run lint`、`npm test`（264 项）均通过。
 10. 安全相关改动不得突破 [THREAT_MODEL.md](./THREAT_MODEL.md) 声明的信任边界。
 
 ---
