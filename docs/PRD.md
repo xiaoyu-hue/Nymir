@@ -1,7 +1,7 @@
 # Nymir 产品需求文档（PRD）
 
-> 版本：v1.3.0
-> 状态：v1.3.0 为当前开发版（见 [CHANGELOG.md](../CHANGELOG.md)）
+> 版本：v1.4.0
+> 状态：v1.4.0 为当前开发版（见 [CHANGELOG.md](../CHANGELOG.md)）
 > 文档原则：本文档描述**当前实现**的产品行为与安全边界，与代码同步维护；安全能力边界以 [THREAT_MODEL.md](./THREAT_MODEL.md) 为准，不得声称超出实现的能力。
 
 ---
