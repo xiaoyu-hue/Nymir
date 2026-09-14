@@ -39,6 +39,8 @@ async function freshManagers() {
   return { e2eeManager }
 }
 
+type E2eeManagerLike = Awaited<ReturnType<typeof freshManagers>>['e2eeManager']
+
 describe('可验证密钥轮换（ADR-007）', () => {
   const memoryStore: Record<string, string> = {}
 
@@ -147,7 +149,7 @@ describe('可验证密钥轮换（ADR-007）', () => {
 
   /** 建立「本端已固定某对端旧公钥」+ 已核对 的状态，返回该对端信息 */
   async function pinPeerWithVerification(
-    e2eeManager: import('../security/e2eeManager').E2EEManager,
+    e2eeManager: E2eeManagerLike,
   ) {
     const peerId = 'peer-rot'
     const peerOldEnc = await generateKeyPair()
@@ -243,7 +245,7 @@ describe('可验证密钥轮换（ADR-007）', () => {
 
   it('oldSignPub 与本端固定旧钥不符：rejected（防伪造来源）', async () => {
     const { e2eeManager } = await freshManagers()
-    const { peerId, peerOldEncPub, peerOldSign } =
+    const { peerId, peerOldEncPub } =
       await pinPeerWithVerification(e2eeManager)
 
     // 用「别的身份」的旧签名钥签发，且 oldSignPub 字段填成不匹配的值
