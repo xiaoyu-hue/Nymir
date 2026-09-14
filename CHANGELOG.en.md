@@ -7,6 +7,29 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 1.1.0 - 2026-09-14
+
+> Version alignment: documentation system completed (PRD / ARCHITECTURE / ADR / English versions). No breaking code changes.
+
+### 📚 Docs
+
+- **docs: add PRD.md** — product requirements: goals, core concepts, feature spec, security boundary, 10 checkable acceptance criteria.
+- **docs: add ARCHITECTURE.md** — one-page current architecture: layers, message journey, file responsibilities, data model, 6 red lines.
+- **docs: add adr/ decision records** (6 + index) — Trystero choice, AGPL-3.0, public signaling positioning, local encryption v4, safety code design, TOFU + out-of-band verification.
+- **docs: add PRD.en.md / ARCHITECTURE.en.md** — English versions for international readers.
+- **docs: update documentation index** — docs/README.md entries for PRD / ARCHITECTURE / ADR / English versions.
+
+### 🔧 Version
+
+- package.json / README badges / PRD / ARCHITECTURE aligned to **1.1.0**.
+
+### 🧪 Test note (honest record)
+
+- `npm test` currently **264 passing** (27 files).
+- One flaky failure (1/264) observed once, green on re-run; classified as **test flake** (suspected shared storage state across parallel workers), not a deterministic bug; will investigate separately if it recurs.
+
+---
+
 ## Rounds 4-6 Review Fixes - 2026-09-13
 
 > After the first three rounds of security audit, continued reviewing across four dimensions: code security, code quality, test coverage, and UI/UX. 264 tests passing.

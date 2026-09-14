@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/version-1.0.0-7c6aef?style=for-the-badge" alt="version">
+<img src="https://img.shields.io/badge/version-1.1.0-7c6aef?style=for-the-badge" alt="version">
 <img src="https://img.shields.io/badge/license-AGPL--3.0-22c55e?style=for-the-badge" alt="license">
 
 **[English](./README.en.md) · 中文**
