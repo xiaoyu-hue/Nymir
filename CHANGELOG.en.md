@@ -7,6 +7,32 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## Unreleased (verifiable key rotation)
+
+> Security enhancement: verifiable key rotation (signature-chaining protocol, ADR-007). No breaking changes.
+
+### 🛡️ Security
+
+- **feat(security): verifiable key rotation protocol (ADR-007)**
+  - `rotateKeysVerifiable()`: signs the new public-key material with the old signing private key, persists the new identity, and auto-broadcasts the proof — peers can verify "old and new identities are the same entity"; MITM cannot forge.
+  - `handleKeyRotation()`: peer re-pins + updates keys + migrates verified record (state becomes `changed`, prompting re-verification) only after signature verification; failures/source mismatch always rejected; duplicate broadcast ignored idempotently.
+  - `message.ts`: new `key-rotation` control channel and `rotateKeys()` explicit entry (replaces legacy `rotateKeys` in production path, fixing its "no persistence + no notification" flaws).
+- **Tests**: +15 cases (9 protocol + 6 channel), **279 passing** (29 files).
+
+### 📚 Docs
+
+- README (zh/en): known limitations updated ("automatic strategy not enabled, verifiable rotation supported"); roadmap updated.
+- THREAT_MODEL §8: verifiable key rotation marked done.
+- ARCHITECTURE: test count corrected 270+ → 279 (29 files).
+- New ADR-007 + index row.
+
+### ⏳ Pending
+
+- Version bump (feat committed; decided at release time)
+- Key rotation UI entry and automatic rotation strategy (roadmap)
+
+---
+
 ## 1.1.0 - 2026-09-14
 
 > Version alignment: documentation system completed (PRD / ARCHITECTURE / ADR / English versions). No breaking code changes.

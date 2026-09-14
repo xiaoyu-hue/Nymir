@@ -142,7 +142,7 @@ BurnConfig = { mode, burnAfter?, burnAt? }
 
 ## 7. 测试体系
 
-- **入口**：`npm test`（Vitest），270+ 用例，28 个测试文件（`src/__tests__/`），覆盖：crypto/e2ee/fingerprint/keyRotation/burn/db/backup/base64/id/噪声、UI 组件（BurnTimer/ConfirmDialog/ErrorBoundary/GlassCard）等。
+- **入口**：`npm test`（Vitest），279 项，29 个测试文件（`src/__tests__/`），覆盖：crypto/e2ee/fingerprint/keyRotation(+Verifiable)/burn/db/backup/base64/id/噪声、UI 组件（BurnTimer/ConfirmDialog/ErrorBoundary/GlassCard）等。
 - **配套**：`npm run typecheck`（tsc）+ `npm run lint`（oxlint），CI 门禁（GitHub Actions）。
 - 安全不变量优先以测试固化（威胁模型 §9：改安全代码先对照威胁模型）。
 

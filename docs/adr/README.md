@@ -19,6 +19,7 @@
 | [ADR-004](./0004-local-encryption-v4.md) | 本地加密 v4 格式（per-install 盐 + PBKDF2-600k） | Accepted |
 | [ADR-005](./0005-safety-code.md) | 安全码：15 位数字主验证 + emoji 视觉辅助 | Accepted |
 | [ADR-006](./0006-tofu-pin.md) | TOFU + 带外安全码核对，不做自动防中间人 | Accepted |
+| [ADR-007](./0007-verifiable-key-rotation.md) | 可验证密钥轮换（签名衔接协议，旧钥签新钥） | Accepted |
 
 ---
 

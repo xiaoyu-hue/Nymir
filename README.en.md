@@ -70,7 +70,7 @@ Encryption and signing happen entirely in your browser. Intermediate nodes (incl
 - **Peer discovery depends on public signaling** — metadata may be visible to signaling parties
 - **Signaling / setup is not an E2EE channel**
 - **No server-side offline inbox**
-- **Automatic key rotation is currently disabled** — per-message HKDF remains; verifiable rotation is on the roadmap
+- **Automatic key rotation strategy is not enabled** — **verifiable key rotation** is supported (signature-chaining protocol: the new public key is signed with the old signing private key, peers re-pin only after verification, see [ADR-007](./docs/adr/0007-verifiable-key-rotation.md)); explicit API ready, UI entry and automatic strategy pending
 - **Pseudonyms are device-local**
 - **Realtime depends on browser and NAT**
 - **Traffic obfuscation is weak** — noise about every 30 seconds with a fixed ~48-byte payload; regular interval and size can themselves be a fingerprint; **does not** resist serious traffic analysis
@@ -96,11 +96,12 @@ To be honest, Nymir is not a universal privacy tool. Please think twice or choos
 - [x] Persistent identity keys (survive refresh, TOFU stays valid) + v4 per-install random salt
 - [x] Cross-device backup restore (V3 backup file embeds its own salt)
 - [x] localStorage key removal (**`removeItem` only**; no overwrite; browsers do not guarantee physical erase)
+- [x] Verifiable key rotation protocol (signature chaining, explicit API, ADR-007)
 - [x] CI test gate (typecheck + lint + test)
 
 ### Planned
 
-- [ ] Verifiable key rotation with TOFU re-pin
+- [ ] Key rotation UI entry and automatic rotation strategy
 - [ ] Search, voice, multi-device sync
 - [ ] Reduce reliance on public signaling
 
