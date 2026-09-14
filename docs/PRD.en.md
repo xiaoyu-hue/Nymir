@@ -1,7 +1,7 @@
 # Nymir Product Requirements Document (PRD)
 
-> Version: v1.1.0
-> Status: v1.1.0 is the current development version (see [CHANGELOG.md](../CHANGELOG.md))
+> Version: v1.2.0
+> Status: v1.2.0 is the current development version (see [CHANGELOG.md](../CHANGELOG.md))
 > Document principle: this document describes the **current implementation's** product behavior and security boundary and stays in sync with the code. The security capability boundary is defined by [THREAT_MODEL.md](./THREAT_MODEL.md) — never claim capabilities beyond the implementation.
 
 ---

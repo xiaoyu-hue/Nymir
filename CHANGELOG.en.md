@@ -7,7 +7,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## Unreleased (verifiable key rotation)
+## 1.2.0 - 2026-09-14 (verifiable key rotation)
 
 > Security enhancement: verifiable key rotation (signature-chaining protocol, ADR-007). No breaking changes.
 
@@ -28,7 +28,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### ⏳ Pending
 
-- Version bump (feat committed; decided at release time)
+- Version aligned to 1.2.0 (package.json + lock fixed from stale 1.0.0)
 - Key rotation UI entry and automatic rotation strategy (roadmap)
 
 ---
