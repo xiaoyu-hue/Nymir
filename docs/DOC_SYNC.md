@@ -39,6 +39,8 @@
 |------|------|---------------|
 | 测试数 / 测试文件数 | `npx vitest run` 输出 | README(.en) badge 与表格、ARCHITECTURE、PRD 验收段 |
 | 依赖数 / 漏洞数 | `npm audit` / OSV 扫描输出 | README 致谢区、PRD 安全段 |
+| 依赖清单（新增 / 移除 / 升级） | `package.json` | README 致谢区（运行时 / 开发工具链 / 安全扫描表） |
+| 中英双语文档 | 中文版为基准（改中文文档时必须同步 `.en.md`） | PRD / ARCHITECTURE / AUTHOR / README 的英文版 |
 | 功能 / 架构描述 | 代码实现 | README、PRD、ARCHITECTURE、THREAT_MODEL、ADR |
 | 分支保护 / CI 门禁 | 仓库设置 + workflow 文件 | README 安全扫描表、CHANGELOG、PRD |
 
@@ -46,6 +48,7 @@
 
 - [ ] `docs/README.md` 补登新增文档
 - [ ] `docs/adr/README.md` 补登新增 ADR
+- [ ] 本次改动的中文文档，对应 `.en.md` 已同步（如无英文版则勾选"不适用"）
 
 ## 三、版本号规则（SemVer 判定）
 
@@ -64,6 +67,7 @@
 2. **测试数核对**：跑全量测试，输出数字与 README 中声明一致（不一致必须修 README，不得改数字假装一致）。
 3. **版本一致性**：`package.json` = `package-lock.json` = CHANGELOG 最新条目 = docs 头部 = tag。
 4. **CHANGELOG**："未发布"条目已转正式；内容覆盖本次全部用户可见变更。
+5. **中英双语对查**：本次改动的中文文档，确认对应 `.en.md` 已同步；新增英文版缺失时补建或注明"不适用"。
 
 ## 五、同步检查模板（发布 PR 前填写）
 
@@ -78,6 +82,8 @@
 - [ ] README badge / 表格数字已同步
 - [ ] 无旧版本号残留（grep 验证）
 - [ ] docs 索引已补登
+- [ ] 中英文档已同步（本次改动的 `.en.md` 已更新）
+- [ ] 依赖 ↔ README 致谢表一致（新增/移除依赖已反映）
 - [ ] Release / tag 已创建且与版本号一致
 ```
 
