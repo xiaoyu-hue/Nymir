@@ -7,6 +7,19 @@
 
 ---
 
+## 1.5.0 - 2026-09-15（信令去依赖：多信令冗余 + Nostr 降级链）
+
+> 新功能：信令可靠性升级——MQTT 主通道启用全部 5 个公共 broker，新增 Nostr 降级策略，降级链 mqtt → nostr → torrent。无破坏性变更。
+
+### ✨ 新功能
+- **信令冗余配置**：MQTT 主通道显式启用全部 5 个公共 broker（此前 trystero 默认列表含 5 个但只启用前 4 个，hivemq 从未被用上），redundancy=5；WebTorrent 降级通道启用全部 5 个公共 tracker（此前只启用前 3 个）。任意几个信令服务器挂掉仍有可用通道。
+- **Nostr 降级策略**：新增 `@trystero-p2p/nostr` 作为第二降级级（mqtt 主 → nostr → torrent）。Nostr 公共 relay 数量远多于 MQTT broker，去中心化程度更高。显式配置 8 个知名公共 relay、同时保持 5 条连接。
+
+### ⚙️ 工程/CI
+- 双端联调与 Nostr 专项验证通过（浏览器内两个独立上下文经公共 relay 真实建连 + 消息送达）；单测 287 全绿。
+
+---
+
 ## 1.4.0 - 2026-09-15（自动密钥轮换 + E2E 三端 + CSP 修复）
 
 > 新功能：自动密钥轮换策略；工程/CI：Playwright E2E 三端 + CSP 修复。无破坏性变更。
