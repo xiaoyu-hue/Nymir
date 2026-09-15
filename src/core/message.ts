@@ -91,7 +91,12 @@ export class MessageManager {
             if (msg && !msg.readBy.includes(peerId)) {
               msg.readBy.push(peerId)
               await markMessageRead(data.msgId, peerId)
-              this.notifyListeners(msg)
+              // 对端已读：read_once 消息本端也要同步焚毁，否则发送方残留原文
+              if (shouldDestroy(msg)) {
+                await this.burn(msg)
+              } else {
+                this.notifyListeners(msg)
+              }
             }
           }
         } catch (err) {
