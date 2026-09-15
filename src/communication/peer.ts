@@ -8,6 +8,28 @@ import { STRATEGY_FALLBACK_MS } from '../constants'
 
 const APP_ID = 'nymir_treehole_v1'
 
+// 信令冗余配置：同时连接多个公共信令服务器，挂掉任意几个仍有可用通道。
+// 对比 trystero 默认（mqtt 默认列表含 5 个 broker 但 redundancy=4，hivemq 被截断未启用；
+// torrent 默认 5 个 tracker 但只启用前 3 个）——这里显式启用全部并拉满冗余。
+// 均为公共免费服务；国内可达性较好的 emqx/emqx-cn 排前。
+const RELAY_URLS_MQTT = [
+  'wss://broker.emqx.io:8084/mqtt',
+  'wss://broker-cn.emqx.io:8084/mqtt',
+  'wss://broker.hivemq.com:8884/mqtt',
+  'wss://test.mosquitto.org:8081/mqtt',
+  'wss://public:public@public.cloud.shiftr.io',
+]
+const RELAY_REDUNDANCY_MQTT = 5
+
+const RELAY_URLS_TORRENT = [
+  'wss://tracker.openwebtorrent.com',
+  'wss://open.ftorrent.com',
+  'wss://tracker.webtorrent.dev',
+  'wss://tracker.btorrent.xyz',
+  'wss://tracker.files.fm:7073/announce',
+]
+const RELAY_REDUNDANCY_TORRENT = 5
+
 export type PeerCallback = (peerId: string) => void
 export type MessageCallback<T> = (data: T, info: { peerId: string }) => void
 export type RoomNameCallback = (name: string, peerId: string) => void
@@ -121,6 +143,10 @@ export class PeerManager {
 
   private joinWithStrategy(roomId: string, strategy: Strategy): Room {
     const joinFn = strategy === 'torrent' ? joinTorrent : joinMqtt
+    const relayConfig =
+      strategy === 'torrent'
+        ? { urls: RELAY_URLS_TORRENT, redundancy: RELAY_REDUNDANCY_TORRENT }
+        : { urls: RELAY_URLS_MQTT, redundancy: RELAY_REDUNDANCY_MQTT }
     // 国内可用的公共 STUN（trystero 默认用 Google STUN，在大陆网络下不通）。
     // 这些地址来自多源交叉验证（小米/B站/腾讯），仅用于 NAT 穿透，不中转数据。
     const room = joinFn(
@@ -134,6 +160,7 @@ export class PeerManager {
             { urls: 'stun:stun.cloudflare.com:3478' },
           ],
         },
+        relayConfig,
       },
       roomId,
     )
