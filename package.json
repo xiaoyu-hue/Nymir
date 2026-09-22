@@ -26,6 +26,8 @@
     "@trystero-p2p/nostr": "^0.25.4",
     "@trystero-p2p/torrent": "^0.25.4",
     "idb": "^8.0.3",
+    "jsqr": "^1.4.0",
+    "qrcode": "^1.5.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
