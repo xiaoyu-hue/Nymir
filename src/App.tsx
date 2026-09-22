@@ -36,6 +36,7 @@ function AppContent() {
   const [identityError, setIdentityError] = useState(false)
   const [roomError, setRoomError] = useState('')
 
+  const [roomCode, setRoomCode] = useState("")
   useEffect(() => {
     securityManager
       .init()
@@ -172,7 +173,7 @@ function AppContent() {
         <Starfield />
 
         {!inRoom ? (
-          <RoomPanel onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} error={roomError} />
+          <RoomPanel onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} error={roomError} onRoomCreated={setRoomCode} />
         ) : (
           <Suspense fallback={<LoadingFallback />}>
             <ChatView />
