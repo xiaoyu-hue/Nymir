@@ -30,6 +30,13 @@ const en: Translations = {
     invalidCode: 'Invalid room code',
     joinFailed: 'Failed to join room. Check your network or room code.',
     createFailed: 'Failed to create room. Check your network.',
+    qrCodeTitle: 'Scan to Join',
+    qrCodeHint: 'Share this QR code with your friend',
+    scanTitle: 'Scan QR Code',
+    scanHint: 'Point camera at QR code to auto-detect',
+    cameraError: 'Cannot access camera',
+    orEnterCode: 'Or enter code manually',
+    shareCode: 'Share Code',
   },
   message: {
     placeholder: 'Say something...',

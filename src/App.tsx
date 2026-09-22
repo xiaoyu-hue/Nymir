@@ -8,6 +8,7 @@ import Starfield from './ui/components/Starfield'
 import RoomPanel from './ui/components/RoomPanel'
 import InstallPrompt from './ui/components/InstallPrompt'
 import './ui/styles/globals.css'
+import './ui/styles/qr.css'
 
 const ChatView = lazy(() => import('./ui/components/ChatView'))
 const BackupPanel = lazy(() => import('./ui/components/BackupPanel'))
@@ -35,6 +36,7 @@ function AppContent() {
   const [identityLoading, setIdentityLoading] = useState(false)
   const [identityError, setIdentityError] = useState(false)
   const [roomError, setRoomError] = useState('')
+  const [_roomCode, setRoomCode] = useState('')
 
   useEffect(() => {
     securityManager
@@ -172,7 +174,7 @@ function AppContent() {
         <Starfield />
 
         {!inRoom ? (
-          <RoomPanel onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} error={roomError} />
+          <RoomPanel onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} error={roomError} _onRoomCreated={setRoomCode} />
         ) : (
           <Suspense fallback={<LoadingFallback />}>
             <ChatView />

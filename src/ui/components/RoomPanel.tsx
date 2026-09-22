@@ -1,21 +1,34 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useI18n } from '../../i18n'
 import GlassCard from './GlassCard'
+import QRCodeComponent from './QRCodeComponent'
+import QRScanner from './QRScanner'
 
 type Props = {
   onCreateRoom: (name: string) => void
   onJoinRoom: (code: string) => void
   error?: string
+  _onRoomCreated?: (roomCode: string) => void
 }
 
-export default function RoomPanel({ onCreateRoom, onJoinRoom, error }: Props) {
+export default function RoomPanel({ onCreateRoom, onJoinRoom, error, _onRoomCreated }: Props) {
   const { t } = useI18n()
   const [tab, setTab] = useState<'create' | 'join'>('create')
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
+  const [showQR, setShowQR] = useState(false)
+  const [showScan, setShowScan] = useState(false)
+  const [roomCode, _setRoomCode] = useState('')
+
+  useEffect(() => {
+    if (roomCode && !showQR) {
+      setShowQR(true)
+    }
+  }, [roomCode, showQR])
 
   const handleCreate = () => {
     if (!name.trim()) return
+    // Note: 实际 room ID 由父组件在 createRoom 成功后通过 onRoomCreated 回调传递
     onCreateRoom(name.trim())
   }
 
@@ -29,6 +42,11 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom, error }: Props) {
       if (tab === 'create') handleCreate()
       else handleJoin()
     }
+  }
+
+  const handleScanSuccess = (scannedCode: string) => {
+    setShowScan(false)
+    onJoinRoom(scannedCode.toUpperCase())
   }
 
   return (
@@ -78,6 +96,16 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom, error }: Props) {
                 >
                   {t.room.join}
                 </button>
+                <div className="room-panel-divider">
+                  <span>{t.room.orEnterCode}</span>
+                </div>
+                <button
+                  type="button"
+                  className="room-panel-qr-btn"
+                  onClick={() => setShowScan(true)}
+                >
+                  📷 {t.room.scanTitle}
+                </button>
               </div>
             ) : (
               <div key="create" className="page-enter room-panel-fields">
@@ -95,7 +123,10 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom, error }: Props) {
                   className="room-panel-input room-panel-input-name"
                 />
                 <button
-                  onClick={handleCreate}
+                  onClick={() => {
+                    handleCreate()
+                    // Note: roomCode will be set via onRoomCreated callback
+                  }}
                   disabled={!name.trim()}
                   className={`room-panel-submit ${name.trim() ? 'ready' : ''}`}
                 >
@@ -109,6 +140,21 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom, error }: Props) {
           </div>
         </div>
       </GlassCard>
+
+      {showQR && roomCode && (
+        <QRCodeComponent
+          roomCode={roomCode}
+          roomName={name}
+          onClose={() => setShowQR(false)}
+        />
+      )}
+
+      {showScan && (
+        <QRScanner
+          onScan={handleScanSuccess}
+          onCancel={() => setShowScan(false)}
+        />
+      )}
     </div>
   )
 }
