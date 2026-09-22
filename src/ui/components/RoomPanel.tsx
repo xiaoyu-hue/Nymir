@@ -8,10 +8,10 @@ type Props = {
   onCreateRoom: (name: string) => void
   onJoinRoom: (code: string) => void
   error?: string
-  _onRoomCreated?: (roomCode: string) => void
+  onRoomCreated: (roomCode: string) => void
 }
 
-export default function RoomPanel({ onCreateRoom, onJoinRoom, error, _onRoomCreated }: Props) {
+export default function RoomPanel({ onCreateRoom, onJoinRoom, error, onRoomCreated }: Props) {
   const { t } = useI18n()
   const [tab, setTab] = useState<'create' | 'join'>('create')
   const [name, setName] = useState('')
@@ -24,7 +24,7 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom, error, _onRoomCrea
     if (roomCode && !showQR) {
       setShowQR(true)
     }
-  }, [roomCode, showQR])
+  }, [roomCode])
 
   const handleCreate = () => {
     if (!name.trim()) return
