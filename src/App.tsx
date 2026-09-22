@@ -108,8 +108,8 @@ function AppContent() {
     try {
       const roomId = await roomManager.createRoom(name)
       // 创建成功后，将真实 room ID 传给父组件用于显示 QR
-      if (typeof _onRoomCreated === 'function') {
-        _onRoomCreated(roomId)
+      if (typeof onRoomCreated === 'function') {
+        onRoomCreated(roomId)
       }
     } catch (err) {
       error('[App] Create room failed:', err)
