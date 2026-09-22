@@ -41,7 +41,7 @@ Nymir 是一款**基于 P2P 的匿名即时通讯工具**。消息通过 **WebRT
 
 ### ⚠️ 关于「去中心化」的准确说明
 
-Nymir **不是完全去中心化**的。数据存储与消息传输是本地/P2P；Peer 发现依赖公共 MQTT / WebTorrent 信令。
+Nymir **不是完全去中心化**的。数据存储与消息传输是本地/P2P；Peer 发现依赖公共 MQTT / Nostr / WebTorrent 信令（三策略冗余，挂掉部分仍可用）。
 
 更准确的定位是：**无业务服务器 + 本地优先 + P2P 通信**。
 
@@ -77,7 +77,7 @@ Nymir **不是完全去中心化**的。数据存储与消息传输是本地/P2P
 
 ### 已知局限
 
-- **Peer 发现依赖公共信令** — 信令侧可能观察连接元数据
+- **Peer 发现依赖公共信令** — 信令侧可能观察连接元数据；已通过多信令冗余缓解（MQTT 5 broker + Nostr 8 relay + WebTorrent 5 tracker，v1.5.0）
 - **信令/建连阶段不是端到端加密通道**
 - **无服务端离线收件箱**
 - **自动密钥轮换依赖对端在线** — **可验证密钥轮换**（签名衔接协议：换钥用旧签名私钥签名新公钥，对端验签通过才 re-pin，见 [ADR-007](./docs/adr/0007-verifiable-key-rotation.md)）已启用：显式 API + UI 入口（手动轮换，v1.3.0）与自动轮换策略（每 100 条消息触发，对端在线时轮换，v1.4.0）；对端离线时自动轮换延迟至在线后补触发
@@ -113,8 +113,9 @@ Nymir **不是完全去中心化**的。数据存储与消息传输是本地/P2P
 
 ### 计划中 🚀
 
+- [x] 信令去依赖第一阶段（多信令冗余 + Nostr 降级链，v1.5.0）
 - [ ] 消息搜索、语音、多设备同步
-- [ ] 降低对公共信令的依赖
+- [ ] 进一步降低信令依赖（自托管信令 / 二维码离线配对）
 
 ---
 
@@ -143,6 +144,7 @@ Nymir 站在这些开源项目的肩膀上。没有它们，一个零编程基�
 | [React DOM](https://react.dev) | MIT | DOM 渲染 |
 | [@trystero-p2p/mqtt](https://www.npmjs.com/package/@trystero-p2p/mqtt) | MIT | P2P 信令（MQTT 通道） |
 | [@trystero-p2p/torrent](https://www.npmjs.com/package/@trystero-p2p/torrent) | MIT | P2P 信令（WebTorrent 通道） |
+| [@trystero-p2p/nostr](https://www.npmjs.com/package/@trystero-p2p/nostr) | MIT | P2P 信令（Nostr 通道，降级策略） |
 | [idb](https://github.com/jakearchibald/idb) | ISC | IndexedDB 封装 |
 
 ### 开发与工具链

@@ -1,5 +1,6 @@
 import { joinRoom as joinTorrent, selfId as torrentSelfId } from '@trystero-p2p/torrent'
 import { joinRoom as joinMqtt, selfId as mqttSelfId } from '@trystero-p2p/mqtt'
+import { joinRoom as joinNostr, selfId as nostrSelfId } from '@trystero-p2p/nostr'
 import type { Room, DataPayload } from '@trystero-p2p/core'
 import { e2eeManager } from '../security/e2eeManager'
 import { connectionMonitor } from './monitor'
@@ -7,6 +8,43 @@ import { log } from '../utils/logger'
 import { STRATEGY_FALLBACK_MS } from '../constants'
 
 const APP_ID = 'nymir_treehole_v1'
+
+// 信令冗余配置：同时连接多个公共信令服务器，挂掉任意几个仍有可用通道。
+// 对比 trystero 默认（mqtt 默认列表含 5 个 broker 但 redundancy=4，hivemq 被截断未启用；
+// torrent 默认 5 个 tracker 但只启用前 3 个）——这里显式启用全部并拉满冗余。
+// 均为公共免费服务；国内可达性较好的 emqx/emqx-cn 排前。
+const RELAY_URLS_MQTT = [
+  'wss://broker.emqx.io:8084/mqtt',
+  'wss://broker-cn.emqx.io:8084/mqtt',
+  'wss://broker.hivemq.com:8884/mqtt',
+  'wss://test.mosquitto.org:8081/mqtt',
+  'wss://public:public@public.cloud.shiftr.io',
+]
+const RELAY_REDUNDANCY_MQTT = 5
+
+const RELAY_URLS_TORRENT = [
+  'wss://tracker.openwebtorrent.com',
+  'wss://open.ftorrent.com',
+  'wss://tracker.webtorrent.dev',
+  'wss://tracker.btorrent.xyz',
+  'wss://tracker.files.fm:7073/announce',
+]
+const RELAY_REDUNDANCY_TORRENT = 5
+
+// Nostr 公共 relay（均来自 @trystero-p2p/nostr 默认列表，作者维护验证过）。
+// 显式指定一组知名公共 relay 而非依赖 appId 打乱选择，保证连接目标可预期；
+// redundancy=5 表示同时保持 5 条 relay 连接，挂掉部分仍有可用通道。
+const RELAY_URLS_NOSTR = [
+  'wss://nos.lol',
+  'wss://nostr-relay.corb.net',
+  'wss://nostr.data.haus',
+  'wss://basspistol.org',
+  'wss://bucket.coracle.social',
+  'wss://chorus.pjv.me',
+  'wss://koru.bitcointxoko.org',
+  'wss://nostr-01.yakihonne.com',
+]
+const RELAY_REDUNDANCY_NOSTR = 5
 
 export type PeerCallback = (peerId: string) => void
 export type MessageCallback<T> = (data: T, info: { peerId: string }) => void
@@ -18,7 +56,7 @@ export interface Channel<T> {
   onMessage: (cb: MessageCallback<T>) => () => void
 }
 
-export type Strategy = 'torrent' | 'mqtt'
+export type Strategy = 'torrent' | 'mqtt' | 'nostr'
 
 interface E2EEPayload {
   type: string
@@ -49,8 +87,12 @@ export class PeerManager {
 
   get id(): string {
     // selfId 是 @trystero-p2p/core 模块加载时生成的常量，
-    // mqtt 和 torrent 包都重新导出同一个 selfId，二者值相同。
-    return this.currentStrategy === 'torrent' ? torrentSelfId : mqttSelfId
+    // mqtt / torrent / nostr 包都重新导出同一个 selfId，三者值相同。
+    return this.currentStrategy === 'torrent'
+      ? torrentSelfId
+      : this.currentStrategy === 'nostr'
+        ? nostrSelfId
+        : mqttSelfId
   }
 
   get peerList(): string[] {
@@ -120,7 +162,14 @@ export class PeerManager {
   }
 
   private joinWithStrategy(roomId: string, strategy: Strategy): Room {
-    const joinFn = strategy === 'torrent' ? joinTorrent : joinMqtt
+    const joinFn =
+      strategy === 'torrent' ? joinTorrent : strategy === 'nostr' ? joinNostr : joinMqtt
+    const relayConfig =
+      strategy === 'torrent'
+        ? { urls: RELAY_URLS_TORRENT, redundancy: RELAY_REDUNDANCY_TORRENT }
+        : strategy === 'nostr'
+          ? { urls: RELAY_URLS_NOSTR, redundancy: RELAY_REDUNDANCY_NOSTR }
+          : { urls: RELAY_URLS_MQTT, redundancy: RELAY_REDUNDANCY_MQTT }
     // 国内可用的公共 STUN（trystero 默认用 Google STUN，在大陆网络下不通）。
     // 这些地址来自多源交叉验证（小米/B站/腾讯），仅用于 NAT 穿透，不中转数据。
     const room = joinFn(
@@ -134,6 +183,7 @@ export class PeerManager {
             { urls: 'stun:stun.cloudflare.com:3478' },
           ],
         },
+        relayConfig,
       },
       roomId,
     )
@@ -208,11 +258,30 @@ export class PeerManager {
     connectionMonitor.setPeerCount(this.peers.size)
     connectionMonitor.setChannel(this.makeChannel('__monitor__'))
     setTimeout(() => this.broadcastE2EEKey(), 100)
-    // 若一段时间仍发现不了对端，再降级尝试 torrent
+    // 若一段时间仍发现不了对端，按 mqtt → nostr → torrent 链式降级
+    this.scheduleFallback(roomId)
+  }
+
+  /**
+   * 降级链：mqtt（主）→ nostr（Nostr 公共 relay，去中心化度高）→ torrent（WebTorrent tracker）。
+   * 每级 STRATEGY_FALLBACK_MS 内找不到对端就切下一级；torrent 为最后一级，不再继续。
+   */
+  private scheduleFallback(roomId: string): void {
+    if (this.strategyFallbackTimer) {
+      clearTimeout(this.strategyFallbackTimer)
+      this.strategyFallbackTimer = null
+    }
     this.strategyFallbackTimer = setTimeout(() => {
-      if (this.peers.size === 0 && this.room) {
-        this.switchStrategy(roomId, 'torrent')
-      }
+      if (this.peers.size > 0 || !this.room) return
+      const next: Strategy | null =
+        this.currentStrategy === 'mqtt'
+          ? 'nostr'
+          : this.currentStrategy === 'nostr'
+            ? 'torrent'
+            : null
+      if (!next) return
+      this.switchStrategy(roomId, next)
+      this.scheduleFallback(roomId)
     }, STRATEGY_FALLBACK_MS)
   }
 
@@ -241,6 +310,8 @@ export class PeerManager {
       connectionMonitor.setPeerCount(this.peers.size)
       for (const cb of this.roomRebuiltCallbacks) cb()
       setTimeout(() => this.broadcastE2EEKey(), 100)
+      // 仍找不到对端则继续走降级链（mqtt → nostr → torrent）
+      this.scheduleFallback(roomId)
     } finally {
       this.isSwitchingStrategy = false
     }

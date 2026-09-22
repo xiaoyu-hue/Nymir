@@ -31,7 +31,7 @@ Nymir is a **P2P anonymous messenger**. Messages travel **end-to-end encrypted o
 
 ### Is it fully decentralized?
 
-**No.** Storage and chat transport are local/P2P; **peer discovery depends on public MQTT / WebTorrent signaling**.
+**No.** Storage and chat transport are local/P2P; **peer discovery depends on public MQTT / Nostr / WebTorrent signaling** (three-strategy redundancy; some can be down and it still works).
 
 More accurate: **serverless + local-first + P2P messaging**.
 
@@ -67,7 +67,7 @@ Encryption and signing happen entirely in your browser. Intermediate nodes (incl
 
 ### Known Limitations
 
-- **Peer discovery depends on public signaling** — metadata may be visible to signaling parties
+- **Peer discovery depends on public signaling** — metadata may be visible to signaling parties; mitigated with multi-relay redundancy (MQTT 5 brokers + Nostr 8 relays + WebTorrent 5 trackers, v1.5.0)
 - **Signaling / setup is not an E2EE channel**
 - **No server-side offline inbox**
 - **Automatic key rotation depends on a peer being online** — **verifiable key rotation** (signature-chaining protocol: the new public key is signed with the old signing private key, peers re-pin only after verification, see [ADR-007](./docs/adr/0007-verifiable-key-rotation.md)) is enabled: explicit API + UI entry (manual rotation, v1.3.0) and automatic strategy (every 100 messages, only when a peer is online, v1.4.0); automatic rotation is deferred until a peer comes online if all are offline
@@ -104,7 +104,8 @@ To be honest, Nymir is not a universal privacy tool. Please think twice or choos
 ### Planned
 
 - [ ] Search, voice, multi-device sync
-- [ ] Reduce reliance on public signaling
+- [x] Signaling de-dependency phase 1 (multi-relay redundancy + Nostr fallback chain, v1.5.0)
+- [ ] Further reduce signaling reliance (self-hosted signaling / QR offline pairing)
 
 ---
 
@@ -133,6 +134,7 @@ Nymir stands on the shoulders of these open-source projects. Without them, a zer
 | [React DOM](https://react.dev) | MIT | DOM rendering |
 | [@trystero-p2p/mqtt](https://www.npmjs.com/package/@trystero-p2p/mqtt) | MIT | P2P signaling (MQTT channel) |
 | [@trystero-p2p/torrent](https://www.npmjs.com/package/@trystero-p2p/torrent) | MIT | P2P signaling (WebTorrent channel) |
+| [@trystero-p2p/nostr](https://www.npmjs.com/package/@trystero-p2p/nostr) | MIT | P2P signaling (Nostr channel) |
 | [idb](https://github.com/jakearchibald/idb) | ISC | IndexedDB wrapper |
 
 ### Development & tooling
