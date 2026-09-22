@@ -176,7 +176,7 @@ function AppContent() {
         <Starfield />
 
         {!inRoom ? (
-          <RoomPanel onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} error={roomError} />
+          <RoomPanel onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} error={roomError} _onRoomCreated={setRoomCode} />
         ) : (
           <Suspense fallback={<LoadingFallback />}>
             <ChatView />
