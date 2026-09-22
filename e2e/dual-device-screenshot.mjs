@@ -4,10 +4,12 @@
 import { chromium } from '@playwright/test';
 import { mkdirSync } from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BASE = 'http://127.0.0.1:4173';
-const PASS = 'dual-pass-2026';
-const OUT = process.argv[2] || '/home/user/Doubao/chats/1482372049645826/Nymir/test-results/dual-device';
+const PASS = process.env.NYMIR_E2E_PASSWORD || 'dual-pass-2026';
+const OUT = process.argv[2] || path.resolve(__dirname, '..', 'test-results', 'dual-device');
 mkdirSync(OUT, { recursive: true });
 
 async function setupDevice(browser, tag) {
