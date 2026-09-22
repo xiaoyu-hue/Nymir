@@ -107,10 +107,8 @@ function AppContent() {
     setRoomError('')
     try {
       const roomId = await roomManager.createRoom(name)
-      // 创建成功后，将真实 room ID 传给父组件用于显示 QR
-      if (typeof onRoomCreated === 'function') {
-        onRoomCreated(roomId)
-      }
+      // 创建成功后，显示 QR 弹窗
+      setRoomCode(roomId)
     } catch (err) {
       error('[App] Create room failed:', err)
       setRoomError(t.room.createFailed)
@@ -178,7 +176,7 @@ function AppContent() {
         <Starfield />
 
         {!inRoom ? (
-          <RoomPanel onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} error={roomError} onRoomCreated={(code) => setRoomCode(code)} />
+          <RoomPanel onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} error={roomError} />
         ) : (
           <Suspense fallback={<LoadingFallback />}>
             <ChatView />
