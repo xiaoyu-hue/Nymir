@@ -1,7 +1,7 @@
 # Nymir 产品需求文档（PRD）
 
 > 版本：v1.5.0
-> 状态：v1.5.0 为当前开发版（见 [CHANGELOG.md](../CHANGELOG.md)）
+> 状态：v1.5.0 已正式发布（见 [CHANGELOG.md](../CHANGELOG.md)）
 > 文档原则：本文档描述**当前实现**的产品行为与安全边界，与代码同步维护；安全能力边界以 [THREAT_MODEL.md](./THREAT_MODEL.md) 为准，不得声称超出实现的能力。
 
 ---
@@ -134,7 +134,7 @@ Nymir（树洞）是一款**基于 P2P 的匿名即时通讯工具**：消息通
 6. 篡改/伪造消息（测试注入）导致验签失败时，UI 明确标示失败，不静默展示。
 7. 断线后发送消息进入离线队列，重连后自动补发。
 8. 中/英文界面可切换，无缺字/漏译。
-9. 工程验收：`npm run typecheck`、`npm run lint`、`npm test`（283 项）均通过。
+9. 工程验收：`npm run typecheck`、`npm run lint`、`npm test`（287 项）均通过。
 10. 安全相关改动不得突破 [THREAT_MODEL.md](./THREAT_MODEL.md) 声明的信任边界。
 
 ---
