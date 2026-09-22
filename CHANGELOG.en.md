@@ -7,6 +7,47 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 1.5.0 - 2026-09-22 (Signaling redundancy: multi-broker + Nostr fallback chain)
+
+> New feature: Signaling reliability upgrade — MQTT main channel enables all 5 public brokers, new Nostr fallback strategy with chain mqtt → nostr → torrent. No breaking changes.
+
+### ✨ New Features
+- **Signaling redundancy config**: MQTT main channel explicitly enables all 5 public brokers (trystero's default list had 5 but only 4 were active, hivemq was never used), redundancy=5; WebTorrent fallback channel enables all 5 public trackers (previously only 3). Multiple server failures still leave available channels.
+- **Nostr fallback strategy**: Adds `@trystero-p2p/nostr` as the second fallback tier (mqtt primary → nostr → torrent). Nostr public relays outnumber MQTT brokers significantly, higher decentralization. Explicitly configures 8 well-known public relays while maintaining 5 simultaneous connections.
+
+### ⚙️ Engineering/CI
+- Dual-device integration and Nostr-specific validation passed (two independent browser contexts connected via public relay and delivered messages); 287 unit tests all green.
+
+---
+
+## 1.4.0 - 2026-09-15 (Automatic key rotation + E2E three-end + CSP fix)
+
+> New feature: Automatic key rotation strategy; Engineering/CI: Playwright E2E three-end + CSP fix. No breaking changes.
+
+- **Automatic key rotation strategy (ADR-007 protocol ready)**: Triggers a verifiable rotation every 100 messages sent (`rotateKeysVerifiable`, signature-chaining proof broadcast via key-rotation channel, peer re-pins after signature verification); only triggers when at least one peer is online, count accumulates while offline and resumes when they reconnect; counter resets after rotation. The earlier flaw of "auto-rotate every 100 messages without notification/signature causing decryption failures" is now resolved by the protocol.
+- **E2E three-end tests (Playwright)**: Adds `e2e/` (smoke + responsive), `playwright.config.js`, `test:e2e` script and CI job (Chromium desktop + WebKit mobile/tablet). Smoke covers: zero-error load / CSP zero violations / first password setup / create room and enter chat; responsive covers three-end rendering.
+- **CSP fix (security issue discovered by E2E)**: ①Removed invalid `stun:` source from `connect-src` (WebRTC is not subject to CSP at the underlying level, previously only produced browser warnings); ②Removed invalid `<meta>` `frame-ancestors` (meta is ineffective), replaced by `X-Frame-Options: DENY` in `public/_headers` to take effect on Pages deployment; ③Added missing trystero fallback MQTT broker whitelist (`test.mosquitto.org`, `public.cloud.shiftr.io`) — previously blocked by CSP, fault tolerance fallback failed.
+- **Decision review system**: AGENTS.md adds "Decision Collaboration Specification" chapter — irreversible / spending / publishing / architecture-impacting operations require AI to answer "three decision questions" (disadvantages/costs, consequences of not doing, conditions for regret) before execution; companion `docs/DECISION_REVIEW.md` (pre-decision checklist + approval record template).
+- **Doc & version sync specification**: AGENTS.md adds "Document & Version Sync (pre-release checklist)" chapter; companion `docs/DOC_SYNC.md` (single source of truth: version number from package.json, numbers from test output, descriptions from code; sync checklist + SemVer decision table + pre-release verification + sync check template). Includes zh/en bilingual consistency and dependency ↔ README acknowledgment table items.
+- **Deployment consolidation**: Removed Cloudflare Workers online address (`*.workers.dev` unavailable); **GitHub Pages (https://xiaoyu-hue.github.io/Nymir/) as primary site, Cloudflare Pages (https://nymir.pages.dev/) as backup** (two sites are independent entry points with domain-isolated identities, primary-backup relationship marked in zh/en README). The `Workers Builds: nymir` known issue from 1.3.0 is no longer applicable with Workers deployment removed.
+
+---
+
+## 1.3.0 - 2026-09-14 (Key rotation UI + security infrastructure consolidation)
+
+> New feature: Key rotation UI entry; Engineering/CI: branch protection + scan pipeline consolidation. No breaking changes.
+
+### ✨ New Features
+- **Key rotation UI**: ChatView toolbar adds 🔑 rotate key button (shown when a peer is present). Click triggers a confirmation dialog for second confirmation, then calls `messageManager.rotateKeys()` (verifiable rotation protocol, see ADR-007). Success/failure banner feedback (auto-dismisses after 4 seconds). After rotation, safety code automatically changes to "changed", prompting both sides to re-verify. zh/en i18n. Adds 4 component test cases.
+
+### ⚙️ Engineering/CI
+- **Enable master branch protection**: Requires PR merge + all checks green (CodeQL `Analyze (javascript-typescript)` / Semgrep `security-audit + owasp-top-ten` / Test Gate `audit · typecheck · lint · test · build`) + branch must be up-to-date (strict) + admins cannot bypass (enforce_admins) + force-push/delete branch prohibited + linear history. Direct push to master rejected, all changes go through PR.
+- **Disable Dependabot regular version upgrades** (delete dependabot.yml): No longer auto-opens upgrade PRs (avoid branch/PR clutter); retains Dependabot alerts (vulnerability alerts) + security updates (high-severity vulnerability auto-fix PRs) — controlled by repo settings, unaffected.
+- **Remove redundant socket.yml**: Socket Security GitHub App is installed and handles supply chain scanning (produces `Socket Security: Project Report` check), self-built workflow deleted.
+- **Known issue**: Cloudflare Workers build check (`Workers Builds: nymir`) occasionally fails in 0 seconds — a Cloudflare-side configuration/authentication issue, not in branch protection required checks, does not affect merge; awaits login to Cloudflare dashboard to investigate.
+
+---
+
 ## 1.2.0 - 2026-09-14 (verifiable key rotation)
 
 > Security enhancement: verifiable key rotation (signature-chaining protocol, ADR-007). No breaking changes.
