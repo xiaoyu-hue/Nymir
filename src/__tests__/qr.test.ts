@@ -40,6 +40,9 @@ describe('QR utilities', () => {
     })
 
     it('canvas context 不可用时返回 null', () => {
+      const canvasMock = { getContext: () => null } as unknown as HTMLCanvasElement
+      const originalCreateElement = globalThis.document?.createElement
+
       // 暂不测复杂 canvas，保证基础调用不抛错
       const videoEl = { videoWidth: 200, videoHeight: 200 } as unknown as HTMLVideoElement
       expect(() => scanQRFromVideo(videoEl)).not.toThrow()
