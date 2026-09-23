@@ -298,7 +298,14 @@ export class PeerManager {
         this.room.leave()
         this.room = null
       }
-      this.peers.clear()
+      // 逐个触发 leave 回调（含 e2eeManager.removePeerKey + UI 通知），
+      // 再清空 Set，确保与正常断开行为一致。
+      for (const peerId of [...this.peers]) {
+        this.peers.delete(peerId)
+        connectionMonitor.setPeerCount(this.peers.size)
+        e2eeManager.removePeerKey(peerId)
+        for (const cb of this.peerLeaveCallbacks) cb(peerId)
+      }
       this.e2eeChannel = null
       this.roomMetaChannel = null
       e2eeManager.clearAll()
