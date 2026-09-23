@@ -28,6 +28,13 @@ const zh = {
     invalidCode: '无效的房间代码',
     joinFailed: '加入房间失败，请检查网络或房间代码',
     createFailed: '创建房间失败，请检查网络',
+    qrCodeTitle: '扫码加入',
+    qrCodeHint: '让对方扫描二维码快速加入',
+    scanTitle: '扫描二维码',
+    scanHint: '将二维码对准摄像头，自动识别',
+    cameraError: '无法访问摄像头',
+    orEnterCode: '或手动输入代码',
+    shareCode: '分享代码',
   },
   message: {
     placeholder: '说点什么...',
