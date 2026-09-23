@@ -36,7 +36,7 @@ function AppContent() {
   const [identityLoading, setIdentityLoading] = useState(false)
   const [identityError, setIdentityError] = useState(false)
   const [roomError, setRoomError] = useState('')
-  const [_roomCode, setRoomCode] = useState('')
+  const [roomCode, setRoomCode] = useState('')
 
   useEffect(() => {
     securityManager
