@@ -134,7 +134,7 @@ The full threat boundary is in [THREAT_MODEL.md](./THREAT_MODEL.md).
 6. Tampered/forged messages (test-injected) cause visible signature-verification failure, never silent display.
 7. Messages sent while offline enter the queue and are re-sent after reconnect.
 8. Chinese/English switching works without missing translations.
-9. Engineering gates pass: `npm run typecheck`, `npm run lint`, `npm test` (287 tests).
+9. Engineering gates pass: `npm run typecheck`, `npm run lint`, `npm test` (293 tests).
 10. Security-related changes must not break the trust boundary declared in [THREAT_MODEL.md](./THREAT_MODEL.md).
 
 ---

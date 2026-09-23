@@ -146,7 +146,7 @@ BurnConfig = { mode, burnAfter?, burnAt? }
 
 ## 7. Testing
 
-- **Entry**: `npm test` (Vitest), 287 cases, 31 test files (`src/__tests__/`), covering: crypto/e2ee/fingerprint/keyRotation/burn/db/backup/base64/id/noise, and UI components (BurnTimer/ConfirmDialog/ErrorBoundary/GlassCard), etc.
+- **Entry**: `npm test` (Vitest), 293 cases, 32 test files (`src/__tests__/`), covering: crypto/e2ee/fingerprint/keyRotation/burn/db/backup/base64/id/noise, and UI components (BurnTimer/ConfirmDialog/ErrorBoundary/GlassCard), etc.
 - **Gates**: `npm run typecheck` (tsc) + `npm run lint` (oxlint), CI (GitHub Actions).
 - Security invariants are preferably locked in as tests (threat model §9: before changing security code, consult the threat model).
 

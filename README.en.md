@@ -136,6 +136,8 @@ Nymir stands on the shoulders of these open-source projects. Without them, a zer
 | [@trystero-p2p/torrent](https://www.npmjs.com/package/@trystero-p2p/torrent) | MIT | P2P signaling (WebTorrent channel) |
 | [@trystero-p2p/nostr](https://www.npmjs.com/package/@trystero-p2p/nostr) | MIT | P2P signaling (Nostr channel) |
 | [idb](https://github.com/jakearchibald/idb) | ISC | IndexedDB wrapper |
+| [qrcode](https://www.npmjs.com/package/qrcode) | MIT | QR code generation (SVG output, v1.6.0) |
+| [jsqr](https://github.com/cozmo/jsQR) | Apache-2.0 | QR code camera scanning (v1.6.0) |
 
 ### Development & tooling
 
@@ -148,6 +150,7 @@ Nymir stands on the shoulders of these open-source projects. Without them, a zer
 | [vite-plugin-pwa](https://vite-pwa-org.netlify.app) | MIT | PWA support (installable, offline-capable) |
 | [jsdom](https://github.com/jsdom/jsdom) | MIT | DOM test environment |
 | [@testing-library/react](https://testing-library.com) | MIT | React component testing |
+| [@types/qrcode](https://www.npmjs.com/package/@types/qrcode) | MIT | QR code type declarations (v1.6.0) |
 
 ### Special thanks
 
