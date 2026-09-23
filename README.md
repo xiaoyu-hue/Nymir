@@ -146,8 +146,8 @@ Nymir 站在这些开源项目的肩膀上。没有它们，一个零编程基�
 | [@trystero-p2p/torrent](https://www.npmjs.com/package/@trystero-p2p/torrent) | MIT | P2P 信令（WebTorrent 通道） |
 | [@trystero-p2p/nostr](https://www.npmjs.com/package/@trystero-p2p/nostr) | MIT | P2P 信令（Nostr 通道，降级策略） |
 | [idb](https://github.com/jakearchibald/idb) | ISC | IndexedDB 封装 |
-| [qrcode](https://www.npmjs.com/package/qrcode) | MIT | QR 码生成（SVG 输出，v1.6.1） |
-| [jsqr](https://github.com/cozmo/jsQR) | Apache-2.0 | QR 码摄像头扫描（v1.6.1） |
+| [qrcode](https://www.npmjs.com/package/qrcode) | MIT | QR 码生成（SVG 输出） |
+| [jsqr](https://github.com/cozmo/jsQR) | Apache-2.0 | QR 码摄像头扫描 |
 
 ### 开发与工具链
 
@@ -161,7 +161,7 @@ Nymir 站在这些开源项目的肩膀上。没有它们，一个零编程基�
 | [jsdom](https://github.com/jsdom/jsdom) | MIT | DOM 测试环境 |
 | [@testing-library/react](https://testing-library.com) | MIT | React 组件测试 |
 | [husky](https://typicode.github.io/husky/) | MIT | Git hooks 管理（pre-commit 门禁） |
-| [@types/qrcode](https://www.npmjs.com/package/@types/qrcode) | MIT | QR 码类型声明（v1.6.1） |
+| [@types/qrcode](https://www.npmjs.com/package/@types/qrcode) | MIT | QR 码类型声明|
 
 ### 安全扫描与审计（CI 门禁）
 
