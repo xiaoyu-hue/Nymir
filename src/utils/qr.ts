@@ -21,7 +21,14 @@ export async function generateQRCodeSVG(text: string, size: number = 200): Promi
     })
   } catch {
     // 降级：返回占位 SVG
-    return `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg"><rect width="${size}" height="${size}" fill="#7c6aef"/><text x="50%" y="50%" text-anchor="middle" fill="white" font-size="14">${text}</text></svg>`
+    // 注意：text 来自用户输入的 room code（纯字母数字），此处做 HTML 实体转义
+    // 防止降级路径下 dangerouslySetInnerHTML 的 XSS 风险
+    const escaped = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+    return `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg"><rect width="${size}" height="${size}" fill="#7c6aef"/><text x="50%" y="50%" text-anchor="middle" fill="white" font-size="14">${escaped}</text></svg>`
   }
 }
 
