@@ -67,7 +67,10 @@ export default function QRScanner({ onScan, onCancel }: Props) {
     }
 
     const stopCamera = () => {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current)
+        animFrameRef.current = 0
+      }
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop())
         streamRef.current = null
