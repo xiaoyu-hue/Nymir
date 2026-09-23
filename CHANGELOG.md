@@ -7,6 +7,28 @@
 
 ---
 
+## 1.6.1 - 2026-09-23（代码审查修复）
+
+### 🐛 Bug 修复
+
+- **安全**：`db.ts` 锁定检查提前到 try/catch 外，防止锁定时被外层 catch 吞掉导致明文泄露
+- **安全**：`peer.ts` switchStrategy 时逐个触发 onPeerLeave 回调，防止共享密钥残留
+- **并发**：`e2eeManager.ts` recordMessageSent 添加 `_rotating` 防重入锁，避免并发消息触发双重轮换
+- **内存**：`ChatView.tsx` 限制 readMsgIdsRef Set 大小为 500，防止长会话内存泄漏
+- **缓存**：`message.ts` init 时清空 _cachedMessages，防止切换房间时显示旧消息
+- **资源**：`QRScanner.tsx` stopCamera 后重置 animFrameRef，防止摄像头资源泄漏
+- **一致**：`offlineQueue.ts` clearRoom 先 emit 再 save，无条件 saveToStorage 确保幂等
+
+### 🧹 规范整理
+
+- `qr.ts` 移除未使用的 catch error 变量
+- `App.tsx` 移除 `_roomCode` 下划线前缀，统一命名规范
+- `e2ee.ts` / `sign.ts` 使用 `as unknown as` 替代直接类型断言
+- `globals.css` 替换 `*` 选择器为具体元素列表
+- `QRScanner.tsx` 移除 TSX 硬编码 fallback 字符串，统一 i18n；为 video 添加 aria-label
+
+---
+
 ## 1.6.0 - 2026-09-23（二维码离线配对）
 
 ### ✨ 新功能
