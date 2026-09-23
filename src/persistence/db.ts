@@ -53,8 +53,8 @@ async function encryptField(value: string): Promise<string> {
 }
 
 async function decryptField(value: string): Promise<string> {
-  // 锁定时抛错而非返回原值：原值可能是历史明文数据，
-  // 锁定状态下返回明文违反「锁定时不应暴露数据」原则。
+  // 锁定时直接抛错：外层 catch 会吞掉此错误并返回原值（可能含敏感数据），
+  // 因此锁定检查必须在 try/catch 之前，绝不进入解密流程。
   if (securityManager.isLocked) throw new Error('Security: locked, cannot decrypt field')
   try {
     // 新数据：带 enc: 前缀，可靠识别
@@ -71,7 +71,9 @@ async function decryptField(value: string): Promise<string> {
       }
     }
     return value
-  } catch {
+  } catch (err) {
+    // 锁定错误已在上面提前抛出，此处只处理解密本身的其他异常
+    if (err instanceof Error && err.message.includes('locked')) throw err
     warn('[DB] Decryption failed, returning original value')
     return value
   }

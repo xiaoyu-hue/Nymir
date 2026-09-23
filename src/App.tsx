@@ -36,7 +36,6 @@ function AppContent() {
   const [identityLoading, setIdentityLoading] = useState(false)
   const [identityError, setIdentityError] = useState(false)
   const [roomError, setRoomError] = useState('')
-  const [_roomCode, setRoomCode] = useState('')
 
   useEffect(() => {
     securityManager
@@ -106,9 +105,8 @@ function AppContent() {
   const handleCreateRoom = async (name: string) => {
     setRoomError('')
     try {
-      const room = await roomManager.createRoom(name)
-      // 创建成功后，显示 QR 弹窗（使用真实房间 ID）
-      setRoomCode(room.id)
+      await roomManager.createRoom(name)
+      // RoomPanel 内部管理 roomCode 状态并渲染 QR 弹窗，无需父组件传递
     } catch (err) {
       error('[App] Create room failed:', err)
       setRoomError(t.room.createFailed)

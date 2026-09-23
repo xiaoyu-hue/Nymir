@@ -19,8 +19,7 @@ export async function generateQRCodeSVG(text: string, size: number = 200): Promi
         light: '#ffffff',
       },
     })
-  } catch (error) {
-    console.error('QR code generation failed:', error)
+  } catch {
     // 降级：返回占位 SVG
     return `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg"><rect width="${size}" height="${size}" fill="#7c6aef"/><text x="50%" y="50%" text-anchor="middle" fill="white" font-size="14">${text}</text></svg>`
   }

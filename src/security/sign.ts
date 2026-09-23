@@ -28,7 +28,8 @@ export async function generateSignKeyPair(): Promise<SignKeyPair> {
     true,
     ['sign', 'verify'],
   )
-  return keyPair as SignKeyPair
+  // WebCrypto 返回 CryptoKeyPair，与 SignKeyPair 结构相同，安全转换
+  return keyPair as unknown as SignKeyPair
 }
 
 /** 持久化签名密钥对：导出公私钥 */

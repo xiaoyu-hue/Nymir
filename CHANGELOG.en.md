@@ -7,6 +7,28 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 1.6.1 - 2026-09-23 (Code review fixes)
+
+### 🐛 Bug Fixes
+
+- **Security**: `db.ts` locked-check now runs before try/catch, preventing plaintext leak when locked
+- **Security**: `peer.ts` switchStrategy now triggers onPeerLeave per peer, preventing shared key residue
+- **Concurrency**: `e2eeManager.ts` recordMessageSent adds `_rotating` re-entrant lock, preventing dual rotation
+- **Memory**: `ChatView.tsx` limits readMsgIdsRef Set to 500, preventing long-session memory leak
+- **Cache**: `message.ts` invalidates _cachedMessages on init, preventing stale messages on room switch
+- **Resource**: `QRScanner.tsx` resets animFrameRef in stopCamera, preventing camera resource leak
+- **Consistency**: `offlineQueue.ts` clearRoom emits before saves, unconditional saveToStorage for idempotency
+
+### 🧹 Housekeeping
+
+- `qr.ts` removed unused catch error variable
+- `App.tsx` removed `_roomCode` underscore prefix for naming consistency
+- `e2ee.ts` / `sign.ts` use `as unknown as` instead of direct type assertion
+- `globals.css` replaced `*` selector with explicit element list
+- `QRScanner.tsx` removed hardcoded TSX fallback strings, unified i18n; added aria-label to video
+
+---
+
 ## 1.6.0 - 2026-09-23 (QR offline pairing)
 
 > New feature: QR code-based room pairing — generate QR after creating a room, scan with camera to join instantly without typing room codes. No breaking changes.

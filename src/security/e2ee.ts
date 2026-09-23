@@ -64,7 +64,8 @@ export async function generateKeyPair(): Promise<KeyPair> {
     true, // 可导出，用于加密持久化
     ['deriveKey', 'deriveBits'],
   )
-  return keyPair as KeyPair
+  // WebCrypto 返回 CryptoKeyPair，与 KeyPair 结构相同，安全转换
+  return keyPair as unknown as KeyPair
 }
 
 /** 持久化身份：同时导出公私钥（base64） */

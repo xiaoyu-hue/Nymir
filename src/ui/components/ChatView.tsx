@@ -56,6 +56,11 @@ export default function ChatView() {
         messageManager.markRead(msg.id)
       }
     }
+    // 限制 Set 大小，防止长会话内存持续增长
+    const ids = Array.from(readMsgIdsRef.current)
+    if (ids.length > 500) {
+      readMsgIdsRef.current = new Set(ids.slice(-500))
+    }
   }, [messages])
 
   // 双人场景：对端即 peers[0]

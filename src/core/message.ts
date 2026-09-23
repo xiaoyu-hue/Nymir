@@ -38,6 +38,8 @@ export class MessageManager {
 
   init(roomId: string): void {
     this.roomId = roomId
+    // 切换房间时清空缓存，防止显示上个房间的消息
+    this.invalidateCache()
     this.bindChannels()
 
     // 可验证密钥轮换：e2eeManager 轮换成功后自动向所有 peer 广播证明。
