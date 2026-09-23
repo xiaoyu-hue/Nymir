@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import GlassCard from './GlassCard'
 import { useI18n } from '../../i18n'
@@ -27,6 +27,8 @@ export default function SafetyCheckDialog({ open, peerId, onClose }: Props) {
   const [fingerprint, setFingerprint] = useState<Fingerprint | null>(null)
   const [state, setState] = useState<VerificationState>('unverified')
   const [busy, setBusy] = useState(false)
+  // 焦点管理：记录打开前获得焦点的元素，关闭时还原
+  const triggerRef = useRef<HTMLElement | null>(null)
 
   const refresh = useCallback(async () => {
     if (!peerId) {
@@ -42,12 +44,19 @@ export default function SafetyCheckDialog({ open, peerId, onClose }: Props) {
 
   useEffect(() => {
     if (open) {
+      // 记录触发元素，用于关闭时还原焦点
+      triggerRef.current = document.activeElement as HTMLElement
       requestAnimationFrame(() => setVisible(true))
       // eslint-disable-next-line react-hooks/set-state-in-effect
       refresh()
     } else {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setVisible(false)
+      // 焦点还原：确保焦点回到触发弹窗的元素
+      if (triggerRef.current instanceof HTMLElement) {
+        triggerRef.current.focus()
+        triggerRef.current = null
+      }
     }
   }, [open, refresh])
 

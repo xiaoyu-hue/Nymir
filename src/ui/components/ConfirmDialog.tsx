@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import GlassCard from './GlassCard'
 import { useI18n } from '../../i18n'
@@ -13,13 +13,20 @@ type Props = {
 export default function ConfirmDialog({ open, message, onConfirm, onCancel }: Props) {
   const { t } = useI18n()
   const [visible, setVisible] = useState(false)
+  // 焦点管理
+  const triggerRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     if (open) {
+      triggerRef.current = document.activeElement as HTMLElement
       requestAnimationFrame(() => setVisible(true))
     } else {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setVisible(false)
+      if (triggerRef.current instanceof HTMLElement) {
+        triggerRef.current.focus()
+        triggerRef.current = null
+      }
     }
   }, [open])
 
