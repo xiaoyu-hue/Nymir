@@ -20,6 +20,9 @@ jobs:
 
       - name: Run OSV-Scanner (v2.6.0 release binary)
         shell: bash
+        env:
+          # 使用 GH_TOKEN 认证 OSV API，提高速率限制
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           # 用 gh CLI 走 API 认证下载，避免 release-asset 直接 curl 被限流返回 HTML
@@ -27,4 +30,5 @@ jobs:
           chmod +x /usr/local/bin/osv-scanner
           # 保险：校验 ELF 魔数
           head -c 4 /usr/local/bin/osv-scanner | od -An -tx1 | grep -q '7f 45 4c 46' || { echo "ERROR: downloaded file is not a valid ELF binary"; exit 1; }
-          osv-scanner scan source -r .
+          # 使用认证 token 调用 OSV API，避免速率限制
+          osv-scanner scan source -r . --api=golang.googlesource.com/+api/v1/osv
