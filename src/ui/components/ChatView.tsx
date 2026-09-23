@@ -44,8 +44,14 @@ export default function ChatView() {
     return unsub
   }, [])
 
+  // 仅在用户位于底部附近时自动滚动，避免打断历史浏览
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = messagesEndRef.current
+    if (!el) return
+    const distToBottom = el.getBoundingClientRect().bottom - window.innerHeight
+    if (distToBottom < 150) {
+      el.scrollIntoView({ behavior: 'smooth' })
+    }
   }, [messages])
 
   // Mark messages as read when they appear (deduplicated)
