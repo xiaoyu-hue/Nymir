@@ -41,7 +41,7 @@ export default function QRScanner({ onScan, onCancel }: Props) {
         }
       } catch {
         if (!cancelled) {
-          setError(t.room.cameraError || '无法访问摄像头')
+          setError(t.room.cameraError)
         }
       }
     }
@@ -95,8 +95,8 @@ export default function QRScanner({ onScan, onCancel }: Props) {
       <div className="qr-modal-content qr-scanner-modal" onClick={(e) => e.stopPropagation()}>
         <GlassCard variant="strong" className="qr-scanner-card">
           <div className="qr-scanner-header">
-            <h3>{t.room.scanTitle || '扫描二维码'}</h3>
-            <button className="qr-scanner-close" onClick={handleCancel}>{t.confirm.cancel || '取消'}</button>
+            <h3>{t.room.scanTitle}</h3>
+            <button className="qr-scanner-close" onClick={handleCancel}>{t.confirm.cancel}</button>
           </div>
           <div className="qr-scanner-body">
             <video ref={videoRef} autoPlay playsInline muted className="qr-scanner-video" />
@@ -104,10 +104,10 @@ export default function QRScanner({ onScan, onCancel }: Props) {
               <div className="qr-scanner-frame" />
             </div>
             {error && <p className="qr-scanner-error">{error}</p>}
-            {!error && scanning && <p className="qr-scanner-hint">{t.room.scanHint || '将二维码对准摄像头'}</p>}
+            {!error && scanning && <p className="qr-scanner-hint">{t.room.scanHint}</p>}
           </div>
           <div className="qr-scanner-footer">
-            <p>{t.room.scanHint || '扫描成功后将自动加入房间'}</p>
+            <p>{t.room.scanHint}</p>
           </div>
         </GlassCard>
       </div>
