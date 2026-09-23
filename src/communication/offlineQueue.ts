@@ -214,17 +214,16 @@ class OfflineQueue {
    * 移除指定房间的全部队列条目（退出房间时调用，避免该房间 payload 残留）
    */
   clearRoom(roomId: string): void {
-    const before = this.queue.length
     const removed = this.queue.filter((q) => q.roomId === roomId)
     this.queue = this.queue.filter((q) => q.roomId !== roomId)
-    if (this.queue.length !== before) {
-      this.saveToStorage()
-      // 通知 UI：这些消息已被移除（状态标记为 expired，与 prune 行为一致），
-      // 避免 UI 仍显示已被清理的离线消息。
-      for (const item of removed) {
-        item.status = 'expired'
-        this.emit(item, 'expired')
-      }
+    // 先通知 UI 再持久化，避免 UI 短暂显示已被清除的消息。
+    // 即使队列未发生变化（无该房间的条目），也应保存，确保清理操作幂等。
+    for (const item of removed) {
+      item.status = 'expired'
+      this.emit(item, 'expired')
+    }
+    this.saveToStorage()
+    if (removed.length > 0) {
       log(`[OfflineQueue] Cleared queue for room ${roomId}`)
     }
   }
