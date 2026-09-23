@@ -124,7 +124,9 @@ const MessageBubble = memo(MessageBubbleInner, (prev, next) => {
     prev.message.readBy.length === next.message.readBy.length &&
     prev.message.content === next.message.content &&
     prev.message.verified === next.message.verified &&
-    prev.message.decryptFailed === next.message.decryptFailed
+    prev.message.decryptFailed === next.message.decryptFailed &&
+    // timestamp 影响 BurnTimer 倒计时显示，变化时需重渲染
+    prev.message.timestamp === next.message.timestamp
   )
 })
 
