@@ -10,7 +10,11 @@
 import { getAllRooms, getMessagesByRoom, saveRoom, saveMessage, getRoom, getMessage } from './db'
 import { decrypt, verifyPassword, encryptWithSalt, decryptWithSalt } from '../security/crypto'
 import { uint8ToBase64, base64ToUint8 } from '../utils/base64'
+import { BurnMode } from '../core/types'
 import type { BackupData } from './types'
+
+/** 合法的 burnMode 白名单，防御：拒绝构造值打乱排序/绕过阅后即焚 */
+const VALID_BURN_MODES = new Set<string>(Object.values(BurnMode))
 
 const BACKUP_VERSION = 3
 const BACKUP_MAGIC = 'NYMIR_ENC_V3'
@@ -189,6 +193,8 @@ export async function importBackup(
   }
   for (const msg of data.messages) {
     if (!msg.id || !msg.content) continue
+    // 防御：拒绝非法 burnMode 构造值，防止绕过阅后即焚逻辑
+    if (typeof msg.burnMode !== 'string' || !VALID_BURN_MODES.has(msg.burnMode)) continue
     const existing = await getMessage(msg.id)
     if (existing) continue // 本地已有该消息，跳过，不覆盖
     await saveMessage(msg)

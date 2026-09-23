@@ -7,6 +7,30 @@
 
 ---
 
+## 1.6.2 - 2026-09-23（代码审查第二轮修复）
+
+### 🐛 Bug 修复
+
+- **安全**：`backup.ts` 导入时校验 burnMode 白名单，防御篡改备份绕过阅后即焚
+- **安全**：`qr.ts` 降级 SVG 文本做 HTML 实体转义，防止 dangerouslySetInnerHTML XSS
+- **性能**：`ChatView.tsx` 仅在底部附近时自动滚动，避免打断历史浏览
+- **正确性**：`MessageBubble.tsx` memo 增加 timestamp 比较，确保 BurnTimer 倒计时正确更新
+- **一致性**：`e2ee.ts` 提取 evictSharedKeysIfNeeded 为独立导出函数，明确 LRU 淘汰语义
+
+### ♿ 无障碍
+
+- 弹窗（SafetyCheckDialog / ConfirmDialog）打开/关闭时管理焦点，符合 WAI-ARIA dialog 规范
+
+### 🎨 样式规范
+
+- `App.tsx` 身份加载失败状态硬编码样式提取为 CSS 类 identity-error-card
+
+### 🔧 CI
+
+- 修复 OSV-Scanner API 限流：添加 GH_TOKEN 认证环境变量
+
+---
+
 ## 1.6.1 - 2026-09-23（代码审查修复）
 
 ### 🐛 Bug 修复

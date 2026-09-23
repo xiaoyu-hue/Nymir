@@ -7,6 +7,30 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 1.6.2 - 2026-09-23 (Code review round 2 fixes)
+
+### 🐛 Bug Fixes
+
+- **Security**: `backup.ts` validates burnMode whitelist on import, preventing tampered backups from bypassing read-and-burn
+- **Security**: `qr.ts` escapes HTML entities in fallback SVG text, preventing XSS via dangerouslySetInnerHTML
+- **Performance**: `ChatView.tsx` only auto-scrolls when user is near bottom, avoiding disruption during history browsing
+- **Correctness**: `MessageBubble.tsx` memo adds timestamp comparison, ensuring BurnTimer countdown updates correctly
+- **Consistency**: `e2ee.ts` extracts evictSharedKeysIfNeeded as standalone exported function for clear LRU semantics
+
+### ♿ Accessibility
+
+- Dialogs (SafetyCheckDialog / ConfirmDialog) manage focus on open/close, complying with WAI-ARIA dialog spec
+
+### 🎨 Style Cleanup
+
+- `App.tsx` extracted hardcoded identity-error styles into CSS class `identity-error-card`
+
+### 🔧 CI
+
+- Fixed OSV-Scanner API rate limiting: added GH_TOKEN auth environment variable
+
+---
+
 ## 1.6.1 - 2026-09-23 (Code review fixes)
 
 ### 🐛 Bug Fixes

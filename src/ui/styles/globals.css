@@ -1300,3 +1300,21 @@ select {
   align-items: center;
   cursor: pointer;
 }
+
+/* 身份加载失败状态 */
+.identity-error-card {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 24px;
+  text-align: center;
+}
+.identity-error-card h2 {
+  font-size: 1.125rem;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+.identity-error-card p {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
