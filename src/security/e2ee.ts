@@ -33,10 +33,20 @@ export interface EncryptedPayload {
   data: string // base64
 }
 
-// 缓存每个 peer 的共享密钥（带 LRU 淘汰）
+// 缓存每个 peer 的共享密钥（带 LRU 淘汰 + 上限保护）
+// 安全边界：共享密钥仅在会话活跃期间保留；peer 离开 / 策略切换 / 密钥轮换时主动清除。
+// 不做时间过期：ECDH 共享密钥本身无时间属性，LRU + 主动清除已足够控制内存占用。
 const MAX_SHARED_KEYS = 100
 const sharedKeys = new Map<string, CryptoKey>()
 const sharedKeysOrder: string[] = [] // LRU 顺序：最近访问的在末尾
+
+/** 主动淘汰最旧的共享密钥，保留最近访问的。调用方在 peer 离开/轮换后使用。 */
+export function evictSharedKeysIfNeeded(): void {
+  while (sharedKeysOrder.length > MAX_SHARED_KEYS) {
+    const oldest = sharedKeysOrder.shift()!
+    sharedKeys.delete(oldest)
+  }
+}
 
 function touchSharedKey(peerId: string): void {
   const idx = sharedKeysOrder.indexOf(peerId)
@@ -45,9 +55,7 @@ function touchSharedKey(peerId: string): void {
 }
 
 function evictOldestSharedKey(): void {
-  if (sharedKeysOrder.length <= MAX_SHARED_KEYS) return
-  const oldest = sharedKeysOrder.shift()!
-  sharedKeys.delete(oldest)
+  evictSharedKeysIfNeeded()
 }
 
 /**
