@@ -106,9 +106,9 @@ function AppContent() {
   const handleCreateRoom = async (name: string) => {
     setRoomError('')
     try {
-      const roomId = await roomManager.createRoom(name)
-      // 创建成功后，显示 QR 弹窗
-      setRoomCode(roomId)
+      const room = await roomManager.createRoom(name)
+      // 创建成功后，显示 QR 弹窗（使用真实房间 ID）
+      setRoomCode(room.id)
     } catch (err) {
       error('[App] Create room failed:', err)
       setRoomError(t.room.createFailed)

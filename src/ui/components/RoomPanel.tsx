@@ -8,23 +8,22 @@ type Props = {
   onCreateRoom: (name: string) => void
   onJoinRoom: (code: string) => void
   error?: string
-  _onRoomCreated?: (roomCode: string) => void
 }
 
-export default function RoomPanel({ onCreateRoom, onJoinRoom, error, _onRoomCreated }: Props) {
+export default function RoomPanel({ onCreateRoom, onJoinRoom, error }: Props) {
   const { t } = useI18n()
   const [tab, setTab] = useState<'create' | 'join'>('create')
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
   const [showQR, setShowQR] = useState(false)
   const [showScan, setShowScan] = useState(false)
-  const [_roomCode, _setRoomCode] = useState('')
+  const [roomCode, _setRoomCode] = useState('')
 
   useEffect(() => {
-    if (_roomCode && !showQR) {
+    if (roomCode && !showQR) {
       setShowQR(true)
     }
-  }, [_roomCode])
+  }, [roomCode])
 
   const handleCreate = () => {
     if (!name.trim()) return
@@ -141,9 +140,9 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom, error, _onRoomCrea
         </div>
       </GlassCard>
 
-      {showQR && _roomCode && (
+      {showQR && roomCode && (
         <QRCodeComponent
-          roomCode={_roomCode}
+          roomCode={roomCode}
           roomName={name}
           onClose={() => setShowQR(false)}
         />
