@@ -3,7 +3,7 @@
 <img src="https://img.shields.io/github/v/release/xiaoyu-hue/Nymir?style=for-the-badge" alt="release">
 <img src="https://img.shields.io/github/last-commit/xiaoyu-hue/Nymir?style=for-the-badge" alt="last commit">
 <img src="https://img.shields.io/badge/license-AGPL--3.0-22c55e?style=for-the-badge" alt="license">
-<img src="https://img.shields.io/badge/tests-287_passing-2ea44f?style=for-the-badge" alt="tests">
+<img src="https://img.shields.io/badge/tests-293_passing-2ea44f?style=for-the-badge" alt="tests">
 <img src="https://github.com/xiaoyu-hue/Nymir/actions/workflows/test-gate.yml/badge.svg" alt="CI">
 <img src="https://github.com/xiaoyu-hue/Nymir/actions/workflows/deploy.yml/badge.svg" alt="Deploy">
 
@@ -114,8 +114,8 @@ Nymir **不是完全去中心化**的。数据存储与消息传输是本地/P2P
 ### 计划中 🚀
 
 - [x] 信令去依赖第一阶段（多信令冗余 + Nostr 降级链，v1.5.0）
+- [x] 二维码离线配对（扫码加入房间，v1.6.0）
 - [ ] 消息搜索、语音、多设备同步
-- [ ] 进一步降低信令依赖（自托管信令 / 二维码离线配对）
 
 ---
 

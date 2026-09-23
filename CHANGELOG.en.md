@@ -7,6 +7,30 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 1.6.0 - 2026-09-23 (QR offline pairing)
+
+> New feature: QR code-based room pairing — generate QR after creating a room, scan with camera to join instantly without typing room codes. No breaking changes.
+
+### ✨ New Features
+- **QR offline pairing**: Generate QR code after creating a room; peers scan with camera to join directly, no need to manually enter room codes
+  - New `src/utils/qr.ts`: QR code generation (qrcode lib) and camera scanning (jsqr lib) utility functions
+  - New `src/ui/components/QRCodeComponent.tsx`: QR modal display component, brand-color SVG output
+  - New `src/ui/components/QRScanner.tsx`: Camera QR scanner component, auto-detects and joins rooms
+  - New `src/ui/styles/qr.css`: QR-related styles (modal overlay, scan frame, buttons)
+  - RoomPanel now uses real room ID, automatically shows QR modal after room creation
+  - Join tab adds "Scan QR Code" button for camera-based quick join
+  - Added bilingual i18n strings (scan, share, camera permission, etc.)
+
+### 🧪 Tests
+- Added `src/__tests__/qr.test.ts` (6 cases): covers QR generation, empty fallback, dimensions, colors, and basic scan logic
+- All 293 unit tests pass green
+
+### 🔒 Dependencies
+- Added runtime deps: `qrcode ^1.5.4` (SVG generation), `jsqr ^1.4.0` (camera frame recognition)
+- Added dev dep: `@types/qrcode`
+
+---
+
 ## 1.5.0 - 2026-09-22 (Signaling redundancy: multi-broker + Nostr fallback chain)
 
 > New feature: Signaling reliability upgrade — MQTT main channel enables all 5 public brokers, new Nostr fallback strategy with chain mqtt → nostr → torrent. No breaking changes.

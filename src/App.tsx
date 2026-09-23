@@ -8,6 +8,7 @@ import Starfield from './ui/components/Starfield'
 import RoomPanel from './ui/components/RoomPanel'
 import InstallPrompt from './ui/components/InstallPrompt'
 import './ui/styles/globals.css'
+import './ui/styles/qr.css'
 
 const ChatView = lazy(() => import('./ui/components/ChatView'))
 const BackupPanel = lazy(() => import('./ui/components/BackupPanel'))
@@ -35,6 +36,7 @@ function AppContent() {
   const [identityLoading, setIdentityLoading] = useState(false)
   const [identityError, setIdentityError] = useState(false)
   const [roomError, setRoomError] = useState('')
+  const [_roomCode, setRoomCode] = useState('')
 
   useEffect(() => {
     securityManager
@@ -104,7 +106,9 @@ function AppContent() {
   const handleCreateRoom = async (name: string) => {
     setRoomError('')
     try {
-      await roomManager.createRoom(name)
+      const room = await roomManager.createRoom(name)
+      // 创建成功后，显示 QR 弹窗（使用真实房间 ID）
+      setRoomCode(room.id)
     } catch (err) {
       error('[App] Create room failed:', err)
       setRoomError(t.room.createFailed)
