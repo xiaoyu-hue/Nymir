@@ -99,7 +99,7 @@ export default function QRScanner({ onScan, onCancel }: Props) {
             <button className="qr-scanner-close" onClick={handleCancel}>{t.confirm.cancel}</button>
           </div>
           <div className="qr-scanner-body">
-            <video ref={videoRef} autoPlay playsInline muted className="qr-scanner-video" />
+            <video ref={videoRef} autoPlay playsInline muted className="qr-scanner-video" aria-label={t.room.scanTitle} role="img" />
             <div className="qr-scanner-overlay">
               <div className="qr-scanner-frame" />
             </div>
