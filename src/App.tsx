@@ -159,11 +159,9 @@ function AppContent() {
   // 身份加载失败：提示用户，不能继续使用
   if (identityError) {
     return (
-      <div className="overlay-enter app-loading" style={{ maxWidth: 420, margin: '0 auto', padding: 24, textAlign: 'center' }}>
-        <span style={{ fontSize: 18, marginBottom: 12 }}>⚠️ {t.error.identityErrorTitle}</span>
-        <p style={{ color: '#888', fontSize: 14, lineHeight: 1.6 }}>
-          {t.error.identityErrorDesc}
-        </p>
+      <div className="overlay-enter app-loading identity-error-card">
+        <h2>⚠️ {t.error.identityErrorTitle}</h2>
+        <p>{t.error.identityErrorDesc}</p>
       </div>
     )
   }
