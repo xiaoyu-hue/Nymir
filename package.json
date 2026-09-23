@@ -1,7 +1,7 @@
 {
   "name": "nymir",
   "private": true,
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "基于 P2P 的匿名即时通讯工具 — 端对端加密、阅读即焚、数据仅存于本地浏览器。Peer 发现依赖公共信令服务器（MQTT/WebTorrent），并非完全去中心化。",
   "license": "AGPL-3.0",
   "type": "module",

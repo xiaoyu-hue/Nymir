@@ -3,7 +3,7 @@
 <img src="https://img.shields.io/github/v/release/xiaoyu-hue/Nymir?style=for-the-badge" alt="release">
 <img src="https://img.shields.io/github/last-commit/xiaoyu-hue/Nymir?style=for-the-badge" alt="last commit">
 <img src="https://img.shields.io/badge/license-AGPL--3.0-22c55e?style=for-the-badge" alt="license">
-<img src="https://img.shields.io/badge/tests-287_passing-2ea44f?style=for-the-badge" alt="tests">
+<img src="https://img.shields.io/badge/tests-293_passing-2ea44f?style=for-the-badge" alt="tests">
 <img src="https://github.com/xiaoyu-hue/Nymir/actions/workflows/test-gate.yml/badge.svg" alt="CI">
 <img src="https://github.com/xiaoyu-hue/Nymir/actions/workflows/deploy.yml/badge.svg" alt="Deploy">
 
@@ -103,9 +103,9 @@ To be honest, Nymir is not a universal privacy tool. Please think twice or choos
 
 ### Planned
 
-- [ ] Search, voice, multi-device sync
 - [x] Signaling de-dependency phase 1 (multi-relay redundancy + Nostr fallback chain, v1.5.0)
-- [ ] Further reduce signaling reliance (self-hosted signaling / QR offline pairing)
+- [x] QR offline pairing (scan code to join room, v1.6.0)
+- [ ] Search, voice, multi-device sync
 
 ---
 
@@ -143,7 +143,7 @@ Nymir stands on the shoulders of these open-source projects. Without them, a zer
 |---------|---------|-------|
 | [TypeScript](https://www.typescriptlang.org) | Apache-2.0 | Type system |
 | [Vite](https://vite.dev) | MIT | Build tool |
-| [Vitest](https://vitest.dev) | MIT | Test framework (287 tests) |
+| [Vitest](https://vitest.dev) | MIT | Test framework (293 tests) |
 | [Oxlint](https://oxc.rs) | MIT | Linter (CI gate) |
 | [vite-plugin-pwa](https://vite-pwa-org.netlify.app) | MIT | PWA support (installable, offline-capable) |
 | [jsdom](https://github.com/jsdom/jsdom) | MIT | DOM test environment |
