@@ -153,6 +153,7 @@ class E2EEManager {
   private _publicKeyString: string | null = null
   private _signPublicKeyString: string | null = null
   private messageCount = 0
+  private _rotating = false
   private onKeyRotationCallback: ((notice: KeyRotationNotice | null) => void) | null = null
   private tofuStore = loadTOFU()
   private verifiedStore = loadVerified()
@@ -395,11 +396,12 @@ class E2EEManager {
    */
   recordMessageSent(onlinePeerCount = 0): boolean {
     this.messageCount++
-    if (this.messageCount >= AUTO_ROTATION_INTERVAL && onlinePeerCount > 0) {
-      // 先清零避免异步轮换期间重入触发；rotateKeysVerifiable 内部也会清零（幂等）。
+    if (this.messageCount >= AUTO_ROTATION_INTERVAL && onlinePeerCount > 0 && !this._rotating) {
+      // 先清零并设锁，防止异步轮换期间重入触发。
       this.messageCount = 0
+      this._rotating = true
       log('[E2EE] Auto rotation threshold reached, rotating keys (verifiable)')
-      void this.rotateKeysVerifiable()
+      void this.rotateKeysVerifiable().finally(() => { this._rotating = false })
       return true
     }
     return false
