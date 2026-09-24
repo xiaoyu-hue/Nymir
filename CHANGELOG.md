@@ -7,6 +7,25 @@
 
 ---
 
+## 1.6.4 - 2026-09-24（代码审查第四轮修复）
+
+### 🐛 Bug 修复（P2 问题）
+
+- **并发安全**：`BurnTimer.tsx` 改为每个实例独立定时器，移除全局 `tick` 共享状态，防止多房间同时倒计时时互相干扰
+- **组件规范**：`QRScanner.tsx` 移除 render 期间 ref 赋值，改用 `useEffect` 同步摄像头流，符合 React Hooks 规则
+- **Lint 警告清理**：`ChatView.tsx`、`RoomPanel.tsx`、`QRCodeComponent.tsx` 添加 eslint-disable 注释，说明有意设计
+
+### 📝 文档
+
+- CHANGELOG.md 新增 v1.6.4 条目
+- docs/DOC_SYNC.md 更新检查清单
+
+### 🧪 测试
+
+- 全量测试：293 个用例全部通过
+
+---
+
 ## 1.6.3 - 2026-09-24（代码审查第三轮修复）
 
 ### 🐛 Bug 修复
