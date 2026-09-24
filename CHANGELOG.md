@@ -15,13 +15,21 @@
 - **安全性**：`QRCodeComponent.tsx` 使用 `dangerouslySetInnerHTML` 注入 SVG — 改为 Blob URL + `<img>` 标签渲染，消除 XSS 风险
 - **功能正确性**：`RoomPanel` 创建房间后二维码弹窗不显示 — 修复 `roomCode` 状态流，添加回调参数实时传递房间 ID
 
+### 🐛 第四轮审查修复（P2）
+
+- **性能**：`BurnTimer.tsx` 改为每个实例独立定时器，移除全局 tick 共享状态，避免批量消息销毁时多实例冲突
+- **规范**：`QRScanner.tsx` 移除 render 期间的 ref 赋值，改用 `useEffect` 同步 refs
+- **注释**：`ChatView.tsx` readMsgIdsRef 说明 WeakSet 不适用于字符串 key 的设计原因；`RoomPanel`/`QRCodeComponent` setState in effect 为有意设计加 eslint-disable
+
 ### 📝 文档
 
 - 新增 `AUDIT_V3.md`：第三次全面代码审查报告
+- 新增 `AUDIT_V4.md`：第四次全面代码审查报告（综合评分 A，92/100）
 
 ### 🧪 测试
 
 - 全量测试：293 个用例全部通过
+- TypeScript 无类型错误，Linter 0 警告
 
 ---
 
