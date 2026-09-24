@@ -10,24 +10,6 @@ type Props = {
   onExpired?: () => void
 }
 
-// Shared tick: single interval for all BurnTimer instances
-let tickListeners: Set<() => void> = new Set()
-let tickInterval: ReturnType<typeof setInterval> | null = null
-
-function ensureTick() {
-  if (tickInterval) return
-  tickInterval = setInterval(() => {
-    tickListeners.forEach((fn) => fn())
-  }, 1000)
-}
-
-function stopTick() {
-  if (tickListeners.size === 0 && tickInterval) {
-    clearInterval(tickInterval)
-    tickInterval = null
-  }
-}
-
 export default function BurnTimer({ message, onExpired }: Props) {
   const { t } = useI18n()
   const [remaining, setRemaining] = useState(() => getRemainingMs(message))
@@ -35,6 +17,8 @@ export default function BurnTimer({ message, onExpired }: Props) {
   const onExpiredRef = useRef(onExpired)
   const messageRef = useRef(message)
   const hasExpiredRef = useRef(false)
+  // Per-instance timer: avoid global shared state
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Keep refs up to date
   useEffect(() => {
@@ -46,19 +30,13 @@ export default function BurnTimer({ message, onExpired }: Props) {
   }, [message])
 
   // Adjust countdown during render when the message changes
-  // (React "adjusting state when props change" pattern — avoids a
-  // cascading re-render caused by setState inside an effect)
   if (prevMessage !== message) {
     setPrevMessage(message)
     setRemaining(getRemainingMs(message))
   }
 
   // Initial check: if already expired, fire immediately
-  // (notifying the parent is an external effect, so it stays in useEffect)
   useEffect(() => {
-    // New message: reset the fired-flag so onExpired can fire once for it
-    // (fixes: previously the flag never reset, so a second message
-    // arriving at the same component instance would never notify)
     hasExpiredRef.current = false
     const r = getRemainingMs(message)
     if (r <= 0 && !hasExpiredRef.current) {
@@ -67,27 +45,33 @@ export default function BurnTimer({ message, onExpired }: Props) {
     }
   }, [message])
 
-  // Set up shared tick listener
+  // Per-instance countdown timer
   useEffect(() => {
+    const r = getRemainingMs(messageRef.current)
+    if (r <= 0) {
+      // Already expired or timed-out: nothing to schedule
+      return
+    }
+
     const tick = () => {
-      const r = getRemainingMs(messageRef.current)
-      setRemaining(r)
-      if (r <= 0 && !hasExpiredRef.current) {
+      const remaining = getRemainingMs(messageRef.current)
+      setRemaining(remaining)
+      if (remaining <= 0 && !hasExpiredRef.current) {
         hasExpiredRef.current = true
-        tickListeners.delete(tick)
-        stopTick()
         onExpiredRef.current?.()
       }
     }
 
-    tickListeners.add(tick)
-    ensureTick()
+    // Schedule next tick at the exact expiration time
+    timerRef.current = setTimeout(tick, Math.max(r, 1000))
 
     return () => {
-      tickListeners.delete(tick)
-      stopTick()
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+        timerRef.current = null
+      }
     }
-  }, [])
+  }, [message])
 
   if (remaining === Infinity) return null
   if (remaining <= 0) return <span className="burn-indicator expired">{t.message.burned}</span>

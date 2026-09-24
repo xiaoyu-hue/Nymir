@@ -63,6 +63,7 @@ export default function ChatView() {
       }
     }
     // 限制 Set 大小，防止长会话内存持续增长
+    // (intentional: WeakSet cannot store strings, only objects)
     const ids = Array.from(readMsgIdsRef.current)
     if (ids.length > 500) {
       readMsgIdsRef.current = new Set(ids.slice(-500))

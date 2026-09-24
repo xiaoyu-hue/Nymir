@@ -19,6 +19,7 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom, error }: Props) {
   const [showScan, setShowScan] = useState(false)
   const [roomCode, setRoomCode] = useState('')
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (roomCode && !showQR) {
       setShowQR(true)
