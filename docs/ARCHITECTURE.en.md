@@ -1,4 +1,4 @@
-# Nymir Technical Architecture (Current · v1.6.2)
+# Nymir Technical Architecture (Current · v1.6.3)
 
 > This document describes the **real current structure** and stays in sync with the code. Security trust boundaries are defined in [THREAT_MODEL.md](./THREAT_MODEL.md); "why we did it this way" lives in [adr/](./adr/README.md).
 > Maintenance rule: any file added/moved/changed in responsibility must be reflected here.
