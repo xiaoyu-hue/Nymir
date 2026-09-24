@@ -25,9 +25,20 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom, error }: Props) {
     }
   }, [roomCode, showQR])
 
+  useEffect(() => {
+    // 监听 App 侧的房间创建事件
+    const handler = (e: Event) => {
+      const { detail } = e as CustomEvent
+      if (detail) setRoomCode(detail)
+    }
+    window.addEventListener('nymir:roomCreated', handler)
+    return () => window.removeEventListener('nymir:roomCreated', handler)
+  }, [])
+
   const handleCreate = () => {
     if (!name.trim()) return
-    onCreateRoom(name.trim(), () => setRoomCode(roomManager.currentRoom?.id || ''))
+    // App 侧会设置 roomCode，通过轮询检查
+    onCreateRoom(name.trim())
   }
 
   const handleJoin = () => {

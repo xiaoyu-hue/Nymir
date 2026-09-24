@@ -102,11 +102,12 @@ function AppContent() {
     }
   }, [])
 
-  const handleCreateRoom = async (name: string, onCreated: (roomId: string) => void) => {
+  const handleCreateRoom = async (name: string) => {
     setRoomError('')
     try {
       const info = await roomManager.createRoom(name)
-      onCreated(info.id)
+      // 通过事件通知 RoomPanel 更新 roomCode
+      window.dispatchEvent(new CustomEvent('nymir:roomCreated', { detail: info.id }))
     } catch (err) {
       error('[App] Create room failed:', err)
       setRoomError(t.room.createFailed)
