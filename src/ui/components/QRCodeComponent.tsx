@@ -12,7 +12,7 @@ type Props = {
 export default function QRCodeComponent({ roomCode, roomName, onClose }: Props) {
   const { t } = useI18n()
   const containerRef = useRef<HTMLDivElement>(null)
-  const [svg, setSvg] = useState('')
+  const [svgUrl, setSvgUrl] = useState<string>('')
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -22,9 +22,13 @@ export default function QRCodeComponent({ roomCode, roomName, onClose }: Props) 
     }
 
     setError('')
-    generateQRCodeSVG(roomCode, 200).then(svg => {
+    generateQRCodeSVG(roomCode, 200).then((svg) => {
       if (svg) {
-        setSvg(svg)
+        // 转为 blob URL 避免 dangerouslySetInnerHTML 的 XSS 风险
+        const blob = new Blob([svg], { type: 'image/svg+xml' })
+        const url = URL.createObjectURL(blob)
+        setSvgUrl(url)
+        return () => URL.revokeObjectURL(url)
       } else {
         setError('二维码生成失败')
       }
@@ -43,8 +47,8 @@ export default function QRCodeComponent({ roomCode, roomName, onClose }: Props) 
             <p className="qr-code-room-name">{roomName}</p>
           </div>
           <div className="qr-code-content" ref={containerRef}>
-            {svg ? (
-              <div dangerouslySetInnerHTML={{ __html: svg }} />
+            {svgUrl ? (
+              <img src={svgUrl} alt={`QR Code for ${roomName}`} className="qr-svg-img" />
             ) : error ? (
               <p className="qr-code-error">{error}</p>
             ) : (
