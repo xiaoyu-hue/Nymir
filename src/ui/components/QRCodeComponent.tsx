@@ -15,6 +15,7 @@ export default function QRCodeComponent({ roomCode, roomName, onClose }: Props) 
   const [svgUrl, setSvgUrl] = useState<string>('')
   const [error, setError] = useState('')
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!roomCode) {
       setError('等待房间代码...')

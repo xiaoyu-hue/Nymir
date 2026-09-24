@@ -17,9 +17,16 @@ export default function QRScanner({ onScan, onCancel }: Props) {
   const animFrameRef = useRef<number>(0)
   const lastCodeRef = useRef<string>('')
   const scanningRef = useRef(false)
+  const onScanRef = useRef(onScan)
 
-  // 同步扫描状态到 ref，避免闭包问题
-  scanningRef.current = scanning
+  // Keep refs up to date (no render-time mutations)
+  useEffect(() => {
+    onScanRef.current = onScan
+  }, [onScan])
+
+  useEffect(() => {
+    scanningRef.current = scanning
+  }, [scanning])
 
   useEffect(() => {
     let cancelled = false
@@ -34,11 +41,15 @@ export default function QRScanner({ onScan, onCancel }: Props) {
           return
         }
         streamRef.current = stream
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-          setScanning(true)
-          startScanning()
+        // Access videoRef in effect, not during render
+        const video = videoRef.current
+        if (!video) {
+          stream.getTracks().forEach(t => t.stop())
+          return
         }
+        video.srcObject = stream
+        setScanning(true)
+        startScanning()
       } catch {
         if (!cancelled) {
           setError(t.room.cameraError)
@@ -56,7 +67,7 @@ export default function QRScanner({ onScan, onCancel }: Props) {
         const code = scanQRFromVideo(videoRef.current)
         if (code && code !== lastCodeRef.current) {
           lastCodeRef.current = code
-          onScan(code)
+          onScanRef.current(code)
           stopCamera()
           return
         }
@@ -84,6 +95,7 @@ export default function QRScanner({ onScan, onCancel }: Props) {
       cancelled = true
       stopCamera()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleCancel = () => {
