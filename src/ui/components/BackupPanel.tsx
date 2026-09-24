@@ -62,7 +62,7 @@ export default function BackupPanel({ onClose }: Props) {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = '.nymir'
-    input.onchange = async (e) => {
+    input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0]
       if (!file) return
 
@@ -70,28 +70,29 @@ export default function BackupPanel({ onClose }: Props) {
       setStatus('')
       setHasError(false)
 
-      try {
-        const text = await file.text()
+      ;(async () => {
+        try {
+          const text = await file.text()
 
-        setStatus(t.backup.verifying)
-        const valid = await verifyBackupPassword(text, password)
-        if (!valid) {
-          setStatus(t.backup.wrongPassword)
+          setStatus(t.backup.verifying)
+          const valid = await verifyBackupPassword(text, password)
+          if (!valid) {
+            setStatus(t.backup.wrongPassword)
+            setHasError(true)
+            return
+          }
+
+          setStatus(t.backup.importing)
+          const result = await importBackup(text, password)
+          setStatus(`${t.backup.importSuccess} ${result.rooms} ${t.backup.rooms}, ${result.messages} ${t.backup.messages}`)
+          setPassword('')
+        } catch (err) {
+          setStatus(`${t.backup.importFailed}: ${err}`)
           setHasError(true)
+        } finally {
           setImporting(false)
-          return
         }
-
-        setStatus(t.backup.importing)
-        const result = await importBackup(text, password)
-        setStatus(`${t.backup.importSuccess} ${result.rooms} ${t.backup.rooms}, ${result.messages} ${t.backup.messages}`)
-        setPassword('')
-      } catch (err) {
-        setStatus(`${t.backup.importFailed}: ${err}`)
-        setHasError(true)
-      } finally {
-        setImporting(false)
-      }
+      })()
     }
     input.click()
   }
