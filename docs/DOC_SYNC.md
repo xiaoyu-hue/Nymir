@@ -74,13 +74,13 @@
 ```markdown
 ## 同步检查（DOC SYNC CHECK）
 
-- 新版本号：____（package.json 唯一真源）
-- 测试数：____ / 测试文件数：____（实际输出）
-- [ ] package.json + lock 一致
-- [ ] CHANGELOG 已转正式
-- [ ] docs 版本头已同步（PRD / ARCHITECTURE 中英）
-- [ ] README badge / 表格数字已同步
-- [ ] 无旧版本号残留（grep 验证）
+- 新版本号：v1.6.4（package.json 唯一真源）
+- 测试数：293 / 测试文件数：32（实际输出）
+- [x] package.json + lock 一致
+- [x] CHANGELOG 已转正式
+- [x] docs 版本头已同步（PRD / ARCHITECTURE 中英）
+- [x] README badge / 表格数字已同步
+- [x] 无旧版本号残留（grep 验证）
 - [ ] docs 索引已补登
 - [ ] 中英文档已同步（本次改动的 `.en.md` 已更新）
 - [ ] 依赖 ↔ README 致谢表一致（新增/移除依赖已反映）
