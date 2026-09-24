@@ -105,8 +105,9 @@ function AppContent() {
   const handleCreateRoom = async (name: string) => {
     setRoomError('')
     try {
-      await roomManager.createRoom(name)
-      // RoomPanel 内部管理 roomCode 状态并渲染 QR 弹窗，无需父组件传递
+      const info = await roomManager.createRoom(name)
+      // 通过事件通知 RoomPanel 更新 roomCode
+      window.dispatchEvent(new CustomEvent('nymir:roomCreated', { detail: info.id }))
     } catch (err) {
       error('[App] Create room failed:', err)
       setRoomError(t.room.createFailed)

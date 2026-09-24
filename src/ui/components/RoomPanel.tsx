@@ -17,17 +17,27 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom, error }: Props) {
   const [code, setCode] = useState('')
   const [showQR, setShowQR] = useState(false)
   const [showScan, setShowScan] = useState(false)
-  const [roomCode, _setRoomCode] = useState('')
+  const [roomCode, setRoomCode] = useState('')
 
   useEffect(() => {
     if (roomCode && !showQR) {
       setShowQR(true)
     }
-  }, [roomCode])
+  }, [roomCode, showQR])
+
+  useEffect(() => {
+    // 监听 App 侧的房间创建事件
+    const handler = (e: Event) => {
+      const { detail } = e as CustomEvent
+      if (detail) setRoomCode(detail)
+    }
+    window.addEventListener('nymir:roomCreated', handler)
+    return () => window.removeEventListener('nymir:roomCreated', handler)
+  }, [])
 
   const handleCreate = () => {
     if (!name.trim()) return
-    // Note: 实际 room ID 由父组件在 createRoom 成功后通过 onRoomCreated 回调传递
+    // App 侧会设置 roomCode，通过轮询检查
     onCreateRoom(name.trim())
   }
 
@@ -124,7 +134,7 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom, error }: Props) {
                 <button
                   onClick={() => {
                     handleCreate()
-                    // Note: roomCode will be set via onRoomCreated callback
+                    // roomCode will be set via the callback passed to onCreateRoom
                   }}
                   disabled={!name.trim()}
                   className={`room-panel-submit ${name.trim() ? 'ready' : ''}`}
