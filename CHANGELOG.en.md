@@ -7,6 +7,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 1.6.5 - 2026-09-28 (Code review fix list P1)
+
+### 🐛 Bug Fixes
+
+- **React Hooks compliance**: `QRScanner.tsx` moves `scanningRef.current = scanning` from render to `useEffect`, fixing `react(refs)` lint warning
+- **React setState timing**: `RoomPanel.tsx` uses derived state (`shouldShowQR`) instead of synchronous `setShowQR` in `useEffect`, fixing `react(set-state-in-effect)` lint warning
+
+### 🧪 Tests
+
+- Full suite: 293 tests passing (no change)
+
+---
+
 ## 1.6.2 - 2026-09-23 (Code review round 2 fixes)
 
 ### 🐛 Bug Fixes
