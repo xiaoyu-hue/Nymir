@@ -33,7 +33,7 @@ async function freshManager() {
 type E2eeManagerLike = Awaited<ReturnType<typeof freshManager>>['e2eeManager']
 
 /** 让 fire-and-forget 的异步轮换完成 */
-const flush = () => new Promise((resolve) => setTimeout(resolve, 30))
+const flush = (ms = 50) => new Promise((resolve) => setTimeout(resolve, ms))
 
 describe('自动密钥轮换（ADR-007 可验证自动策略）', () => {
   const memoryStore: Record<string, string> = {}

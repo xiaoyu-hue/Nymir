@@ -18,8 +18,10 @@ export default function QRScanner({ onScan, onCancel }: Props) {
   const lastCodeRef = useRef<string>('')
   const scanningRef = useRef(false)
 
-  // 同步扫描状态到 ref，避免闭包问题
-  scanningRef.current = scanning
+  // 同步扫描状态到 ref，在 effect 中更新避免 render 期间修改 ref
+  useEffect(() => {
+    scanningRef.current = scanning
+  }, [scanning])
 
   useEffect(() => {
     let cancelled = false

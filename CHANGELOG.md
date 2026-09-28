@@ -7,6 +7,19 @@
 
 ---
 
+## 1.6.5 - 2026-09-28（代码审查修复清单 P1）
+
+### 🐛 Bug 修复
+
+- **React Hooks 规范**：`QRScanner.tsx` 将 `scanningRef.current = scanning` 从 render 期间移至 `useEffect`，修复 `react(refs)` lint 警告
+- **React setState 时序**：`RoomPanel.tsx` 使用 derive state（`shouldShowQR`）替代 `useEffect` 内同步 `setShowQR`，修复 `react(set-state-in-effect)` lint 警告
+
+### 🧪 测试
+
+- 全量测试：293 个用例全部通过（无变化）
+
+---
+
 ## 1.6.4 - 2026-09-24（代码审查第四轮修复）
 
 ### 🐛 Bug 修复（P2 问题）

@@ -18,12 +18,15 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom, error }: Props) {
   const [showQR, setShowQR] = useState(false)
   const [showScan, setShowScan] = useState(false)
   const [roomCode, setRoomCode] = useState('')
+  // derive state: roomCode 非空且未显示二维码时才展示
+  const shouldShowQR = roomCode && !showQR
 
   useEffect(() => {
-    if (roomCode && !showQR) {
+    if (shouldShowQR) {
       setShowQR(true)
     }
-  }, [roomCode, showQR])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomCode])
 
   useEffect(() => {
     // 监听 App 侧的房间创建事件
