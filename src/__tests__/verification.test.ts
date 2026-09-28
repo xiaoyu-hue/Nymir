@@ -165,7 +165,7 @@ describe('带外身份核对（verified store）', () => {
     await m.markPeerVerified('peer-G')
     expect(await m.getVerificationState('peer-G')).toBe('verified')
 
-    m.unverifyPeer('peer-G')
+    await m.unverifyPeer('peer-G')
     expect(await m.getVerificationState('peer-G')).toBe('unverified')
   })
 
