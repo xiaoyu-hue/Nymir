@@ -174,3 +174,23 @@ v1.6.5 - 文档同步
 - 支持多种 P2P 通信协议（Nostr, MQTT, Torrent）
 - 阅读即焚功能（消息阅后销毁）
 - AGPL v3.0 许可证（开源必须保留相同协议）
+
+## 文档提交规则（重要）
+
+**以下文档禁止推送到 GitHub：**
+- 审查报告（COMPREHENSIVE_REVIEW.md, CODE_REVIEW.md 等）
+- 计划方案（IMPLEMENTATION_PLAN.md, THEME_SYNC_PLAN.md 等）
+- 工作总结（FIX_SUMMARY.md, THEME_SYNC_COMPLETE.md 等）
+- 临时文档（*.tmp, *.temp 等）
+
+**可以推送的文档：**
+- CHANGELOG.md / CHANGELOG.en.md
+- README.md / README.en.md
+- ARCHITECTURE.md / ARCHITECTURE.en.md
+- PRD.md / PRD.en.md
+- TESTING.md
+- API.md / API.en.md
+- GLOBAL.md
+- LICENSE, CODE_OF_CONDUCT, CONTRIBUTING 等标准文档
+
+**原因**：审查报告和计划方案是内部工作文档，推送会污染仓库。
