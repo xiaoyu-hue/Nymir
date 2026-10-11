@@ -3,6 +3,7 @@
 <img src="https://img.shields.io/github/v/release/xiaoyu-hue/Nymir?style=for-the-badge" alt="release">
 <img src="https://img.shields.io/github/last-commit/xiaoyu-hue/Nymir?style=for-the-badge" alt="last commit">
 <img src="https://img.shields.io/badge/license-AGPL--3.0-22c55e?style=for-the-badge" alt="license">
+<img src="https://img.shields.io/badge/docs-CC%20BY--NC--SA%204.0-8B5CF6?style=for-the-badge" alt="docs-license">
 <img src="https://img.shields.io/badge/tests-293_passing-2ea44f?style=for-the-badge" alt="tests">
 <img src="https://github.com/xiaoyu-hue/Nymir/actions/workflows/test-gate.yml/badge.svg" alt="CI">
 <img src="https://github.com/xiaoyu-hue/Nymir/actions/workflows/deploy.yml/badge.svg" alt="Deploy">
@@ -130,7 +131,14 @@ cd Nymir && npm install && npm run dev
 
 ## ✦ 开源协议
 
-[AGPL-3.0](./LICENSE)
+本项目采用**分离式许可证**：
+
+| 部分 | 许可证 | 说明 |
+|------|--------|------|
+| **代码**（`src/`、`index.html`、配置文件、测试等） | [AGPL-3.0](./LICENSE) | 自由使用、修改与分发，需保持开源 |
+| **文档**（`docs/`、README.md、CHANGELOG.md、SECURITY.md 等） | [CC BY-NC-SA 4.0](./LICENSE-DOCS) | 可自由分享与演绎，禁止商用，需署名且相同方式共享 |
+
+> **为什么分开？** 代码采用 AGPL-3.0 确保软件本身保持开源；文档采用 CC BY-NC-SA 4.0 保护原创内容的著作权，防止被商用。这与[时念 ShiNian](https://github.com/xiaoyu-hue/shinian) 的许可证结构一致。
 
 ## ✦ 致谢与依赖
 
@@ -197,3 +205,4 @@ Nymir 站在这些开源项目的肩膀上。没有它们，一个零编程基�
 ---
 
 *Nymir — 让秘密只属于你*
+
