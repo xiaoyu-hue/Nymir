@@ -6,6 +6,7 @@
 <img src="https://img.shields.io/badge/docs-CC%20BY--NC--SA%204.0-8B5CF6?style=for-the-badge" alt="docs-license">
 <img src="https://img.shields.io/badge/tests-293_passing-2ea44f?style=for-the-badge" alt="tests">
 <img src="https://github.com/xiaoyu-hue/Nymir/actions/workflows/test-gate.yml/badge.svg" alt="CI">
+<img src="https://github.com/xiaoyu-hue/Nymir/actions/workflows/osv-scanner.yml/badge.svg" alt="OSV-Scanner">
 <img src="https://github.com/xiaoyu-hue/Nymir/actions/workflows/deploy.yml/badge.svg" alt="Deploy">
 
 **[English](./README.en.md) · 中文**
