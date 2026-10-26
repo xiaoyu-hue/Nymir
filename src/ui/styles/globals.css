@@ -244,6 +244,9 @@ textarea {
 .chat-header-left {
   min-width: 0;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .chat-header-name {
@@ -252,6 +255,29 @@ textarea {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 头部通用圆形图标按钮（返回 / 带外核对 / 更多） */
+.chat-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.chat-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.chat-icon-btn svg {
+  width: 19px;
+  height: 19px;
 }
 
 .chat-header-code {
@@ -293,53 +319,6 @@ textarea {
   white-space: nowrap;
 }
 
-.chat-leave-btn {
-  padding: 5px 10px;
-  border-radius: var(--radius-sm);
-  background: rgba(239,68,68,0.15);
-  color: var(--danger);
-  font-size: 0.75rem;
-  min-height: 32px;
-}
-
-/* ========== 房间代码栏 ========== */
-.room-code-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px 12px;
-  margin: 0 12px;
-  border-radius: var(--radius-sm);
-  background: rgba(124,106,239,0.12);
-  border: 1px solid rgba(124,106,239,0.25);
-  cursor: pointer;
-  transition: all 0.2s;
-  user-select: none;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-.room-code-label {
-  color: var(--text-secondary);
-  font-size: 0.75rem;
-}
-
-.room-code-value {
-  color: var(--accent);
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  font-family: monospace;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.room-code-status {
-  font-size: 0.7rem;
-}
-
 /* ========== 消息列表 ========== */
 .chat-messages {
   flex: 1;
@@ -367,39 +346,132 @@ textarea {
   animation: breathe 3s ease-in-out infinite;
 }
 
-/* ========== 燃烧模式选择器 ========== */
-.burn-mode-row {
+/* ========== 阅后即焚：输入栏按钮 + 选择抽屉 ========== */
+.chat-burn-btn {
   display: flex;
-  gap: 5px;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
   align-items: center;
-}
-
-.burn-mode-btn {
-  padding: 3px 8px;
-  border-radius: var(--radius-xs);
-  font-size: 0.7rem;
-  background: rgba(255,255,255,0.05);
+  justify-content: center;
+  gap: 2px;
+  min-width: 38px;
+  height: 38px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text-muted);
-  border: 1px solid transparent;
-  min-height: 28px;
+  flex-shrink: 0;
+  transition: background 0.2s, color 0.2s;
 }
 
-.burn-mode-btn.active {
-  background: rgba(124,106,239,0.3);
+.chat-burn-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.chat-burn-btn.burn-read_once {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.14);
+}
+
+.chat-burn-btn.burn-timed {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.14);
+}
+
+.chat-burn-duration {
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.burn-sheet {
+  display: flex;
+  flex-direction: column;
+}
+
+.burn-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 13px 4px;
+  background: transparent;
+  border-bottom: 1px solid var(--glass-border);
+  text-align: left;
+  color: var(--text-primary);
+}
+
+.burn-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.burn-option-label {
+  font-size: 0.95rem;
+}
+
+.burn-option-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.burn-option.active .burn-option-label {
   color: var(--accent);
-  border-color: var(--accent);
+}
+
+.burn-option-check {
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.burn-duration-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 4px 4px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
 }
 
 .burn-timer-select {
-  padding: 3px 8px;
-  border-radius: var(--radius-xs);
-  background: rgba(255,255,255,0.05);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text-primary);
   border: 1px solid var(--glass-border);
-  font-size: 0.7rem;
-  min-height: 28px;
+  font-size: 0.85rem;
+}
+
+/* ========== 对话操作菜单 ========== */
+.sheet-menu {
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet-menu .settings-row:last-child {
+  border-bottom: none;
+}
+
+.menu-code-value {
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+.settings-row-value.danger,
+.settings-row-icon.danger {
+  color: var(--danger);
+}
+
+.settings-row-danger .settings-row-label,
+.settings-row-danger .settings-row-icon {
+  color: var(--danger);
 }
 
 /* ========== 输入区域 ========== */
@@ -491,7 +563,7 @@ select {
 /* ========== 安全区 ========== */
 .chat-input-area {
   flex-shrink: 0;
-  padding-bottom: calc(58px + var(--safe-bottom));
+  padding-bottom: calc(12px + var(--safe-bottom));
 }
 
 /* ========== 响应式 — 移动端小屏 (< 480px) ========== */
@@ -517,20 +589,6 @@ select {
     font-size: 0.65rem;
   }
 
-  .room-code-bar {
-    margin: 0 8px;
-    padding: 4px 8px;
-  }
-
-  .room-code-label {
-    font-size: 0.65rem;
-  }
-
-  .room-code-value {
-    font-size: 0.85rem;
-    letter-spacing: 1.5px;
-  }
-
   .chat-messages {
     padding: 4px 0;
   }
@@ -539,15 +597,10 @@ select {
     padding: 6px 8px !important;
   }
 
-  .burn-mode-row {
-    gap: 4px;
-    margin-bottom: 6px;
-  }
-
-  .burn-mode-btn {
-    padding: 2px 6px;
-    font-size: 0.65rem;
-    min-height: 24px;
+  .chat-burn-btn {
+    min-width: 34px;
+    height: 34px;
+    padding: 0 6px;
   }
 
   .chat-input-row {
@@ -611,10 +664,6 @@ select {
   .chat-header-inner {
     padding: 10px 14px;
   }
-
-  .room-code-bar {
-    margin: 0 12px;
-  }
 }
 
 /* ========== 响应式 — 桌面 (1024px+) ========== */
@@ -641,9 +690,19 @@ select {
     margin: 0 auto;
   }
 
-  .room-code-bar {
-    max-width: 800px;
+  /* 桌面端收敛：设置页限宽、底部 Tab 栏不再横贯全宽 */
+  .settings-page {
+    max-width: 720px;
     margin: 0 auto;
+    width: 100%;
+  }
+
+  .app-tabbar {
+    max-width: 520px;
+    margin: 0 auto;
+    border-radius: 16px 16px 0 0;
+    border-left: 1px solid var(--glass-border);
+    border-right: 1px solid var(--glass-border);
   }
 
   .message-bubble {
@@ -1225,57 +1284,9 @@ select {
   max-width: 400px;
 }
 
-/* 安全按钮状态（ChatView header） */
-.chat-safety-btn {
-  background: transparent;
-  border: none;
-  font-size: 1.1rem;
-  cursor: pointer;
-}
-.chat-safety-btn.verified {
-  filter: grayscale(0);
-}
-.chat-safety-btn.changed {
-  filter: hue-rotate(-40deg) saturate(3);
-}
-.chat-safety-btn.unverified {
-  filter: grayscale(1) opacity(0.6);
-}
-
-/* 密钥轮换按钮（ChatView header） */
-.chat-rotate-btn {
-  background: transparent;
-  border: none;
-  font-size: 1.1rem;
-  cursor: pointer;
-  opacity: 0.85;
-  transition: opacity 0.2s;
-}
-.chat-rotate-btn:hover {
-  opacity: 1;
-}
-.chat-rotate-btn:disabled {
-  cursor: wait;
-  opacity: 0.5;
-}
-.chat-rotate-btn.success {
-  filter: hue-rotate(0deg) saturate(1.5);
-}
-.chat-rotate-btn.fail {
-  filter: hue-rotate(-30deg) saturate(2);
-}
-
-/* 带外身份核对按钮（ChatView header） */
-.chat-oob-btn {
-  background: transparent;
-  border: none;
-  font-size: 1.1rem;
-  cursor: pointer;
-  opacity: 0.85;
-  transition: opacity 0.2s;
-}
+/* 带外身份核对按钮（ChatView header，叠加在 chat-icon-btn 上） */
 .chat-oob-btn:hover {
-  opacity: 1;
+  color: var(--accent);
 }
 
 /* 密钥轮换结果横幅 */

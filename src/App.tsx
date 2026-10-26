@@ -187,7 +187,7 @@ function AppContent() {
           <SettingsPage />
         )}
 
-        {!keyboardOpen && (
+        {!keyboardOpen && !inRoom && (
           <BottomTabBar active={activeTab} onChange={setActiveTab} />
         )}
 
