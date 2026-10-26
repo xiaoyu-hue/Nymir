@@ -32,9 +32,6 @@ async function freshManager() {
 
 type E2eeManagerLike = Awaited<ReturnType<typeof freshManager>>['e2eeManager']
 
-/** 让 fire-and-forget 的异步轮换完成 */
-const flush = (ms = 50) => new Promise((resolve) => setTimeout(resolve, ms))
-
 describe('自动密钥轮换（ADR-007 可验证自动策略）', () => {
   const memoryStore: Record<string, string> = {}
   let e2ee: E2eeManagerLike
@@ -95,9 +92,8 @@ describe('自动密钥轮换（ADR-007 可验证自动策略）', () => {
     }
     expect(triggered).toBe(true)
 
-    await flush()
+    await vi.waitFor(() => expect(notices).toHaveLength(1))
     expect(e2ee.publicKeyString).not.toBe(before)
-    expect(notices).toHaveLength(1)
     expect(notices[0].proof).toEqual(expect.any(String))
     expect(notices[0].signature).toEqual(expect.any(String))
   })
@@ -113,14 +109,14 @@ describe('自动密钥轮换（ADR-007 可验证自动策略）', () => {
 
     // 计数已满且对端上线：下一次发消息补触发
     expect(e2ee.recordMessageSent(1)).toBe(true)
-    await flush()
-    expect(e2ee.publicKeyString).not.toBe(before)
+    await vi.waitFor(() => expect(e2ee.publicKeyString).not.toBe(before))
   })
 
   it('轮换后计数清零，可再次累计触发', async () => {
     // 第一次轮换
+    const beforeFirst = e2ee.publicKeyString
     for (let i = 0; i < AUTO_ROTATION_INTERVAL; i++) e2ee.recordMessageSent(1)
-    await flush()
+    await vi.waitFor(() => expect(e2ee.publicKeyString).not.toBe(beforeFirst))
     const afterFirst = e2ee.publicKeyString
     expect(afterFirst).toBeTruthy()
 
@@ -134,7 +130,6 @@ describe('自动密钥轮换（ADR-007 可验证自动策略）', () => {
 
     // 第 100 条再次触发
     expect(e2ee.recordMessageSent(1)).toBe(true)
-    await flush()
-    expect(e2ee.publicKeyString).not.toBe(afterFirst)
+    await vi.waitFor(() => expect(e2ee.publicKeyString).not.toBe(afterFirst))
   })
 })

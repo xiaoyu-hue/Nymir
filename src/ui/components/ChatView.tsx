@@ -13,6 +13,7 @@ import { e2eeManager, type VerificationState } from '../../security/e2eeManager'
 import GlassCard from './GlassCard'
 import MessageBubble from './MessageBubble'
 import SafetyCheckDialog from './SafetyCheckDialog'
+import OutOfBandVerify from './OutOfBandVerify'
 import { useConfirm } from './useConfirm'
 
 export default function ChatView() {
@@ -28,6 +29,7 @@ export default function ChatView() {
   const [burnAfter, setBurnAfter] = useState(60)
   const [copied, setCopied] = useState(false)
   const [safetyOpen, setSafetyOpen] = useState(false)
+  const [oobOpen, setOobOpen] = useState(false)
   const [verifyState, setVerifyState] = useState<VerificationState>('unverified')
   const [rotateState, setRotateState] = useState<'idle' | 'busy' | 'success' | 'fail'>('idle')
   const rotateTimerRef = useRef<ReturnType<typeof setTimeout>>(null)
@@ -223,6 +225,16 @@ export default function ChatView() {
                 {rotateState === 'busy' ? '⏳' : '🔑'}
               </button>
             )}
+            {peerId && (
+              <button
+                onClick={() => setOobOpen(true)}
+                className="chat-oob-btn"
+                aria-label={t.oob.title}
+                title={t.oob.title}
+              >
+                {'🤝'}
+              </button>
+            )}
             <button
               onClick={handleLeave}
               className="chat-leave-btn"
@@ -389,6 +401,10 @@ export default function ChatView() {
           }
         }}
       />
+
+      {oobOpen && (
+        <OutOfBandVerify peerId={peerId} onClose={() => setOobOpen(false)} />
+      )}
 
       {/* 密钥轮换确认弹窗 */}
       <ConfirmDialog />

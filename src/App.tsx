@@ -12,6 +12,7 @@ import './ui/styles/qr.css'
 
 const ChatView = lazy(() => import('./ui/components/ChatView'))
 const BackupPanel = lazy(() => import('./ui/components/BackupPanel'))
+const SignalingSettings = lazy(() => import('./ui/components/SignalingSettings'))
 const LockScreen = lazy(() => import('./ui/components/LockScreen'))
 
 const LoadingFallback = () => (
@@ -29,6 +30,7 @@ function AppContent() {
   const { inRoom } = useRoom()
   const { t, toggleLang } = useI18n()
   const [showBackup, setShowBackup] = useState(false)
+  const [showSignaling, setShowSignaling] = useState(false)
   const [locked, setLocked] = useState(true)
   const [securityReady, setSecurityReady] = useState(false)
   const [keyboardOpen, setKeyboardOpen] = useState(false)
@@ -198,6 +200,14 @@ function AppContent() {
             >
               {t.nav.switchLang}
             </button>
+            <button
+              onClick={() => setShowSignaling(true)}
+              aria-label={t.signaling.title}
+              className="app-icon-btn"
+              title={t.signaling.title}
+            >
+              {'⚙️'}
+            </button>
           </div>
         )}
 
@@ -228,6 +238,12 @@ function AppContent() {
         {showBackup && (
           <Suspense fallback={<LoadingFallback />}>
             <BackupPanel onClose={() => setShowBackup(false)} />
+          </Suspense>
+        )}
+
+        {showSignaling && (
+          <Suspense fallback={<LoadingFallback />}>
+            <SignalingSettings onClose={() => setShowSignaling(false)} />
           </Suspense>
         )}
 

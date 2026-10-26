@@ -7,6 +7,40 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 1.7.0 - 2026-10-26 (Security hardening: traffic randomization / weak forward secrecy / self-hostable signaling / offline verification)
+
+### ✨ Features
+
+- **Configurable / self-hostable signaling**: relay URL lists and redundancy for MQTT / Nostr / WebTorrent are editable in Settings and persisted to `localStorage`, applied on next room join (no refresh needed). Non-`wss://` URLs are dropped, empty lists fall back to defaults, redundancy is clamped (ADR-009)
+- **Pre-connection offline identity verification**: new "Out-of-band verify" entry — export your identity string (`nymir1:<base64url>`, **public keys only**) and send it over any channel, or paste a peer's string to immediately compute the 15-digit + 7-emoji security code. No peer online, no room joined: verify identity before connecting (ADR-009)
+- **Weak forward secrecy**: each session adds a one-shot ephemeral X25519 keypair; the session root becomes `HKDF(static-static ECDH, salt=ephemeral-ephemeral ECDH)`. Ephemeral private keys live in memory and are dropped on disconnect, so a leaked long-term static key cannot decrypt ciphertext already sent under ephemeral keys (ADR-008)
+
+### 🛡️ Security improvements
+
+- **Randomized noise**: interval changed from fixed 30s to 8–28s random; payload from fixed 48B to 24–512B random, breaking constant-interval/constant-size fingerprints
+- **Randomized heartbeat**: ping/pong changed from fixed 5s to 3.5–7s random
+- **Ephemeral public keys in handshake and messages**: `eph` field added to the `e2ee_key` handshake and message payloads; decryption is fail-safe (combined root first, static root fallback) to cover the pre-handshake window and older clients
+- **CSP adjusted**: `connect-src` now permits `wss:` / `https:` for self-hosted signaling; `script-src` stays `'self'` without `unsafe-inline` / `unsafe-eval` (trade-off in ADR-009)
+
+### 🐛 Fixes
+
+- **Doc/implementation contradiction**: `docs/THREAT_MODEL.md` claimed the peer private key is non-extractable (`extractable: false`) while code uses `extractable: true`; corrected to match code (exports are still encrypted at rest with the lock password)
+- **Flaky test**: `autoRotation.test.ts` used a fixed 50ms wait for async rotation, timing out intermittently under coverage instrumentation; replaced with conditional waits (`vi.waitFor`) without weakening assertions
+
+### 📝 Docs
+
+- New [ADR-008](./docs/adr/0008-ephemeral-forward-secrecy.md): ephemeral session keys and the boundary of weak forward secrecy (pre-handshake window, fallback to static root when talking to older clients)
+- New [ADR-009](./docs/adr/0009-self-hosted-signaling-and-oob-verification.md): self-hosted signaling, the CSP trade-off, out-of-band identity format, and an explicit "not doing" list
+- `THREAT_MODEL.md`: §5.1 / §5.3 / §6 / §7 / §8 updated to match the implementation
+- `README.md` / `README.en.md`: security features, known limitations (noise/heartbeat/signaling/Nostr metadata) and roadmap synced
+
+### 🧪 Tests
+
+- Added `signaling.test.ts`, `outOfBand.test.ts`, `SignalingSettings.test.tsx`, `OutOfBandVerify.test.tsx`
+- Full suite: 317 tests pass (293 in v1.6.5); typecheck and coverage gate both pass
+
+---
+
 ## 1.6.5 - 2026-09-28 (Code review fix list P1)
 
 ### 🐛 Bug Fixes
