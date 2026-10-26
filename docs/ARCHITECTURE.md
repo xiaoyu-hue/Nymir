@@ -1,4 +1,4 @@
-# Nymir 技术架构（当前 · v1.6.5）
+# Nymir 技术架构（当前 · v1.7.0）
 
 > 本文档描述**当前代码真实结构**，与代码同步维护。安全信任边界以 [THREAT_MODEL.md](./THREAT_MODEL.md) 为准；"为什么这样设计"见 [adr/](./adr/README.md)。
 > 维护约定：任何文件新增/移动/职责变化，必须同步更新本文档。
@@ -26,10 +26,11 @@
 ┌──────────────────────────────┴────────────────────────────┐
 │ 安全层（src/security/，全部基于 WebCrypto，不实现密码学原语） │
 │   crypto.ts（本地加密 PBKDF2-600k + AES-256-GCM，v4 格式）   │
-│   e2ee.ts（X25519 密钥协商 + 每消息 HKDF + AES-256-GCM）      │
+│   e2ee.ts（X25519 静态+临时密钥协商 + 每消息 HKDF + AES-GCM） │
 │   sign.ts（Ed25519 密文签名，encrypt-then-sign）             │
 │   fingerprint.ts（15 位数字 + 7 emoji 安全码）               │
-│   noise.ts（流量噪声：~30s 固定 ~48B 填充）                  │
+│   outOfBand.ts（身份串序列化 + 离线指纹核对）                 │
+│   noise.ts（流量噪声：8–28s 随机间隔 / 24–512B 随机长度）      │
 │   pseudonym.ts（假名/房间内显示名）                          │
 │   manager.ts（SecurityManager 锁屏/会话/自动锁定）           │
 │   secureDelete.ts（localStorage 敏感键删除）                 │
@@ -37,7 +38,7 @@
                                ↓
 ┌──────────────────────────────┴────────────────────────────┐
 │ 通信层（src/communication/，基于 Trystero）                  │
-│   peer.ts（PeerManager：WebRTC 通道、torrent/mqtt 策略）     │
+│   peer.ts（PeerManager：WebRTC 通道、mqtt/nostr/torrent 策略）│
 │   offlineQueue.ts（离线消息队列 pending→sent→delivered）     │
 │   monitor.ts（连接质量监控，ping/pong 心跳）                 │
 └──────────────────────────────┬────────────────────────────┘
@@ -52,7 +53,7 @@
 │ 浏览器底座                                                  │
 │   WebCrypto（X25519/AES-GCM/HKDF/Ed25519/PBKDF2）           │
 │   IndexedDB（本地加密存储）· localStorage（非敏感元数据）      │
-│   WebRTC（P2P 数据通道）· 公共信令（MQTT / WebTorrent）       │
+│   WebRTC（P2P 数据通道）· 信令（MQTT/Nostr/WebTorrent，可自配）│
 └───────────────────────────────────────────────────────────┘
 ```
 
@@ -81,19 +82,21 @@
 | `src/core/room.ts` | `RoomManager` 单例：房间生命周期、连接状态（connected/reconnecting/disconnected）、事件 |
 | `src/core/burn.ts` | 阅后即焚纯函数：`shouldDestroy(msg)` / `getRemainingMs(msg)` |
 | `src/security/crypto.ts` | 本地数据加密：PBKDF2(600k)+AES-256-GCM，v4 per-install 盐，兼容 v1/v2/v3 迁移（`needsMigration`/`verifyPassword`/`encryptWithSalt`） |
-| `src/security/e2ee.ts` | 会话 E2EE：X25519 密钥对生成/导入导出（私钥 extractable:false）、每消息加密 |
+| `src/security/e2ee.ts` | 会话 E2EE：X25519 密钥对（私钥 extractable:true，导出后仍以锁屏密码加密存储）、静态+临时双重协商、每消息加密 |
 | `src/security/sign.ts` | Ed25519 签名密钥对 + 密文签名/验签 |
 | `src/security/fingerprint.ts` | 安全码：双方公钥 → 15 位数字 + 7 emoji（EMOJI_TABLE 64 个，独立实现） |
-| `src/security/noise.ts` | 流量噪声：周期性填充 + `isNoiseMessage` 识别 |
+| `src/security/noise.ts` | 流量噪声：随机间隔（8–28s）与随机长度（24–512B）填充 + `isNoiseMessage` 识别 |
+| `src/security/outOfBand.ts` | 带外身份交换：`serializeIdentity`/`parseIdentity`（`nymir1:` 前缀，仅含公钥）+ `computeFingerprintOutOfBand`（复用 buildFingerprint，与聊天内安全码同源） |
 | `src/security/pseudonym.ts` | 假名：`getAnonymousId` / 房间内显示名 / 重置 |
 | `src/security/manager.ts` | `SecurityManager` 锁屏单例：锁定/解锁/自动锁定/密码材料清理 |
 | `src/security/secureDelete.ts` | localStorage 敏感键清理（`clearLocalStorage`，仅 removeItem） |
-| `src/communication/peer.ts` | `PeerManager`：Trystero 通道封装，Strategy='torrent'|'mqtt'，peer join/leave 回调 |
+| `src/config/signaling.ts` | 信令配置：三策略 relay URL + redundancy，localStorage 持久化，非 `wss://` 丢弃 / 空列表回退 / 冗余夹取 |
+| `src/communication/peer.ts` | `PeerManager`：Trystero 通道封装，Strategy='mqtt'|'nostr'|'torrent'（读取 signaling 配置），peer join/leave 回调 |
 | `src/communication/offlineQueue.ts` | 离线消息队列：状态机 pending→sent→delivered/expired/failed |
 | `src/communication/monitor.ts` | 连接质量：quality 分级、统计、ping/pong 心跳（明文，已知局限） |
 | `src/persistence/db.ts` | IndexedDB 读写：saveRoom/getRoom/…/saveMessage/getMessagesByRoom/destroyMessage |
 | `src/persistence/backup.ts` | 加密备份：`exportBackup(password)` 导出 JSON + `downloadBackup` 下载 |
-| `src/ui/components/` | 组件：ChatView/RoomPanel/MessageBubble/LockScreen/SafetyCheckDialog/BurnTimer/BackupPanel/Starfield/GlassCard/ConfirmDialog/ErrorBoundary/InstallPrompt |
+| `src/ui/components/` | 组件：ChatView/RoomPanel/MessageBubble/LockScreen/SafetyCheckDialog/BurnTimer/BackupPanel/SignalingSettings/OutOfBandVerify/Starfield/GlassCard/ConfirmDialog/ErrorBoundary/InstallPrompt |
 | `src/ui/hooks/` | React hooks（确认框、计时等） |
 | `src/i18n/` | zh.ts / en.ts 双语资源 + index.tsx 提供 |
 | `src/utils/` | base64 / id / logger / random / time 工具 |
@@ -142,14 +145,14 @@ BurnConfig = { mode, burnAfter?, burnAt? }
 
 ## 7. 测试体系
 
-- **入口**：`npm test`（Vitest），293 项，32 个测试文件（`src/__tests__/`），覆盖：crypto/e2ee/fingerprint/keyRotation(+Verifiable)/burn/db/backup/base64/id/噪声、UI 组件（BurnTimer/ConfirmDialog/ErrorBoundary/GlassCard）等。
+- **入口**：`npm test`（Vitest），317 项，36 个测试文件（`src/__tests__/`），覆盖：crypto/e2ee/fingerprint/keyRotation(+Verifiable)/burn/db/backup/base64/id/噪声/signaling/outOfBand、UI 组件（BurnTimer/ConfirmDialog/ErrorBoundary/GlassCard）等。
 - **配套**：`npm run typecheck`（tsc）+ `npm run lint`（oxlint），CI 门禁（GitHub Actions）。
 - 安全不变量优先以测试固化（威胁模型 §9：改安全代码先对照威胁模型）。
 
 ## 8. 红线（勿动，除非先改威胁模型）
 
 1. **E2EE 管线**：消息必须 encrypt-then-sign；验签失败不得静默展示。
-2. **私钥可导出性**：生成时必须 `extractable: false`。
+2. **私钥可导出性**：生成时为 `extractable: true`（加密备份/换设备迁移需要导出）；**导出后必须立即以锁屏密码派生的密钥加密存储**，不得明文落盘。同源脚本仍可 `exportKey` 取得原始私钥——这是已知边界（威胁模型 §5.4），对外不得声称「私钥不可导出」。
 3. **本地加密格式**：v4 per-install 盐 + PBKDF2-600k；兼容旧版本解密不得破坏。
 4. **锁屏语义**：忘记密码 = 永久不可解密（不做"找回密码"）。
 5. **噪声与监控**：monitor ping/pong 明文是已知局限，改动需评估元数据泄露面。

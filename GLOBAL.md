@@ -84,10 +84,10 @@ curl -s -X POST -H "Authorization: token ${GITHUBTOKEN}" \
 
 | 元素 | 格式 | 示例 |
 |------|------|------|
-| Git Tag | `vMAJOR.MINOR.PATCH` | `v1.6.5` |
-| package.json version | `vMAJOR.MINOR.PATCH` | `"version": "1.6.5"` |
-| CHANGELOG 标题 | `## [vX.Y.Z]` | `## [v1.6.5]` |
-| GitHub Release tag_name | 必须与 Git Tag 完全一致 | `v1.6.5` |
+| Git Tag | `vMAJOR.MINOR.PATCH` | `v1.7.0` |
+| package.json version | `vMAJOR.MINOR.PATCH` | `"version": "1.7.0"` |
+| CHANGELOG 标题 | `## [vX.Y.Z]` | `## [v1.7.0]` |
+| GitHub Release tag_name | 必须与 Git Tag 完全一致 | `v1.7.0` |
 
 ### 历史版本参考
 
@@ -103,6 +103,7 @@ v1.6.2 - 性能优化
 v1.6.3 - 代码审查第三轮
 v1.6.4 - 统一版本号
 v1.6.5 - 文档同步
+v1.7.0 - 流量随机化 / 弱前向保密 / 信令可自托管 / 带外核对
 ```
 
 ---
@@ -122,7 +123,7 @@ v1.6.5 - 文档同步
 ```
 /var/minis/workspace/Nymir/
 ├── index.html              # 应用入口
-├── package.json            # 依赖配置（version: 1.6.5）
+├── package.json            # 依赖配置（version: 1.7.0）
 ├── vite.config.ts          # Vite 构建配置
 ├── tsconfig.json           # TypeScript 配置
 ├── src/                    # 源代码目录
