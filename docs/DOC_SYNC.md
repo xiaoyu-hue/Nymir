@@ -75,7 +75,7 @@
 ## 同步检查（DOC SYNC CHECK）
 
 - 新版本号：v1.6.4（package.json 唯一真源）
-- 测试数：293 / 测试文件数：32（实际输出）
+- 测试数：317 / 测试文件数：36（实际输出）
 - [x] package.json + lock 一致
 - [x] CHANGELOG 已转正式
 - [x] docs 版本头已同步（PRD / ARCHITECTURE 中英）
