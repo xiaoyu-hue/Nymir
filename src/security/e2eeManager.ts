@@ -149,6 +149,10 @@ class E2EEManager {
   // 对方公钥的原始 base64 字符串（peerPublicKeys 只存 import 后的 CryptoKey，无法反推原文）
   private peerPublicKeyStrings = new Map<string, string>()
   private peerSignPublicKeyStrings = new Map<string, string>()
+  // 临时密钥（弱前向保密）：每个 peer 一次性临时 X25519 密钥对，仅存内存、不持久化、断开即弃
+  private peerEphemeralKeys = new Map<string, KeyPair>()
+  // 对端临时公钥（import 后的 CryptoKey）
+  private peerEphemeralPublicKeys = new Map<string, CryptoKey>()
   private status: E2EEStatus = 'initializing'
   private _publicKeyString: string | null = null
   private _signPublicKeyString: string | null = null
@@ -231,6 +235,28 @@ class E2EEManager {
   }
 
   /**
+   * 取（或惰性生成）与本 peer 会话绑定的临时密钥对。
+   * 临时密钥仅存内存、不持久化；peer 断开（removePeerKey）即从内存丢弃 → 提供弱前向保密。
+   */
+  private async ensureEphemeral(peerId: string): Promise<KeyPair> {
+    let eph = this.peerEphemeralKeys.get(peerId)
+    if (!eph) {
+      eph = await generateKeyPair()
+      this.peerEphemeralKeys.set(peerId, eph)
+    }
+    return eph
+  }
+
+  /**
+   * 获取自己的临时公钥字符串（随 e2ee_key 握手与每条消息一并外发）。
+   */
+  async getEphemeralPublicKey(peerId: string): Promise<string | null> {
+    if (!this.keyPair) return null
+    const eph = await this.ensureEphemeral(peerId)
+    return exportPublicKey(eph)
+  }
+
+  /**
    * 处理接收到的对端公钥（带 TOFU 验证）
    *
    * TOFU key 是对方公钥的 SHA-256 哈希（不是临时 peerId）。
@@ -240,6 +266,7 @@ class E2EEManager {
     peerId: string,
     publicKeyStr: string,
     signPublicKeyStr?: string,
+    ephemeralPublicKeyStr?: string,
   ): Promise<TOFUStatus> {
     try {
       // TOFU: 计算公钥哈希并验证
@@ -257,6 +284,17 @@ class E2EEManager {
         const peerSignKey = await importPeerSignPublicKey(signPublicKeyStr)
         this.peerSignPublicKeys.set(peerId, peerSignKey)
         this.peerSignPublicKeyStrings.set(peerId, signPublicKeyStr)
+      }
+
+      // 临时公钥（弱前向保密）：握手阶段一并交换，存入缓存供组合会话根使用。
+      // 非法/缺失则忽略，退化为纯静态根（向后兼容）。
+      if (ephemeralPublicKeyStr) {
+        try {
+          const peerEphKey = await importPeerPublicKey(ephemeralPublicKeyStr)
+          this.peerEphemeralPublicKeys.set(peerId, peerEphKey)
+        } catch {
+          // 忽略非法临时公钥
+        }
       }
 
       // TOFU：按公钥哈希钉住（跨会话持久）
@@ -284,7 +322,9 @@ class E2EEManager {
   }
 
   /**
-   * 加密发送给指定 peer 的消息（会话级静态 ECDH + 每消息 HKDF，非强前向保密）
+   * 加密发送给指定 peer 的消息。
+   * 当本端已持有对端临时公钥时，会话根叠加临时-临时 ECDH（弱前向保密）；
+   * 否则退化为纯静态根。无论哪种，发送方临时公钥都会随消息外发，供对端重建组合根。
    */
   async encrypt(plaintext: string, peerId: string, messageId: string): Promise<string | null> {
     if (!this.keyPair) return null
@@ -292,12 +332,15 @@ class E2EEManager {
     if (!peerKey) return null
 
     try {
+      const myEph = await this.ensureEphemeral(peerId)
+      const peerEphPub = this.peerEphemeralPublicKeys.get(peerId) ?? null
       const payload = await encryptMessage(
         plaintext,
         peerId,
         this.keyPair.privateKey,
         peerKey,
         messageId,
+        { myEphemeralPrivateKey: myEph.privateKey, peerEphemeralPublicKey: peerEphPub },
       )
       return JSON.stringify(payload)
     } catch (e) {
@@ -307,13 +350,49 @@ class E2EEManager {
   }
 
   /**
-   * 解密来自指定 peer 的消息（会话级静态 ECDH + 每消息 HKDF，非强前向保密）
+   * 解密来自指定 peer 的消息。
+   * 失败安全：先试「组合根（弱前向保密）」，失败再回退「纯静态根」，
+   * 以覆盖握手前 / 临时密钥尚未交换的过渡窗口，保证任何状态下都能解密。
+   * @param peerEphemeralPublicKeyB64 对端随消息外发的临时公钥（本端由此重建组合根）
    */
-  async decrypt(ciphertext: string, peerId: string, messageId: string): Promise<string | null> {
+  async decrypt(
+    ciphertext: string,
+    peerId: string,
+    messageId: string,
+    peerEphemeralPublicKeyB64?: string,
+  ): Promise<string | null> {
     if (!this.keyPair) return null
     const peerKey = this.peerPublicKeys.get(peerId)
     if (!peerKey) return null
 
+    // 从对端载荷提取临时公钥并缓存（若尚未持有）
+    let peerEphPub = peerEphemeralPublicKeyB64
+      ? this.peerEphemeralPublicKeys.get(peerId)
+      : undefined
+    if (peerEphemeralPublicKeyB64 && !peerEphPub) {
+      try {
+        peerEphPub = await importPeerPublicKey(peerEphemeralPublicKeyB64)
+        this.peerEphemeralPublicKeys.set(peerId, peerEphPub)
+      } catch {
+        peerEphPub = undefined // 非法临时公钥：忽略，退化为静态根
+      }
+    }
+    const myEph = await this.ensureEphemeral(peerId)
+
+    // 先试组合根（弱前向保密路径）
+    if (myEph && peerEphPub) {
+      try {
+        const payload = JSON.parse(ciphertext)
+        return await decryptMessage(payload, peerId, this.keyPair.privateKey, peerKey, messageId, {
+          myEphemeralPrivateKey: myEph.privateKey,
+          peerEphemeralPublicKey: peerEphPub,
+        })
+      } catch {
+        // 组合根失败（如对方在临时密钥交换前用纯静态根加密）→ 回退纯静态根
+      }
+    }
+
+    // 回退：纯静态根（向后兼容 / 过渡窗口）
     try {
       const payload = JSON.parse(ciphertext)
       return await decryptMessage(payload, peerId, this.keyPair.privateKey, peerKey, messageId)
@@ -366,6 +445,9 @@ class E2EEManager {
     this.peerSignPublicKeys.delete(peerId)
     this.peerPublicKeyStrings.delete(peerId)
     this.peerSignPublicKeyStrings.delete(peerId)
+    // 丢弃临时密钥（从内存移除引用，供 GC 回收）→ 该 peer 会话的前向保密密钥材料彻底消失
+    this.peerEphemeralKeys.delete(peerId)
+    this.peerEphemeralPublicKeys.delete(peerId)
     clearSharedKey(peerId)
   }
 
@@ -377,6 +459,8 @@ class E2EEManager {
     this.peerSignPublicKeys.clear()
     this.peerPublicKeyStrings.clear()
     this.peerSignPublicKeyStrings.clear()
+    this.peerEphemeralKeys.clear()
+    this.peerEphemeralPublicKeys.clear()
     clearAllSharedKeys()
   }
 

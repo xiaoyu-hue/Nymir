@@ -51,6 +51,7 @@ const { mockE2EEManager } = vi.hoisted(() => ({
   mockE2EEManager: {
     getOwnPublicKey: vi.fn(() => 'pub-key'),
     getOwnSignPublicKey: vi.fn(() => 'sign-pub-key'),
+    getEphemeralPublicKey: vi.fn(() => 'eph-key'),
     handlePeerPublicKey: vi.fn(),
     removePeerKey: vi.fn(),
     clearAll: vi.fn(),

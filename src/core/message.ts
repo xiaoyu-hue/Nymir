@@ -275,7 +275,8 @@ export class MessageManager {
 
     if (data.encrypted) {
       try {
-        const decrypted = await e2eeManager.decrypt(data.content, peerId, data.id)
+        // data.eph 为对端随消息外发的临时公钥，供组合会话根（弱前向保密）使用
+        const decrypted = await e2eeManager.decrypt(data.content, peerId, data.id, data.eph)
         if (decrypted) {
           content = decrypted
         } else {
@@ -381,6 +382,7 @@ export class MessageManager {
               continue
             }
             const signature = await e2eeManager.sign(encrypted)
+            const eph = await e2eeManager.getEphemeralPublicKey(peerId)
             const payload: AnyPayload = {
               ...msg,
               content: encrypted,
@@ -389,6 +391,10 @@ export class MessageManager {
             }
             if (signature) {
               payload.signature = signature
+            }
+            // 随消息外发本端临时公钥（弱前向保密握手的一部分；对端据此重建组合会话根）
+            if (eph) {
+              payload.eph = eph
             }
             this.channel.send(payload, peerId)
             delivered++
@@ -452,6 +458,7 @@ export class MessageManager {
             if (!encrypted) continue
 
             const signature = await e2eeManager.sign(encrypted)
+            const eph = await e2eeManager.getEphemeralPublicKey(peerId)
             const payload: AnyPayload = {
               ...msg,
               content: encrypted,
@@ -459,6 +466,7 @@ export class MessageManager {
               sig: MESSAGE_SIG_VERSION,
             }
             if (signature) payload.signature = signature
+            if (eph) payload.eph = eph
 
             this.channel.send(payload, peerId)
           } catch (err) {

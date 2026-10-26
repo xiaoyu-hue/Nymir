@@ -62,6 +62,7 @@ interface E2EEPayload {
   type: string
   publicKey: string
   signPublicKey: string
+  /** 临时公钥（弱前向保密握手）随 e2ee_key 一并交换，由索引签名兜底为 string */
   [key: string]: string
 }
 
@@ -206,27 +207,43 @@ export class PeerManager {
     return room
   }
 
-  private sendE2EEKey(targetPeerId: string): void {
+  private async sendE2EEKey(targetPeerId: string): Promise<void> {
     if (!this.e2eeChannel) return
     const publicKey = e2eeManager.getOwnPublicKey()
     const signPublicKey = e2eeManager.getOwnSignPublicKey()
     if (!publicKey || !signPublicKey) return
-    this.e2eeChannel.send({ type: 'e2ee_key', publicKey, signPublicKey }, targetPeerId)
+    // 临时公钥随 e2ee_key 一并外发（弱前向保密握手）
+    const eph = await e2eeManager.getEphemeralPublicKey(targetPeerId)
+    this.e2eeChannel.send(
+      eph
+        ? { type: 'e2ee_key', publicKey, signPublicKey, eph }
+        : { type: 'e2ee_key', publicKey, signPublicKey },
+      targetPeerId,
+    )
   }
 
-  private broadcastE2EEKey(): void {
+  private async broadcastE2EEKey(): Promise<void> {
     if (!this.e2eeChannel) return
     const publicKey = e2eeManager.getOwnPublicKey()
     const signPublicKey = e2eeManager.getOwnSignPublicKey()
     if (!publicKey || !signPublicKey) return
-    this.e2eeChannel.send({ type: 'e2ee_key', publicKey, signPublicKey })
+    // 广播给所有 peer：临时公钥用各自 peerId 的会话临时密钥
+    for (const peerId of this.peers) {
+      const eph = await e2eeManager.getEphemeralPublicKey(peerId)
+      this.e2eeChannel.send(
+        eph
+          ? { type: 'e2ee_key', publicKey, signPublicKey, eph }
+          : { type: 'e2ee_key', publicKey, signPublicKey },
+        peerId,
+      )
+    }
   }
 
   private setupE2EEChannel(): void {
     this.e2eeChannel = this.makeChannel<E2EEPayload>('e2ee-exchange')
     this.e2eeChannel.onMessage(async (data, { peerId }) => {
       if (data.type === 'e2ee_key') {
-        await e2eeManager.handlePeerPublicKey(peerId, data.publicKey, data.signPublicKey)
+        await e2eeManager.handlePeerPublicKey(peerId, data.publicKey, data.signPublicKey, data.eph)
         for (const cb of this.peerKeyCallbacks) cb(peerId)
       }
     })
