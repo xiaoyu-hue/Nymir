@@ -4,6 +4,7 @@ import { useI18n } from '../../i18n'
 import { SHAKE_ANIMATION_MS, MIN_PASSWORD_LENGTH } from '../../constants'
 import GlassCard from './GlassCard'
 import { useConfirm } from './useConfirm'
+import { TriangleAlert } from 'lucide-react'
 
 type Props = {
   onUnlocked: () => void
@@ -154,7 +155,7 @@ export default function LockScreen({ onUnlocked }: Props) {
           {!isSetup && (
             <div className="lock-warning">
               <p className="lock-warning-text">
-                ⚠️ {t.security.warning}
+                <TriangleAlert size={14} aria-hidden="true" style={{ verticalAlign: '-2px', marginRight: 4 }} />{t.security.warning}
               </p>
             </div>
           )}

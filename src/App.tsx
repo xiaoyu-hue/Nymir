@@ -9,7 +9,7 @@ import RoomPanel from './ui/components/RoomPanel'
 import InstallPrompt from './ui/components/InstallPrompt'
 import BottomTabBar, { type MainTab } from './ui/components/BottomTabBar'
 import SettingsPage from './ui/components/SettingsPage'
-import { Plus } from 'lucide-react'
+import { Plus, TriangleAlert } from 'lucide-react'
 import { ToastProvider } from './ui/components/Toast'
 import './ui/styles/globals.css'
 import './ui/styles/qr.css'
@@ -164,7 +164,7 @@ function AppContent() {
   if (identityError) {
     return (
       <div className="overlay-enter app-loading identity-error-card">
-        <h2>⚠️ {t.error.identityErrorTitle}</h2>
+        <h2><TriangleAlert size={20} aria-hidden="true" style={{ verticalAlign: '-3px', marginRight: 6 }} />{t.error.identityErrorTitle}</h2>
         <p>{t.error.identityErrorDesc}</p>
       </div>
     )

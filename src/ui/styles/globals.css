@@ -342,7 +342,8 @@ textarea {
 }
 
 .chat-empty-icon {
-  font-size: 2rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
   animation: breathe 3s ease-in-out infinite;
 }
 

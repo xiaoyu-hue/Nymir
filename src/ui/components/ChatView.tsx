@@ -9,6 +9,10 @@ import {
   Copy,
   LogOut,
   Check,
+  TriangleAlert,
+  CircleCheck,
+  CircleX,
+  MessageCircle,
 } from 'lucide-react'
 import type { Message, BurnConfig } from '../../core/types'
 import { BurnMode } from '../../core/types'
@@ -312,7 +316,7 @@ export default function ChatView() {
             }
           }}
         >
-          <span aria-hidden="true">⚠️</span>
+          <TriangleAlert size={16} aria-hidden="true" />
           <span>{t.safety.unverifiedBanner}</span>
         </div>
       )}
@@ -323,7 +327,11 @@ export default function ChatView() {
           className={`rotate-banner ${rotateState === 'success' ? 'rotate-banner-ok' : 'rotate-banner-fail'}`}
           role="status"
         >
-          <span aria-hidden="true">{rotateState === 'success' ? '✅' : '❌'}</span>
+          {rotateState === 'success' ? (
+            <CircleCheck size={16} aria-hidden="true" />
+          ) : (
+            <CircleX size={16} aria-hidden="true" />
+          )}
           <span>
             {rotateState === 'success' ? t.keyRotation.success : t.keyRotation.fail}
           </span>
@@ -334,7 +342,7 @@ export default function ChatView() {
       <div className="chat-messages">
         {messages.length === 0 && (
           <div className="chat-empty">
-            <div className="chat-empty-icon">💬</div>
+            <MessageCircle size={44} strokeWidth={1.5} className="chat-empty-icon" aria-hidden="true" />
             <span>{t.room.empty}</span>
           </div>
         )}
