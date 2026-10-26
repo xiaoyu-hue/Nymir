@@ -27,6 +27,7 @@
     "@trystero-p2p/torrent": "^0.25.4",
     "idb": "^8.0.3",
     "jsqr": "^1.4.0",
+    "lucide-react": "^1.61.0",
     "qrcode": "^1.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"

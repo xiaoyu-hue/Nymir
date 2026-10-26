@@ -7,6 +7,7 @@ import { error } from './utils/logger'
 import Starfield from './ui/components/Starfield'
 import RoomPanel from './ui/components/RoomPanel'
 import InstallPrompt from './ui/components/InstallPrompt'
+import { ToastProvider } from './ui/components/Toast'
 import './ui/styles/globals.css'
 import './ui/styles/qr.css'
 
@@ -256,7 +257,9 @@ function AppContent() {
 export default function App() {
   return (
     <I18nProvider>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </I18nProvider>
   )
 }
