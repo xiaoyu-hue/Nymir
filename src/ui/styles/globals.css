@@ -868,8 +868,8 @@ select {
 }
 
 .lock-icon {
-  font-size: 2rem;
-  margin-bottom: 8px;
+  color: var(--accent);
+  margin: 0 auto 8px;
 }
 
 .lock-heading {
@@ -1848,4 +1848,105 @@ select {
   background: transparent;
   color: var(--text-secondary);
   font-size: 0.85rem;
+}
+
+/* ========== 首次使用欢迎引导 ========== */
+.welcome {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 32px 24px calc(32px + var(--safe-bottom));
+  max-width: 560px;
+  margin: 0 auto;
+  animation: overlay-in 0.4s ease;
+}
+
+.welcome-hero {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.welcome-title {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+  letter-spacing: 0.02em;
+}
+
+.welcome-subtitle {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.welcome-features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 36px;
+}
+
+.welcome-feature {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.welcome-feature-icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(124, 106, 239, 0.18);
+  color: var(--accent);
+}
+
+.welcome-feature-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.welcome-feature-desc {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.welcome-cta {
+  padding: 15px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(124, 106, 239, 0.35);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.welcome-cta:active {
+  transform: scale(0.98);
+}
+
+.welcome-hint {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 14px 0 0;
+  line-height: 1.5;
 }

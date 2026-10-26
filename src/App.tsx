@@ -16,6 +16,7 @@ import './ui/styles/qr.css'
 
 const ChatView = lazy(() => import('./ui/components/ChatView'))
 const LockScreen = lazy(() => import('./ui/components/LockScreen'))
+import Welcome from './ui/components/Welcome'
 
 const LoadingFallback = () => (
   <div role="status" aria-live="polite" className="app-loading">
@@ -33,6 +34,7 @@ function AppContent() {
   const { t } = useI18n()
   const [activeTab, setActiveTab] = useState<MainTab>('conversation')
   const [locked, setLocked] = useState(true)
+  const [welcomeDone, setWelcomeDone] = useState(false)
   const [securityReady, setSecurityReady] = useState(false)
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   const [viewportHeight, setViewportHeight] = useState('100dvh')
@@ -142,6 +144,16 @@ function AppContent() {
   }
 
   if (locked) {
+    // 首次使用（尚未设置锁屏密码）时，先显示一次性欢迎引导，
+    // 点「开始使用」后进入锁屏密码设置，设置完成后 isSetup=true 不再出现
+    if (!welcomeDone && !securityManager.isSetup) {
+      return (
+        <>
+          <Starfield />
+          <Welcome onDone={() => setWelcomeDone(true)} />
+        </>
+      )
+    }
     return (
       <>
         <Starfield />

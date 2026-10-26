@@ -64,6 +64,19 @@ const en: Translations = {
     timer5m: '5min',
     timer10m: '10min',
   },
+
+  welcome: {
+    title: 'Welcome to Nymir',
+    subtitle: 'No servers, no accounts, no prying — messages live only between the two of you',
+    f1Title: 'Serverless P2P',
+    f1Desc: 'Messages travel directly over a peer-to-peer network, never stored on any server',
+    f2Title: 'End-to-end encryption',
+    f2Desc: 'Keys stay on your device — even the network only sees ciphertext',
+    f3Title: 'Burn after reading',
+    f3Desc: 'Messages can self-destruct on a timer, leaving no trace',
+    cta: 'Get started',
+    hint: 'Next, set a local lock password to protect chats on this device',
+  },
   chat: {
     back: 'Back',
     menuTitle: 'Chat actions',
