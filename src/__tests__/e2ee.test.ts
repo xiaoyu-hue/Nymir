@@ -232,3 +232,78 @@ describe('e2ee — 共享密钥 LRU 缓存上限', () => {
   })
 })
 
+describe('e2ee — 临时密钥弱前向保密（ADR-0008）', () => {
+  beforeEach(() => {
+    clearAllSharedKeys()
+  })
+
+  it('双方临时密钥齐备：加密→解密往返成功', async () => {
+    const alice = await generateKeyPair()
+    const bob = await generateKeyPair()
+    const aliceEph = await generateKeyPair()
+    const bobEph = await generateKeyPair()
+
+    const aliceEphPubKey = await importPeerPublicKey(await exportPublicKey(aliceEph))
+    const bobEphPubKey = await importPeerPublicKey(await exportPublicKey(bobEph))
+
+    const plaintext = '前向保密测试消息 🔐'
+    const messageId = 'fs-msg-1'
+    const enc = await encryptMessage(plaintext, 'bob', alice.privateKey, bob.publicKey, messageId, {
+      myEphemeralPrivateKey: aliceEph.privateKey,
+      peerEphemeralPublicKey: bobEphPubKey,
+    })
+    const dec = await decryptMessage(enc, 'alice', bob.privateKey, alice.publicKey, messageId, {
+      myEphemeralPrivateKey: bobEph.privateKey,
+      peerEphemeralPublicKey: aliceEphPubKey,
+    })
+    expect(dec).toBe(plaintext)
+  })
+
+  it('弱前向保密：仅泄露长期静态私钥（无临时私钥）无法解密带临时密钥的密文', async () => {
+    const alice = await generateKeyPair() // 长期身份（假设已泄露）
+    const bob = await generateKeyPair()
+    const aliceEph = await generateKeyPair() // 会话临时密钥（已销毁，攻击者拿不到）
+    const bobEph = await generateKeyPair()
+
+    const bobEphPubKey = await importPeerPublicKey(await exportPublicKey(bobEph))
+
+    const enc = await encryptMessage('secret', 'bob', alice.privateKey, bob.publicKey, 'fs-x', {
+      myEphemeralPrivateKey: aliceEph.privateKey,
+      peerEphemeralPublicKey: bobEphPubKey,
+    })
+
+    // 攻击者只有 Alice 长期静态私钥 + Bob 静态公钥，没有临时私钥
+    await expect(
+      decryptMessage(enc, 'alice', alice.privateKey, bob.publicKey, 'fs-x'),
+    ).rejects.toThrow()
+  })
+
+  it('向后兼容：不带临时密钥加密 → 不带临时密钥解密，往返成功', async () => {
+    const alice = await generateKeyPair()
+    const bob = await generateKeyPair()
+    const enc = await encryptMessage('legacy', 'bob', alice.privateKey, bob.publicKey, 'fs-legacy')
+    const dec = await decryptMessage(enc, 'alice', bob.privateKey, alice.publicKey, 'fs-legacy')
+    expect(dec).toBe('legacy')
+  })
+
+  it('组合根与静态根为不同密钥：纯静态根加密的消息，用组合根解密必失败', async () => {
+    const alice = await generateKeyPair()
+    const bob = await generateKeyPair()
+    const bobEph = await generateKeyPair()
+    const bobEphPubKey = await importPeerPublicKey(await exportPublicKey(bobEph))
+
+    // Alice 用纯静态根加密（握手前场景）
+    const enc = await encryptMessage('fallback', 'bob', alice.privateKey, bob.publicKey, 'fs-fb')
+    // Bob 持临时密钥尝试组合根解密 → 必失败（密文并非组合根加密），需回退静态根
+    await expect(
+      decryptMessage(enc, 'alice', bob.privateKey, alice.publicKey, 'fs-fb', {
+        myEphemeralPrivateKey: bobEph.privateKey,
+        peerEphemeralPublicKey: bobEphPubKey,
+      }),
+    ).rejects.toThrow()
+    // 无临时参数（纯静态根）可正常解密
+    const dec = await decryptMessage(enc, 'alice', bob.privateKey, alice.publicKey, 'fs-fb')
+    expect(dec).toBe('fallback')
+  })
+})
+
