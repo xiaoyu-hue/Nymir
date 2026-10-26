@@ -9,7 +9,14 @@
  */
 
 import { log } from '../utils/logger'
-import { MONITOR_PING_INTERVAL_MS, QUALITY_EXCELLENT_MS, QUALITY_GOOD_MS, QUALITY_FAIR_MS } from '../constants'
+import {
+  MONITOR_PING_MIN_INTERVAL_MS,
+  MONITOR_PING_MAX_INTERVAL_MS,
+  QUALITY_EXCELLENT_MS,
+  QUALITY_GOOD_MS,
+  QUALITY_FAIR_MS,
+} from '../constants'
+import { secureRandomInt } from '../utils/random'
 import type { Channel } from './peer'
 
 export type QualityLevel = 'excellent' | 'good' | 'fair' | 'poor' | 'unknown'
@@ -38,7 +45,7 @@ class ConnectionMonitor {
   private bytesSent = 0
   private bytesReceived = 0
   private peersConnected = 0
-  private pingTimer: ReturnType<typeof setInterval> | null = null
+  private pingTimer: ReturnType<typeof setTimeout> | null = null
   private listeners: StatsListener[] = []
   private active = false
   private channel: MonitorChannel | null = null
@@ -49,24 +56,46 @@ class ConnectionMonitor {
     this.active = true
     this.connectedAt = Date.now()
 
-    this.pingTimer = setInterval(() => {
-      this.sendPing()
-    }, MONITOR_PING_INTERVAL_MS)
+    this.scheduleNextPing()
 
     log('[Monitor] Started')
   }
 
   stop(): void {
     this.active = false
-    if (this.pingTimer) {
-      clearInterval(this.pingTimer)
-      this.pingTimer = null
-    }
+    this.clearPingTimer()
     // 清理已注册的 onMessage，避免通道/房间重建后旧 handler 残留
     this.channelUnsub?.()
     this.channelUnsub = null
     this.channel = null
     log('[Monitor] Stopped')
+  }
+
+  /**
+   * 清除待执行的 ping 定时器
+   */
+  private clearPingTimer(): void {
+    if (this.pingTimer) {
+      clearTimeout(this.pingTimer)
+      this.pingTimer = null
+    }
+  }
+
+  /**
+   * 自调度下一次 ping（随机延迟区间，打破固定周期）。
+   * 仅在 active 时续约，stop() 后自然终止。
+   */
+  private scheduleNextPing(): void {
+    if (!this.active) return
+    const delay =
+      MONITOR_PING_MIN_INTERVAL_MS +
+      secureRandomInt(
+        MONITOR_PING_MAX_INTERVAL_MS - MONITOR_PING_MIN_INTERVAL_MS + 1,
+      )
+    this.pingTimer = setTimeout(() => {
+      this.sendPing()
+      this.scheduleNextPing()
+    }, delay)
   }
 
   /**
