@@ -225,16 +225,15 @@ export default function ChatView() {
                 {rotateState === 'busy' ? '⏳' : '🔑'}
               </button>
             )}
-            {peerId && (
-              <button
-                onClick={() => setOobOpen(true)}
-                className="chat-oob-btn"
-                aria-label={t.oob.title}
-                title={t.oob.title}
-              >
-                {'🤝'}
-              </button>
-            )}
+            {/* 带外核对：不依赖对端在线，未连接时也应可用（ADR-0009） */}
+            <button
+              onClick={() => setOobOpen(true)}
+              className="chat-oob-btn"
+              aria-label={t.oob.title}
+              title={t.oob.title}
+            >
+              {'🤝'}
+            </button>
             <button
               onClick={handleLeave}
               className="chat-leave-btn"
