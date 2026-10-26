@@ -59,17 +59,21 @@ Nymir is a **personally maintained project, not a 24/7 security operation**. Mai
 - **Local storage encryption**: IndexedDB field-level encryption (AES-256-GCM, PBKDF2 600k iterations, per-install random salt); lock password derives the key, minimum 10 characters.
 - **Burn after reading**: messages can be set to auto-destruct after view.
 - **Secure deletion**: sensitive keys removed via `removeItem`; no overwrite reliance (browsers don't guarantee physical erasure).
-- **Traffic obfuscation**: ~48 bytes of fixed noise every ~30s — mitigates but **cannot** defeat serious traffic analysis.
+- **Weak forward secrecy**: each session adds one-shot ephemeral X25519 keys, dropped from memory on disconnect; a leaked long-term static key cannot decrypt ciphertext sent under ephemeral keys (still **not** strong forward secrecy).
+- **Pre-connection offline verification**: export an identity string (public keys only) or paste a peer's string to compute the security code locally, no peer online required.
+- **Configurable signaling**: relay URLs and redundancy for MQTT / Nostr / WebTorrent are editable in Settings; self-hosting supported.
+- **Traffic obfuscation**: randomized noise interval (8-28s) and length (24-512 bytes) — fixed fingerprints broken, but **cannot** defeat serious traffic analysis (total byte volume is still observable).
 
 ## 5. Known Limitations & Out-of-Scope Uses
 
 Honestly, Nymir is **not** a universal privacy tool:
 
 - **TOFU risk**: on first key exchange a MITM may inject a fake public key first; the protocol cannot detect this alone — **you must actively verify the safety number**.
-- **Signaling metadata**: public signaling can observe connection metadata (who connects to whom, when).
+- **Signaling metadata**: public signaling can observe connection metadata (who connects to whom, when); self-hosted relays remove reliance on public services.
 - **Signaling/connection setup is not an E2EE channel**.
 - **No server-side offline inbox**.
-- **Limited traffic obfuscation**: fixed interval/length may be identifiable by traffic analysis; not against nation-state adversaries.
+- **Limited traffic obfuscation**: interval and length are now randomized, but total byte volume and statistical timing remain identifiable; not against nation-state adversaries.
+- **Weak forward secrecy only**: ephemeral keys apply only when both clients are up to date; a static-key leak still covers the pre-handshake window and old-client sessions.
 - **Heartbeat (ping/pong) in plaintext**: timestamp only, over P2P; leaks online metadata, not content.
 - **Forgetting the lock password** may make local encrypted data **permanently unrecoverable** (backup needs the same password).
 - **Burn-after-reading cannot stop screenshots/copying**.

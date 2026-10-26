@@ -1,6 +1,6 @@
 # Nymir Product Requirements Document (PRD)
 
-> Version: v1.6.5
+> Version: v1.7.0
 > Status: v1.6.5 is the current release (see [CHANGELOG.md](../CHANGELOG.md))
 > Document principle: this document describes the **current implementation's** product behavior and security boundary and stays in sync with the code. The security capability boundary is defined by [THREAT_MODEL.md](./THREAT_MODEL.md) — never claim capabilities beyond the implementation.
 
@@ -35,8 +35,8 @@ Nymir (树洞 / "Tree Hollow") is a **P2P anonymous instant messaging tool**: me
 | **Room** | A chat session with id, name, creation time, and peer list (`RoomInfo`). |
 | **Message** | A chat message: id, content, sender, timestamp, burn config, read list, destroyed state; includes `verified` (signature verification result) and `decryptFailed` flags. |
 | **Burn** | Four modes (`BurnMode`): `read_once` destroy after read / `timed` destroy after N seconds (burnAfter) / `scheduled` destroy at a time (burnAt) / `persist` keep forever. |
-| **E2EE** | X25519 key agreement + per-message HKDF-derived keys + AES-256-GCM; encrypt-then-sign (Ed25519 signs the ciphertext). |
-| **Safety Code (Fingerprint)** | A human-comparable fingerprint derived from both public keys: 15 digits + 7 emoji, verified over an out-of-band channel to detect man-in-the-middle (TOFU mitigation). |
+| **E2EE** | X25519 static agreement + **one-shot per-session ephemeral keys** + per-message HKDF-derived keys + AES-256-GCM; encrypt-then-sign (Ed25519 signs the ciphertext). Ephemeral private keys are dropped on disconnect (weak forward secrecy). |
+| **Safety Code (Fingerprint)** | A human-comparable fingerprint derived from both public keys: 15 digits + 7 emoji, verified over an out-of-band channel to detect man-in-the-middle (TOFU mitigation). Can be checked **before connecting** via identity strings. |
 | **Lock Screen** | Access passphrase for local encrypted data: PBKDF2 (600k iterations) derived key + AES-256-GCM field-level encryption of IndexedDB. |
 | **Pseudonym** | In-session identity, loosely bound to the device. |
 
@@ -60,6 +60,7 @@ Nymir (树洞 / "Tree Hollow") is a **P2P anonymous instant messaging tool**: me
 
 - The shield icon in the chat header shows the shared fingerprint (15 digits + 7 emoji).
 - Users verify it over an out-of-band channel; after verification the fingerprint is **pinned**, and public-key changes trigger a red warning.
+- **Pre-connection offline check**: the "🤝" button exports your identity string (`nymir1:` + base64url, public keys only) to send over any channel; pasting a peer's string computes the same security code locally — **no peer online, no room needed**.
 - Unverified first exchange remains subject to the TOFU weakness (threat model §4.2).
 
 ### 3.4 Lock Screen & Local Encryption
@@ -77,7 +78,13 @@ Nymir (树洞 / "Tree Hollow") is a **P2P anonymous instant messaging tool**: me
 
 - Chinese (default) / English bilingual UI (`src/i18n/`, zh.ts / en.ts).
 
-### 3.7 Other
+### 3.7 Signaling Settings
+
+- Relay URL lists and simultaneous connection counts for all three strategies (MQTT / Nostr / WebTorrent) are editable in Settings, persisted to `localStorage`, applied on the next room join.
+- Validation: non-`wss://` URLs dropped, empty list falls back to defaults, redundancy clamped to `[1, url count]`.
+- Self-hosted relays are supported to reduce reliance on public signaling; CSP allows `wss:` / `https:` (ADR-009).
+
+### 3.8 Other
 
 - PWA: installable, offline-capable (vite-plugin-pwa).
 - Install prompt (InstallPrompt), error boundary (ErrorBoundary) and degraded UI.
@@ -99,15 +106,19 @@ Nymir (树洞 / "Tree Hollow") is a **P2P anonymous instant messaging tool**: me
 - Session-message E2EE (X25519 + per-message HKDF + AES-256-GCM)
 - Ciphertext signing (encrypt-then-sign) and visible verification failure
 - Field-level local encryption (PBKDF2-600k + AES-256-GCM, v4 per-install salt)
-- Non-extractable private keys (`extractable: false`)
-- Out-of-band safety code verification (15 digits + 7 emoji, pinned with re-key warning)
+- Private keys exports remain encrypted at rest with the lock password (`extractable: true`; XSS risk in threat model §5.4 — **never** claim keys are non-extractable)
+- Out-of-band safety code verification (15 digits + 7 emoji, pinned with re-key warning) + pre-connection offline check (identity strings)
+- Weak forward secrecy (one-shot per-session ephemeral X25519 keys dropped on disconnect; falls back to a static-only root with older clients or during the pre-handshake window — not strong forward secrecy, ADR-008)
+- Configurable / self-hostable signaling relays (ADR-009)
 
 **Not committed / known limitations** (must not be claimed in docs or marketing):
 - Resistance against state-level traffic analysis and long-term metadata correlation
 - Preventing the peer from screenshots/copies/secondary forwarding
-- Fully decentralized peer discovery (depends on public signaling; signaling/handshake phase is not an E2EE channel)
+- Fully decentralized peer discovery (depends on public signaling by default, self-hosting possible; signaling/handshake phase is not an E2EE channel)
+- Strong forward secrecy (ephemeral keys only apply when both sides are up to date)
+- Encrypted rendezvous (Nostr coordination metadata is plaintext to relays unless you self-host)
 - Physical anti-forensic erasure
-- Automatic key rotation (currently off; per-message HKDF still applies)
+- Protection of historical messages after a long-term static key leak (weak forward secrecy only covers sessions that used ephemeral keys)
 
 The full threat boundary is in [THREAT_MODEL.md](./THREAT_MODEL.md).
 
@@ -119,7 +130,8 @@ The full threat boundary is in [THREAT_MODEL.md](./THREAT_MODEL.md).
 - Real-time multi-device sync (currently backup export/import migration only).
 - Account system, registration, username search.
 - Message search (roadmap), voice messages (roadmap), verifiable key rotation (roadmap).
-- Reducing reliance on public signaling (roadmap).
+- Encrypted rendezvous (requires forking Trystero to change the Nostr coordination protocol).
+- Persisting the out-of-band verification result as "verified" (requires redesigning the TOFU/rotation state machine).
 - No "fully anonymous / fully decentralized" marketing claims.
 
 ---
@@ -134,7 +146,7 @@ The full threat boundary is in [THREAT_MODEL.md](./THREAT_MODEL.md).
 6. Tampered/forged messages (test-injected) cause visible signature-verification failure, never silent display.
 7. Messages sent while offline enter the queue and are re-sent after reconnect.
 8. Chinese/English switching works without missing translations.
-9. Engineering gates pass: `npm run typecheck`, `npm run lint`, `npm test` (293 tests).
+9. Engineering gates pass: `npm run typecheck`, `npm run lint`, `npm test` (317 tests).
 10. Security-related changes must not break the trust boundary declared in [THREAT_MODEL.md](./THREAT_MODEL.md).
 
 ---
