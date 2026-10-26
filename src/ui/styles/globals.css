@@ -491,7 +491,7 @@ select {
 /* ========== 安全区 ========== */
 .chat-input-area {
   flex-shrink: 0;
-  padding-bottom: calc(var(--safe-bottom) + 4px) !important;
+  padding-bottom: calc(58px + var(--safe-bottom));
 }
 
 /* ========== 响应式 — 移动端小屏 (< 480px) ========== */
@@ -1152,7 +1152,7 @@ select {
 
 .install-prompt {
   position: fixed;
-  bottom: calc(var(--safe-bottom) + 12px);
+  bottom: calc(64px + var(--safe-bottom));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -1330,4 +1330,266 @@ select {
   color: var(--text-secondary);
   font-size: 0.875rem;
   line-height: 1.6;
+}
+
+/* ========== 底部导航栏 ========== */
+.app-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  background: rgba(10, 10, 26, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--glass-border);
+  padding-bottom: var(--safe-bottom);
+  z-index: 60;
+}
+
+.app-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 0 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+}
+
+.app-tab.active {
+  color: var(--accent);
+}
+
+.app-tab svg {
+  width: 22px;
+  height: 22px;
+}
+
+.app-fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(64px + var(--safe-bottom));
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #5b4bc9);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(124, 106, 239, 0.5);
+  z-index: 55;
+}
+
+.app-fab svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* ========== 设置页 ========== */
+.settings-page {
+  height: 100%;
+  overflow-y: auto;
+  padding: calc(var(--safe-top) + 16px) 16px calc(80px + var(--safe-bottom));
+}
+
+.settings-page-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 8px 4px 20px;
+}
+
+.settings-group {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.settings-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  text-align: left;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.settings-group .settings-row:last-child {
+  border-bottom: none;
+}
+
+.settings-row-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.settings-row-label {
+  flex: 1;
+}
+
+.settings-row-value {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.settings-row-chevron {
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+}
+
+.settings-version {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-top: 8px;
+}
+
+.settings-about {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-about-body {
+  display: flex;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.settings-about-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--accent);
+  margin-top: 2px;
+}
+
+.settings-about-privacy {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ========== 信令设置表单（BottomSheet 内） ========== */
+.signaling-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.signaling-desc {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.signaling-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.signaling-label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.signaling-select,
+.signaling-textarea,
+.signaling-number {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255,255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 0.85rem;
+  box-sizing: border-box;
+}
+
+.signaling-textarea {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 0.8rem;
+  resize: vertical;
+}
+
+.signaling-redundancy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.signaling-number {
+  width: 70px;
+}
+
+.signaling-hint {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.signaling-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.signaling-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.signaling-btn-secondary {
+  background: rgba(255, 255,255, 0.05);
+  color: var(--text-secondary);
+}
+
+.signaling-btn-primary {
+  background: rgba(52, 211, 153, 0.2);
+  color: var(--success, #34d399);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  font-weight: 600;
+}
+
+.signaling-status {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.signaling-status.success {
+  color: var(--success, #34d399);
+}
+
+.signaling-close {
+  padding: 10px;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  width: 100%;
 }

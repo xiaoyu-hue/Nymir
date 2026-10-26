@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useI18n } from '../../i18n'
 import GlassCard from './GlassCard'
 import QRCodeComponent from './QRCodeComponent'
@@ -13,6 +13,7 @@ type Props = {
 export default function RoomPanel({ onCreateRoom, onJoinRoom, error }: Props) {
   const { t } = useI18n()
   const [tab, setTab] = useState<'create' | 'join'>('create')
+  const nameRef = useRef<HTMLInputElement>(null)
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
   const [showQR, setShowQR] = useState(false)
@@ -36,6 +37,13 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom, error }: Props) {
     }
     window.addEventListener('nymir:roomCreated', handler)
     return () => window.removeEventListener('nymir:roomCreated', handler)
+  }, [])
+
+  useEffect(() => {
+    // FAB「新建对话」：聚焦房间名输入框
+    const handler = () => nameRef.current?.focus()
+    window.addEventListener('nymir:focusCreate', handler)
+    return () => window.removeEventListener('nymir:focusCreate', handler)
   }, [])
 
   const handleCreate = () => {
@@ -126,6 +134,7 @@ export default function RoomPanel({ onCreateRoom, onJoinRoom, error }: Props) {
                 </label>
                 <input
                   id="room-name"
+                  ref={nameRef}
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
