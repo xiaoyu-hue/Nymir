@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { createPortal } from 'react-dom'
-import GlassCard from './GlassCard'
+import { useState, useEffect, useCallback } from 'react'
+import BottomSheet from './BottomSheet'
 import { useI18n } from '../../i18n'
 import { e2eeManager, type VerificationState } from '../../security/e2eeManager'
 import type { Fingerprint } from '../../security/fingerprint'
@@ -14,7 +13,7 @@ type Props = {
 }
 
 /**
- * 安全码核对弹窗。
+ * 安全码核对抽屉。
  *
  * 显示双方共同的 15 位数字 + 7 个 emoji，提示用户用另一条渠道（电话/当面/微信）
  * 和对方比对。一致后点"我已核对一致"，把当前指纹钉住。
@@ -23,12 +22,9 @@ type Props = {
  */
 export default function SafetyCheckDialog({ open, peerId, onClose }: Props) {
   const { t } = useI18n()
-  const [visible, setVisible] = useState(false)
   const [fingerprint, setFingerprint] = useState<Fingerprint | null>(null)
   const [state, setState] = useState<VerificationState>('unverified')
   const [busy, setBusy] = useState(false)
-  // 焦点管理：记录打开前获得焦点的元素，关闭时还原
-  const triggerRef = useRef<HTMLElement | null>(null)
 
   const refresh = useCallback(async () => {
     if (!peerId) {
@@ -44,35 +40,13 @@ export default function SafetyCheckDialog({ open, peerId, onClose }: Props) {
 
   useEffect(() => {
     if (open) {
-      // 记录触发元素，用于关闭时还原焦点
-      triggerRef.current = document.activeElement as HTMLElement
-      requestAnimationFrame(() => setVisible(true))
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       refresh()
     } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setVisible(false)
-      // 焦点还原：确保焦点回到触发弹窗的元素
-      if (triggerRef.current instanceof HTMLElement) {
-        triggerRef.current.focus()
-        triggerRef.current = null
-      }
+      // 关闭后重置状态，下次打开重新计算
+      setFingerprint(null)
+      setState('unverified')
     }
   }, [open, refresh])
-
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    },
-    [onClose],
-  )
-
-  useEffect(() => {
-    if (open) {
-      document.addEventListener('keydown', handleKeyDown)
-      return () => document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [open, handleKeyDown])
 
   const handleConfirm = useCallback(async () => {
     if (!peerId || !fingerprint) return
@@ -88,8 +62,6 @@ export default function SafetyCheckDialog({ open, peerId, onClose }: Props) {
     onClose()
   }, [peerId, fingerprint, onClose])
 
-  if (!open) return null
-
   const bannerColor =
     state === 'changed'
       ? 'var(--danger)'
@@ -103,156 +75,39 @@ export default function SafetyCheckDialog({ open, peerId, onClose }: Props) {
         ? t.safety.verified
         : t.safety.unconfirmed
 
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="safety-dialog-title"
-      className={`overlay-enter ${visible ? '' : 'confirm-hidden'}`}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'rgba(0, 0, 0, 0.6)',
-        backdropFilter: 'blur(8px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 200,
-        opacity: visible ? 1 : 0,
-        transition: 'opacity 0.2s ease',
-      }}
-      onClick={onClose}
-    >
-      <div onClick={(e) => e.stopPropagation()}>
-        <GlassCard variant="strong" className="modal-enter">
-          <div
-            style={{
-              padding: '24px',
-              minWidth: 'min(320px, 88vw)',
-              maxWidth: '420px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
-            }}
-          >
-            <h3
-              id="safety-dialog-title"
-              style={{
-                margin: 0,
-                color: 'var(--text-primary)',
-                fontSize: '1.05rem',
-                fontWeight: 600,
-                textAlign: 'center',
-              }}
-            >
-              {t.safety.title}
-            </h3>
-
-            {!fingerprint ? (
-              <p
-                style={{
-                  color: 'var(--text-secondary)',
-                  textAlign: 'center',
-                  margin: '12px 0',
-                }}
-              >
-                {t.safety.waiting}
-              </p>
-            ) : (
-              <>
-                <div
-                  style={{
-                    fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
-                    fontSize: '1.6rem',
-                    letterSpacing: '0.15em',
-                    textAlign: 'center',
-                    color: 'var(--text-primary)',
-                    padding: '12px 0',
-                  }}
-                >
-                  {fingerprint.decimal}
-                </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    fontSize: '1.8rem',
-                  }}
-                  aria-label="emoji fingerprint"
-                >
-                  {fingerprint.emojis.map((e, i) => (
-                    <span key={i}>{e}</span>
-                  ))}
-                </div>
-                <p
-                  style={{
-                    color: 'var(--text-secondary)',
-                    fontSize: '0.85rem',
-                    lineHeight: 1.5,
-                    textAlign: 'center',
-                    margin: 0,
-                  }}
-                >
-                  {t.safety.hint}
-                </p>
-                <div
-                  role="status"
-                  style={{
-                    color: bannerColor,
-                    fontSize: '0.85rem',
-                    fontWeight: 500,
-                    textAlign: 'center',
-                  }}
-                >
-                  {bannerText}
-                </div>
-              </>
-            )}
-
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                onClick={onClose}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  borderRadius: '12px',
-                  background: 'rgba(255,255,255,0.05)',
-                  color: 'var(--text-secondary)',
-                  fontWeight: 500,
-                  fontSize: '0.9rem',
-                }}
-              >
-                {t.safety.close}
-              </button>
-              <button
-                onClick={handleConfirm}
-                disabled={!fingerprint || busy || state === 'verified'}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  borderRadius: '12px',
-                  background:
-                    state === 'verified'
-                      ? 'rgba(52, 211, 153, 0.15)'
-                      : 'rgba(52, 211, 153, 0.2)',
-                  color: 'var(--success, #34d399)',
-                  fontWeight: 600,
-                  fontSize: '0.9rem',
-                  border: '1px solid rgba(52, 211, 153, 0.3)',
-                  opacity: !fingerprint || busy || state === 'verified' ? 0.5 : 1,
-                }}
-              >
-                {t.safety.matchBtn}
-              </button>
+  return (
+    <BottomSheet open={open} onClose={onClose} title={t.safety.title}>
+      <div className="safety-body">
+        {!fingerprint ? (
+          <p className="safety-waiting">{t.safety.waiting}</p>
+        ) : (
+          <>
+            <div className="safety-fingerprint">{fingerprint.decimal}</div>
+            <div className="safety-emojis" aria-label="emoji fingerprint">
+              {fingerprint.emojis.map((e, i) => (
+                <span key={i}>{e}</span>
+              ))}
             </div>
-          </div>
-        </GlassCard>
+            <p className="safety-hint">{t.safety.hint}</p>
+            <div role="status" className="safety-banner" style={{ color: bannerColor }}>
+              {bannerText}
+            </div>
+          </>
+        )}
+
+        <div className="safety-actions">
+          <button onClick={onClose} className="safety-btn-secondary">
+            {t.safety.close}
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={!fingerprint || busy || state === 'verified'}
+            className="safety-btn-primary"
+          >
+            {t.safety.matchBtn}
+          </button>
+        </div>
       </div>
-    </div>,
-    document.body,
+    </BottomSheet>
   )
 }

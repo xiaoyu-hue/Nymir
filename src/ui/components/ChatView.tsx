@@ -463,9 +463,12 @@ export default function ChatView() {
         }}
       />
 
-      {oobOpen && (
-        <OutOfBandVerify peerId={peerId} onClose={() => setOobOpen(false)} />
-      )}
+      {/* 带外身份核对抽屉 */}
+      <OutOfBandVerify
+        open={oobOpen}
+        peerId={peerId}
+        onClose={() => setOobOpen(false)}
+      />
 
       {/* 密钥轮换确认弹窗 */}
       <ConfirmDialog />

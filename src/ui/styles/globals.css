@@ -1604,3 +1604,247 @@ select {
   font-size: 0.85rem;
   width: 100%;
 }
+
+/* ========== 安全码核对抽屉 ========== */
+.safety-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 0 calc(16px + var(--safe-bottom));
+}
+
+.safety-waiting {
+  color: var(--text-secondary);
+  text-align: center;
+  margin: 12px 0;
+}
+
+.safety-fingerprint {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 1.6rem;
+  letter-spacing: 0.15em;
+  text-align: center;
+  color: var(--text-primary);
+  padding: 12px 0;
+}
+
+.safety-emojis {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  font-size: 1.8rem;
+}
+
+.safety-hint {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  text-align: center;
+  margin: 0;
+}
+
+.safety-banner {
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.safety-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.safety-btn-secondary {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.9rem;
+  border: 1px solid var(--glass-border);
+}
+
+.safety-btn-primary {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(52, 211, 153, 0.2);
+  color: var(--success, #34d399);
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.safety-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ========== 带外身份核对抽屉 ========== */
+.oob-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 0 calc(16px + var(--safe-bottom));
+}
+
+.oob-desc {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.oob-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.oob-tab {
+  flex: 1;
+  padding: 9px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+}
+
+.oob-tab.active {
+  background: rgba(124, 106, 239, 0.3);
+  color: var(--text-primary);
+  border-color: rgba(124, 106, 239, 0.6);
+}
+
+.oob-qr-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.oob-qr {
+  width: 200px;
+  height: 200px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.oob-qr-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.oob-copy-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: rgba(124, 106, 239, 0.25);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  border: 1px solid rgba(124, 106, 239, 0.4);
+}
+
+.oob-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.oob-label {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.oob-textarea {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 0.75rem;
+  resize: none;
+  box-sizing: border-box;
+}
+
+.oob-textarea.invalid {
+  border-color: var(--danger);
+}
+
+.oob-compute-btn {
+  padding: 11px;
+  border-radius: 12px;
+  background: rgba(124, 106, 239, 0.25);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  border: 1px solid rgba(124, 106, 239, 0.4);
+}
+
+.oob-compute-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.oob-invalid {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.82rem;
+}
+
+.oob-result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.oob-fingerprint {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 1.5rem;
+  letter-spacing: 0.12em;
+  color: var(--text-primary);
+}
+
+.oob-match-btn {
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: rgba(52, 211, 153, 0.2);
+  color: var(--success, #34d399);
+  font-size: 0.88rem;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.oob-match-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.oob-match-hint {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.oob-waiting {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.oob-close-btn {
+  padding: 10px;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
