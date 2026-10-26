@@ -31,7 +31,7 @@ Nymir is a **P2P anonymous messenger**. Messages travel **end-to-end encrypted o
 
 ### Is it fully decentralized?
 
-**No.** Storage and chat transport are local/P2P; **peer discovery depends on public MQTT / Nostr / WebTorrent signaling** (three-strategy redundancy; some can be down and it still works).
+**No.** Storage and chat transport are local/P2P; **peer discovery depends on MQTT / Nostr / WebTorrent signaling** (three-strategy redundancy; some can be down and it still works). A set of public relays is used by default, and **you can swap in self-hosted or self-chosen relays in Signaling Settings** (see [ADR-009](./docs/adr/0009-self-hosted-signaling-and-oob-verification.md)).
 
 More accurate: **serverless + local-first + P2P messaging**.
 
@@ -48,10 +48,13 @@ Encryption and signing happen entirely in your browser. Intermediate nodes (incl
 ### Security Features
 
 - ✅ **Session message E2EE** — X25519 key agreement + AES-256-GCM (signaling/setup phase excluded, see Known Limitations)
+- ✅ **Weak forward secrecy** — each session folds in a one-shot ephemeral X25519 key into the session root; ephemeral private keys are dropped from memory on disconnect, so leaked long-term static keys cannot decrypt ciphertext already sent under ephemeral keys (**not** strong forward secrecy; boundary in [ADR-008](./docs/adr/0008-ephemeral-forward-secrecy.md))
 - ✅ **Per-message keys** — HKDF derived per message, different keys for different messages
 - ✅ **Encrypt-then-sign** — Ed25519 over ciphertext; verification failure means no display
 - ✅ **Visible signature failures** — shown on the bubble, never silent
 - ✅ **Out-of-band security code verification** — shield icon in chat header shows a 15-digit number + 7 emoji derived from both parties' public keys; verify via another channel to detect MITM. After verification, keys are pinned; any future change triggers a red warning
+- ✅ **Pre-connection offline verification** — new "Out-of-band verify" entry: export your identity string (`nymir1:…`, public keys only) and send it over any channel, or paste a peer's string to compute the security code immediately. **No peer online, no room joined** — verify identity before connecting
+- ✅ **Configurable signaling** — relay URLs and redundancy for all three strategies are editable in Settings and persisted; self-hosting supported
 - ✅ **P2P Direct** — no app-server message store
 - ✅ **Encrypted local storage** — IndexedDB field-level encryption (AES-256-GCM, PBKDF2 600k iterations, v4 per-install random salt)
 - ✅ **Persistent identity** — encryption identity survives page refresh; TOFU/security-code verification stays valid long-term (since v4)
@@ -67,14 +70,15 @@ Encryption and signing happen entirely in your browser. Intermediate nodes (incl
 
 ### Known Limitations
 
-- **Peer discovery depends on public signaling** — metadata may be visible to signaling parties; mitigated with multi-relay redundancy (MQTT 5 brokers + Nostr 8 relays + WebTorrent 5 trackers, v1.5.0)
+- **Peer discovery depends on signaling** — metadata may be visible to signaling parties; mitigated with multi-relay redundancy (MQTT 5 brokers + Nostr 8 relays + WebTorrent 5 trackers, v1.5.0), and **relay addresses are now user-configurable / self-hostable** — switching to your own node removes reliance on public services
 - **Signaling / setup is not an E2EE channel**
+- **Nostr rendezvous metadata is plaintext** — under the Nostr strategy, Trystero sends rendezvous data to relays in the clear; a self-hosted relay mitigates this, but end-to-end encrypted rendezvous requires forking Trystero and is not implemented
 - **No server-side offline inbox**
 - **Automatic key rotation depends on a peer being online** — **verifiable key rotation** (signature-chaining protocol: the new public key is signed with the old signing private key, peers re-pin only after verification, see [ADR-007](./docs/adr/0007-verifiable-key-rotation.md)) is enabled: explicit API + UI entry (manual rotation, v1.3.0) and automatic strategy (every 100 messages, only when a peer is online, v1.4.0); automatic rotation is deferred until a peer comes online if all are offline
 - **Pseudonyms are device-local**
 - **Realtime depends on browser and NAT**
-- **Traffic obfuscation is weak** — noise about every 30 seconds with a fixed ~48-byte payload; regular interval and size can themselves be a fingerprint; **does not** resist serious traffic analysis
-- **Ping/pong monitoring messages are unencrypted** — connection-quality heartbeats (timestamps only) go over the P2P channel every 5 seconds; no content leak but online-status metadata is visible
+- **Traffic obfuscation is still limited** — noise intervals are now randomized (8–28s) and payload sizes randomized (24–512 bytes); fixed fingerprints are broken, but **total byte volume and statistical timing remain detectable by serious traffic analysis** and this **does not** resist capable adversaries (full obfuscation would need a remote proxy, infeasible in a pure browser)
+- **Ping/pong monitoring messages are unencrypted** — connection-quality heartbeats (timestamps only) now use randomized intervals (3.5–7s) and go over the P2P channel in the clear; no content leak but online-status metadata is visible
 
 ### When Nymir is NOT a good fit
 
@@ -100,12 +104,18 @@ To be honest, Nymir is not a universal privacy tool. Please think twice or choos
 - [x] Key rotation UI entry (manual rotation + confirm interaction + result feedback, v1.3.0)
 - [x] Automatic key rotation strategy (every 100 messages, only when a peer is online, v1.4.0)
 - [x] CI test gate (typecheck + lint + test + 3-viewport E2E)
+- [x] Traffic randomization (noise interval/size + ping interval; fixed fingerprints broken)
+- [x] Weak forward secrecy (one-shot ephemeral X25519 keys dropped on disconnect, ADR-008)
+- [x] Configurable / self-hostable signaling (3 strategies' URLs + redundancy editable in Settings, ADR-009)
+- [x] Pre-connection offline identity verification (export/paste identity string to compute security code, ADR-009)
 
 ### Planned
 
 - [x] Signaling de-dependency phase 1 (multi-relay redundancy + Nostr fallback chain, v1.5.0)
 - [x] QR offline pairing (scan code to join room, v1.6.0)
 - [ ] Search, voice, multi-device sync
+- [ ] Encrypted rendezvous (requires forking Trystero to change the Nostr coordination protocol)
+- [ ] Persist out-of-band verification result as "verified" (requires redesigning the TOFU/rotation state machine)
 
 ---
 
