@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { isNoiseMessage, startNoiseGeneration, stopNoiseGeneration } from '../security/noise'
-import { NOISE_INTERVAL_MS, FAKE_ID_LENGTH } from '../constants'
+import { NOISE_MIN_INTERVAL_MS, FAKE_ID_LENGTH } from '../constants'
+
+// 把安全随机数固定为 0，使随机化后的噪声间隔/长度在测试中确定可预测：
+// 延迟 = NOISE_MIN_INTERVAL_MS + 0；载荷长度 = NOISE_MIN_LEN；fakeId 全为 'A'（长度不变）。
+vi.mock('../utils/random', () => ({
+  secureRandomInt: vi.fn(() => 0),
+}))
 
 describe('isNoiseMessage', () => {
   it('returns false when sender field is present', () => {
@@ -97,13 +103,13 @@ describe('isNoiseMessage — 真实消息与恶意构造', () => {
   })
 })
 
-describe('startNoiseGeneration / stopNoiseGeneration', () => {
+describe('startNoiseGeneration / stopNoiseGeneration（随机化后）', () => {
   afterEach(() => {
     stopNoiseGeneration()
     vi.useRealTimers()
   })
 
-  it('启动后按间隔发送噪声消息', () => {
+  it('启动后按随机间隔（此处被 mock 为 NOISE_MIN_INTERVAL_MS）发送噪声消息', () => {
     vi.useFakeTimers()
     const sendFn = vi.fn()
     startNoiseGeneration(sendFn)
@@ -111,12 +117,12 @@ describe('startNoiseGeneration / stopNoiseGeneration', () => {
     // 间隔内不应发送
     expect(sendFn).not.toHaveBeenCalled()
 
-    // 推进一个间隔
-    vi.advanceTimersByTime(NOISE_INTERVAL_MS)
+    // 推进一个最小间隔（secureRandomInt 被 mock 为 0，延迟 = 最小间隔）
+    vi.advanceTimersByTime(NOISE_MIN_INTERVAL_MS)
     expect(sendFn).toHaveBeenCalledTimes(1)
 
     // 再推进一个
-    vi.advanceTimersByTime(NOISE_INTERVAL_MS)
+    vi.advanceTimersByTime(NOISE_MIN_INTERVAL_MS)
     expect(sendFn).toHaveBeenCalledTimes(2)
   })
 
@@ -125,11 +131,11 @@ describe('startNoiseGeneration / stopNoiseGeneration', () => {
     const sendFn = vi.fn()
     startNoiseGeneration(sendFn)
 
-    vi.advanceTimersByTime(NOISE_INTERVAL_MS)
+    vi.advanceTimersByTime(NOISE_MIN_INTERVAL_MS)
     expect(sendFn).toHaveBeenCalledTimes(1)
 
     stopNoiseGeneration()
-    vi.advanceTimersByTime(NOISE_INTERVAL_MS)
+    vi.advanceTimersByTime(NOISE_MIN_INTERVAL_MS)
     expect(sendFn).toHaveBeenCalledTimes(1)
   })
 
@@ -139,7 +145,7 @@ describe('startNoiseGeneration / stopNoiseGeneration', () => {
     startNoiseGeneration(sendFn)
     startNoiseGeneration(sendFn) // 第二次应被忽略
 
-    vi.advanceTimersByTime(NOISE_INTERVAL_MS)
+    vi.advanceTimersByTime(NOISE_MIN_INTERVAL_MS)
     expect(sendFn).toHaveBeenCalledTimes(1)
   })
 
@@ -147,7 +153,7 @@ describe('startNoiseGeneration / stopNoiseGeneration', () => {
     vi.useFakeTimers()
     const sendFn = vi.fn()
     startNoiseGeneration(sendFn)
-    vi.advanceTimersByTime(NOISE_INTERVAL_MS)
+    vi.advanceTimersByTime(NOISE_MIN_INTERVAL_MS)
 
     const sent = sendFn.mock.calls[0][0] as Record<string, unknown>
     expect(isNoiseMessage(sent)).toBe(true)
@@ -159,12 +165,12 @@ describe('startNoiseGeneration / stopNoiseGeneration', () => {
     vi.useFakeTimers()
     const sendFn = vi.fn()
     startNoiseGeneration(sendFn)
-    vi.advanceTimersByTime(NOISE_INTERVAL_MS)
+    vi.advanceTimersByTime(NOISE_MIN_INTERVAL_MS)
     expect(sendFn).toHaveBeenCalledTimes(1)
 
     stopNoiseGeneration()
     startNoiseGeneration(sendFn)
-    vi.advanceTimersByTime(NOISE_INTERVAL_MS)
+    vi.advanceTimersByTime(NOISE_MIN_INTERVAL_MS)
     expect(sendFn).toHaveBeenCalledTimes(2)
   })
 })
