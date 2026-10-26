@@ -150,7 +150,7 @@ export default function SignalingSettings({ onClose }: Props) {
                   value={strategies[s.key].urls}
                   onChange={(e) => setStrategy(s.key, { urls: e.target.value })}
                   placeholder={`wss://...\nwss://...`}
-                  rows={Math.min(6, Math.max(2, strategies[s.key].urls.split('\n').filter(Boolean).length || 2))}
+                  rows={Math.min(3, Math.max(2, strategies[s.key].urls.split('\n').filter(Boolean).length || 2))}
                   spellCheck={false}
                   style={{
                     width: '100%',
