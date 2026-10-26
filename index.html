@@ -7,7 +7,16 @@
     <link rel="apple-touch-icon" sizes="512x512" href="./icon-512.png" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' wss://test.mosquitto.org:8081 wss://broker.emqx.io wss://broker.emqx.io:8084 wss://broker-cn.emqx.io wss://broker-cn.emqx.io:8084 wss://public.cloud.shiftr.io wss://broker.hivemq.com wss://broker.hivemq.com:8884 https://tracker.openwebtorrent.com wss://tracker.openwebtorrent.com https://tracker.btorrent.xyz wss://tracker.btorrent.xyz https://tracker.webtorrent.dev wss://tracker.webtorrent.dev wss://tracker.files.fm:7073 https://tracker.files.fm:7073; img-src 'self' data: blob:; font-src 'self' data:; object-src 'none'; base-uri 'self';" />
+    <!--
+      connect-src 说明（信令可自托管）：
+      原 CSP 把公共信令地址逐个白名单写死。为支持「用户自托管 / 自定义信令节点」
+      （见 src/config/signaling.ts 与设置页），这里在保留原公共节点白名单之外，
+      额外放开 wss: 与 https: 通配，使任意用户自托管的 WebSocket / HTTPS 信令
+      均可连接。注意：信令服务器本就不被信任（只做发现/建连，不接触消息明文），
+      因此放开连接目标是安全的，反而降低了对少数公共服务的依赖。脚本源仍严格锁定
+      为 'self'，杜绝加载外部脚本。
+    -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' wss: https: wss://test.mosquitto.org:8081 wss://broker.emqx.io wss://broker.emqx.io:8084 wss://broker-cn.emqx.io wss://broker-cn.emqx.io:8084 wss://public.cloud.shiftr.io wss://broker.hivemq.com wss://broker.hivemq.com:8884 https://tracker.openwebtorrent.com wss://tracker.openwebtorrent.com https://tracker.btorrent.xyz wss://tracker.btorrent.xyz https://tracker.webtorrent.dev wss://tracker.webtorrent.dev wss://tracker.files.fm:7073 https://tracker.files.fm:7073; img-src 'self' data: blob:; font-src 'self' data:; object-src 'none'; base-uri 'self';" />
     <meta name="theme-color" content="#0a0a1a" />
     <meta name="description" content="Nymir - 匿名树洞阅读即焚应用" />
     <meta name="apple-mobile-web-app-capable" content="yes" />

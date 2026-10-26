@@ -681,6 +681,22 @@ class E2EEManager {
   }
 
   /**
+   * 导出自己的身份公钥（供带外交换 UI 序列化 / 生成二维码）。
+   * 身份未加载（未解锁）时返回 null。
+   */
+  getOwnIdentityExport(): IdentityKeys | null {
+    return this.getOwnIdentityKeys()
+  }
+
+  /**
+   * 导出某 peer 的身份公钥（供带外交换 UI 预填对方身份）。
+   * 尚未交换公钥时返回 null。
+   */
+  getPeerIdentityExport(peerId: string): IdentityKeys | null {
+    return this.getPeerIdentityKeys(peerId)
+  }
+
+  /**
    * 计算与某 peer 的共同安全码指纹。
    * 任一侧公钥未就绪时返回 null（例如尚未完成公钥交换）。
    */

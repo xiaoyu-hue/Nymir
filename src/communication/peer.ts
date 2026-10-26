@@ -6,45 +6,13 @@ import { e2eeManager } from '../security/e2eeManager'
 import { connectionMonitor } from './monitor'
 import { log } from '../utils/logger'
 import { STRATEGY_FALLBACK_MS } from '../constants'
+import { loadSignalingConfig } from '../config/signaling'
 
 const APP_ID = 'nymir_treehole_v1'
 
-// 信令冗余配置：同时连接多个公共信令服务器，挂掉任意几个仍有可用通道。
-// 对比 trystero 默认（mqtt 默认列表含 5 个 broker 但 redundancy=4，hivemq 被截断未启用；
-// torrent 默认 5 个 tracker 但只启用前 3 个）——这里显式启用全部并拉满冗余。
-// 均为公共免费服务；国内可达性较好的 emqx/emqx-cn 排前。
-const RELAY_URLS_MQTT = [
-  'wss://broker.emqx.io:8084/mqtt',
-  'wss://broker-cn.emqx.io:8084/mqtt',
-  'wss://broker.hivemq.com:8884/mqtt',
-  'wss://test.mosquitto.org:8081/mqtt',
-  'wss://public:public@public.cloud.shiftr.io',
-]
-const RELAY_REDUNDANCY_MQTT = 5
-
-const RELAY_URLS_TORRENT = [
-  'wss://tracker.openwebtorrent.com',
-  'wss://open.ftorrent.com',
-  'wss://tracker.webtorrent.dev',
-  'wss://tracker.btorrent.xyz',
-  'wss://tracker.files.fm:7073/announce',
-]
-const RELAY_REDUNDANCY_TORRENT = 5
-
-// Nostr 公共 relay（均来自 @trystero-p2p/nostr 默认列表，作者维护验证过）。
-// 显式指定一组知名公共 relay 而非依赖 appId 打乱选择，保证连接目标可预期；
-// redundancy=5 表示同时保持 5 条 relay 连接，挂掉部分仍有可用通道。
-const RELAY_URLS_NOSTR = [
-  'wss://nos.lol',
-  'wss://nostr-relay.corb.net',
-  'wss://nostr.data.haus',
-  'wss://basspistol.org',
-  'wss://bucket.coracle.social',
-  'wss://chorus.pjv.me',
-  'wss://koru.bitcointxoko.org',
-  'wss://nostr-01.yakihonne.com',
-]
-const RELAY_REDUNDANCY_NOSTR = 5
+// 信令地址不再硬编码：默认公共配置见 src/config/signaling.ts（DEFAULT_SIGNALING），
+// 用户可在「设置 → 信令」中覆盖为自托管 / 更可信的节点；空 URL 列表即禁用该策略。
+// 公共 STUN 仍硬编码（仅用于 NAT 穿透，不中转数据；国内可用地址已验证）。
 
 export type PeerCallback = (peerId: string) => void
 export type MessageCallback<T> = (data: T, info: { peerId: string }) => void
@@ -165,12 +133,15 @@ export class PeerManager {
   private joinWithStrategy(roomId: string, strategy: Strategy): Room {
     const joinFn =
       strategy === 'torrent' ? joinTorrent : strategy === 'nostr' ? joinNostr : joinMqtt
+    // 信令配置来自可持久化的用户配置（src/config/signaling.ts），
+    // 默认走公共节点，用户可改为自托管节点。
+    const signaling = loadSignalingConfig()
     const relayConfig =
       strategy === 'torrent'
-        ? { urls: RELAY_URLS_TORRENT, redundancy: RELAY_REDUNDANCY_TORRENT }
+        ? signaling.torrent
         : strategy === 'nostr'
-          ? { urls: RELAY_URLS_NOSTR, redundancy: RELAY_REDUNDANCY_NOSTR }
-          : { urls: RELAY_URLS_MQTT, redundancy: RELAY_REDUNDANCY_MQTT }
+          ? signaling.nostr
+          : signaling.mqtt
     // 国内可用的公共 STUN（trystero 默认用 Google STUN，在大陆网络下不通）。
     // 这些地址来自多源交叉验证（小米/B站/腾讯），仅用于 NAT 穿透，不中转数据。
     const room = joinFn(
@@ -266,9 +237,10 @@ export class PeerManager {
 
   join(roomId: string): void {
     if (this.room) this.leave()
-    // 默认走 MQTT：移动网络上 WebTorrent tracker 常被干扰；MQTT 公共 broker 更稳
-    this.currentStrategy = 'mqtt'
-    this.room = this.joinWithStrategy(roomId, 'mqtt')
+    // 默认策略来自可配置的信令配置（默认 mqtt：移动网络下 WebTorrent tracker
+    // 常被干扰，MQTT 公共 broker 更稳；用户可在设置中改为 nostr/torrent 或自托管）。
+    this.currentStrategy = loadSignalingConfig().defaultStrategy
+    this.room = this.joinWithStrategy(roomId, this.currentStrategy)
     this.setupE2EEChannel()
     this.setupRoomMetaChannel()
     connectionMonitor.start()

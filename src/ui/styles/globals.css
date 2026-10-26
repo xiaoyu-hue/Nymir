@@ -1265,6 +1265,19 @@ select {
   filter: hue-rotate(-30deg) saturate(2);
 }
 
+/* 带外身份核对按钮（ChatView header） */
+.chat-oob-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: opacity 0.2s;
+}
+.chat-oob-btn:hover {
+  opacity: 1;
+}
+
 /* 密钥轮换结果横幅 */
 .rotate-banner {
   margin: 8px 12px 0;

@@ -20,6 +20,8 @@
 | [ADR-005](./0005-safety-code.md) | 安全码：15 位数字主验证 + emoji 视觉辅助 | Accepted |
 | [ADR-006](./0006-tofu-pin.md) | TOFU + 带外安全码核对，不做自动防中间人 | Accepted |
 | [ADR-007](./0007-verifiable-key-rotation.md) | 可验证密钥轮换（签名衔接协议，旧钥签新钥） | Accepted |
+| [ADR-008](./0008-ephemeral-forward-secrecy.md) | 临时 X25519 会话公钥，提供弱前向保密 | Accepted |
+| [ADR-009](./0009-self-hosted-signaling-and-oob-verification.md) | 信令节点可自配 / 自托管 + 带外身份核对 | Accepted |
 
 ---
 
