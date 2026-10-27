@@ -7,6 +7,33 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 1.8.0 - 2026-10-27 (Mobile UI polish: big-company feel, M1–M7)
+
+### ✨ Features
+
+- **Bottom Tab navigation**: persistent `BottomTabBar` with `Conversation` / `Settings` sections, matching mainstream mobile IM conventions and lowering the learning curve
+- **Unified secondary surfaces**: backup, signaling, about, and identity verification now share a `BottomSheet` half-screen drawer with swipe-down-to-close, preserving chat context
+- **Icon system upgrade**: introduced `lucide-react` to replace scattered emoji icons — crisp vectors, theme-tintable, consistent across platforms
+- **Glassmorphism toned down**: reduced blur radius (`glass.css` 20/10/40 → 14/8/24) to rebalance texture against body-text readability
+- **First-run onboarding (Welcome)**: shown only on first use (no lock password set), explaining the core selling points — backend-free / end-to-end encryption / burn-after-reading — before password setup
+- **Pre-connection identity verification (M7)**: Settings gains an "Identity & Safety Code" entry that lets you share your identity string/QR or paste a peer's string to compute the safety code **before connecting** — no peer online, no room join required (delivers the ADR-006/009 anti-MITM promise)
+
+### 🐛 Fixes
+
+- **Dependency vulnerabilities (OSV red cross)**: upgraded `vitest` / `@vitest/coverage-v8` to `5.0.5`, eliminating GHSA-qxg6-89mg-rqv8 (code injection) and GHSA-xp26-3454-mjgp (path traversal); dev dependencies only, no breaking change
+
+### 📝 Docs
+
+- Added [ADR-0010](./docs/adr/0010-mobile-ui-redesign.md): decisions on the mobile redesign — navigation model, BottomSheet pattern, lucide icons, glassmorphism reduction, Welcome onboarding, pre-connection identity entry
+- ADR-0010 also clarifies that `BurnMode.SCHEDULED` is **not dead code** (it is receive-side protocol compatibility for burn-after-reading old/peer messages); retained and documented to avoid accidental removal that would leave old messages unburned
+
+### 🧪 Tests
+
+- Full suite: 317 cases passing; typecheck, lint, and build all green
+- `OutOfBandVerify.test.tsx` and `burn.test.ts` (scheduled segment retained) cover identity verification and burn compatibility
+
+---
+
 ## 1.7.0 - 2026-10-26 (Security hardening: traffic randomization / weak forward secrecy / self-hostable signaling / offline verification)
 
 ### ✨ Features

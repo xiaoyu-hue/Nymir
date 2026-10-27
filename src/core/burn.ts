@@ -8,7 +8,9 @@ export function shouldDestroy(msg: Message): boolean {
     const elapsed = Date.now() - msg.timestamp
     if (elapsed >= msg.burnAfter * 1000) return true
   }
-  // scheduled：仅用于接收旧版/对端客户端发来的消息，当前 UI 不发送此模式
+  // scheduled：仅用于接收旧版/对端客户端发来的消息，当前 UI 不发送此模式。
+  // 注意：这是接收端协议兼容逻辑（非死代码），不可删除——删除会让旧客户端发来的
+  // scheduled 消息永不销毁，留下明文残留。详见 docs/adr/0010-mobile-ui-redesign.md。
   if (msg.burnMode === 'scheduled' && msg.burnAt) {
     if (Date.now() >= msg.burnAt) return true
   }
