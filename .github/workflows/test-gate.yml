@@ -44,7 +44,14 @@ jobs:
     name: E2E Smoke (三端：Chromium 桌面 + WebKit 手机/平板)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    continue-on-error: true
+    # 官方 Playwright 镜像已预装 Chromium/WebKit/Firefox 本体与全部系统库
+    # （libflite、libmanette、libgstcodecparsers、libavif、libGLESv2 等），
+    # 从而彻底绕开 runner 上极慢的 apt 源（实测 5.5 分钟只下完 10 个包，
+    # `playwright install-deps` 无论给多少 timeout 都装不完）。
+    # ⚠️ 镜像 tag 必须与 package.json 的 @playwright/test 版本严格一致：升级 Playwright 时同步改这里。
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --ipc=host
 
     steps:
       - name: Checkout
@@ -58,24 +65,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Cache Playwright browsers
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-playwright-
-
-      - name: Install Playwright browsers
-        # 只下浏览器本体（走 actions/cache，命中时秒过），不碰 apt
-        run: npx playwright install chromium webkit
-
-      - name: Install Playwright system deps (best effort)
-        # runner 的 apt 源（azure.archive.ubuntu.com）近期极慢：实测 5.5 分钟才下完 10 个包
-        # （fonts-wqy-zenhei 7.4MB、libavcodec60 5.8MB 等），`--with-deps` 会把 job 拖死。
-        # 这里只做尽力而为的补装：最多 4 分钟，超时就放弃，让 E2E 照常跑、用结果说话。
-        run: timeout -k 10s 240s npx playwright install-deps chromium webkit || echo "::warning::系统依赖安装超时/失败，E2E 可能因缺少系统库失败"
 
       - name: Run E2E
         run: npx playwright test
