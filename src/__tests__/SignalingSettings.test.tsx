@@ -14,7 +14,7 @@ function renderPanel() {
   localStorage.setItem('nymir-lang', 'zh')
   return render(
     <I18nProvider>
-      <SignalingSettings onClose={() => {}} />
+      <SignalingSettings open onClose={() => {}} />
     </I18nProvider>,
   )
 }

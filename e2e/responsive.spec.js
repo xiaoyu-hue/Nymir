@@ -16,6 +16,8 @@ function collectBreaches(page) {
 test('响应式: 三端首页正常渲染且无页面错误', async ({ page }) => {
   const breaches = collectBreaches(page);
   await page.goto('/');
+  // M6 新增 Welcome 引导页：首次访问（未设密码）会先显示，点「开始使用」进入 LockScreen
+  await page.locator('.welcome-cta').first().click({ timeout: 3000 }).catch(() => {});
   await expect(page.locator('.lock-input').first()).toBeVisible({ timeout: 20000 });
   // 密码输入框在视口内可见（不被裁切）
   const box = await page.locator('.lock-input').first().boundingBox();

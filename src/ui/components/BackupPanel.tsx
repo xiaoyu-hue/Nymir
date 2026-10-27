@@ -1,14 +1,15 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { exportBackup, downloadBackup, importBackup, verifyBackupPassword } from '../../persistence/backup'
 import { useI18n } from '../../i18n'
 import { MIN_PASSWORD_LENGTH } from '../../constants'
-import GlassCard from './GlassCard'
+import BottomSheet from './BottomSheet'
 
 type Props = {
+  open: boolean
   onClose: () => void
 }
 
-export default function BackupPanel({ onClose }: Props) {
+export default function BackupPanel({ open, onClose }: Props) {
   const { t } = useI18n()
   const [status, setStatus] = useState('')
   const [hasError, setHasError] = useState(false)
@@ -18,18 +19,6 @@ export default function BackupPanel({ onClose }: Props) {
   const [mode, setMode] = useState<'export' | 'import'>('export')
 
   const isBusy = loading || importing
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') onClose()
-  }, [onClose])
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [onClose])
 
   const handleExport = async () => {
     if (!password || password.length < MIN_PASSWORD_LENGTH) {
@@ -98,78 +87,70 @@ export default function BackupPanel({ onClose }: Props) {
   }
 
   return (
-    <div className="overlay-enter backup-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label={t.backup.title} onKeyDown={handleKeyDown}>
-      <GlassCard
-        variant="strong"
-        className="backup-panel modal-enter"
-        onClick={(e) => e?.stopPropagation()}
-      >
-        <div className="backup-card">
-          <h2 className="backup-heading">{t.backup.title}</h2>
-
-          <div className="backup-mode-tabs">
-            <button
-              onClick={() => setMode('export')}
-              className={`backup-mode-tab ${mode === 'export' ? 'active' : ''}`}
-            >
-              {t.backup.export}
-            </button>
-            <button
-              onClick={() => setMode('import')}
-              className={`backup-mode-tab ${mode === 'import' ? 'active' : ''}`}
-            >
-              {t.backup.import}
-            </button>
-          </div>
-
-          <div className="backup-password-group">
-            <label htmlFor="backup-password" className="backup-label">
-              {t.backup.backupPassword}
-            </label>
-            <input
-              id="backup-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={t.backup.passwordPlaceholder}
-              className="backup-input"
-              aria-required="true"
-            />
-          </div>
-
-          <div className="backup-actions">
-            {mode === 'export' ? (
-              <button
-                onClick={handleExport}
-                disabled={isBusy || !password}
-                className={`backup-submit ${password ? 'ready' : ''}`}
-                style={{ opacity: loading ? 0.7 : 1 }}
-              >
-                {loading ? t.backup.exporting : t.backup.export}
-              </button>
-            ) : (
-              <button
-                onClick={handleImport}
-                disabled={isBusy || !password}
-                className={`backup-submit ${password ? 'ready' : ''}`}
-                style={{ opacity: importing ? 0.7 : 1 }}
-              >
-                {importing ? t.backup.importing : t.backup.import}
-              </button>
-            )}
-
-            {status && (
-              <p className={`pop-in backup-status ${hasError ? 'error' : 'success'}`} aria-live="polite">
-                {status}
-              </p>
-            )}
-          </div>
-
-          <button onClick={onClose} className="backup-close">
-            {t.backup.close}
+    <BottomSheet open={open} onClose={onClose} title={t.backup.title}>
+      <div className="backup-card">
+        <div className="backup-mode-tabs">
+          <button
+            onClick={() => setMode('export')}
+            className={`backup-mode-tab ${mode === 'export' ? 'active' : ''}`}
+          >
+            {t.backup.export}
+          </button>
+          <button
+            onClick={() => setMode('import')}
+            className={`backup-mode-tab ${mode === 'import' ? 'active' : ''}`}
+          >
+            {t.backup.import}
           </button>
         </div>
-      </GlassCard>
-    </div>
+
+        <div className="backup-password-group">
+          <label htmlFor="backup-password" className="backup-label">
+            {t.backup.backupPassword}
+          </label>
+          <input
+            id="backup-password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={t.backup.passwordPlaceholder}
+            className="backup-input"
+            aria-required="true"
+          />
+        </div>
+
+        <div className="backup-actions">
+          {mode === 'export' ? (
+            <button
+              onClick={handleExport}
+              disabled={isBusy || !password}
+              className={`backup-submit ${password ? 'ready' : ''}`}
+              style={{ opacity: loading ? 0.7 : 1 }}
+            >
+              {loading ? t.backup.exporting : t.backup.export}
+            </button>
+          ) : (
+            <button
+              onClick={handleImport}
+              disabled={isBusy || !password}
+              className={`backup-submit ${password ? 'ready' : ''}`}
+              style={{ opacity: importing ? 0.7 : 1 }}
+            >
+              {importing ? t.backup.importing : t.backup.import}
+            </button>
+          )}
+
+          {status && (
+            <p className={`pop-in backup-status ${hasError ? 'error' : 'success'}`} aria-live="polite">
+              {status}
+            </p>
+          )}
+        </div>
+
+        <button onClick={onClose} className="backup-close">
+          {t.backup.close}
+        </button>
+      </div>
+    </BottomSheet>
   )
 }

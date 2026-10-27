@@ -31,7 +31,7 @@ function renderOob() {
   localStorage.setItem('nymir-lang', 'zh')
   return render(
     <I18nProvider>
-      <OutOfBandVerify peerId={null} onClose={() => {}} />
+      <OutOfBandVerify open peerId={null} onClose={() => {}} />
     </I18nProvider>,
   )
 }

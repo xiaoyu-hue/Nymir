@@ -7,13 +7,16 @@ import { error } from './utils/logger'
 import Starfield from './ui/components/Starfield'
 import RoomPanel from './ui/components/RoomPanel'
 import InstallPrompt from './ui/components/InstallPrompt'
+import BottomTabBar, { type MainTab } from './ui/components/BottomTabBar'
+import SettingsPage from './ui/components/SettingsPage'
+import { Plus, TriangleAlert } from 'lucide-react'
+import { ToastProvider } from './ui/components/Toast'
 import './ui/styles/globals.css'
 import './ui/styles/qr.css'
 
 const ChatView = lazy(() => import('./ui/components/ChatView'))
-const BackupPanel = lazy(() => import('./ui/components/BackupPanel'))
-const SignalingSettings = lazy(() => import('./ui/components/SignalingSettings'))
 const LockScreen = lazy(() => import('./ui/components/LockScreen'))
+import Welcome from './ui/components/Welcome'
 
 const LoadingFallback = () => (
   <div role="status" aria-live="polite" className="app-loading">
@@ -28,10 +31,10 @@ export const useKeyboard = () => useContext(KeyboardContext)
 
 function AppContent() {
   const { inRoom } = useRoom()
-  const { t, toggleLang } = useI18n()
-  const [showBackup, setShowBackup] = useState(false)
-  const [showSignaling, setShowSignaling] = useState(false)
+  const { t } = useI18n()
+  const [activeTab, setActiveTab] = useState<MainTab>('conversation')
   const [locked, setLocked] = useState(true)
+  const [welcomeDone, setWelcomeDone] = useState(false)
   const [securityReady, setSecurityReady] = useState(false)
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   const [viewportHeight, setViewportHeight] = useState('100dvh')
@@ -141,6 +144,16 @@ function AppContent() {
   }
 
   if (locked) {
+    // 首次使用（尚未设置锁屏密码）时，先显示一次性欢迎引导，
+    // 点「开始使用」后进入锁屏密码设置，设置完成后 isSetup=true 不再出现
+    if (!welcomeDone && !securityManager.isSetup) {
+      return (
+        <>
+          <Starfield />
+          <Welcome onDone={() => setWelcomeDone(true)} />
+        </>
+      )
+    }
     return (
       <>
         <Starfield />
@@ -163,88 +176,44 @@ function AppContent() {
   if (identityError) {
     return (
       <div className="overlay-enter app-loading identity-error-card">
-        <h2>⚠️ {t.error.identityErrorTitle}</h2>
+        <h2><TriangleAlert size={20} aria-hidden="true" style={{ verticalAlign: '-3px', marginRight: 6 }} />{t.error.identityErrorTitle}</h2>
         <p>{t.error.identityErrorDesc}</p>
       </div>
     )
   }
 
   return (
-      <KeyboardContext.Provider value={{ keyboardOpen, setKeyboardOpen, viewportHeight }}>
+    <KeyboardContext.Provider value={{ keyboardOpen, setKeyboardOpen, viewportHeight }}>
       <div className="app-root">
         <Starfield />
 
-        {!inRoom ? (
-          <RoomPanel onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} error={roomError} />
+        {activeTab === 'conversation' ? (
+          !inRoom ? (
+            <RoomPanel onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} error={roomError} />
+          ) : (
+            <Suspense fallback={<LoadingFallback />}>
+              <ChatView />
+            </Suspense>
+          )
         ) : (
-          <Suspense fallback={<LoadingFallback />}>
-            <ChatView />
-          </Suspense>
+          <SettingsPage />
         )}
 
-        {/* Action bar - top right, safe area aware, hidden when in room */}
         {!keyboardOpen && !inRoom && (
-          <div className="app-action-bar">
-            <button
-              onClick={() => securityManager.lock()}
-              aria-label={t.security.locked}
-              className="app-icon-btn"
-              title={t.security.locked}
-            >
-              🔒
-            </button>
-            <button
-              onClick={toggleLang}
-              aria-label={t.nav.switchLang}
-              className="app-icon-btn"
-            >
-              {t.nav.switchLang}
-            </button>
-            <button
-              onClick={() => setShowSignaling(true)}
-              aria-label={t.signaling.title}
-              className="app-icon-btn"
-              title={t.signaling.title}
-            >
-              {'⚙️'}
-            </button>
-          </div>
+          <BottomTabBar active={activeTab} onChange={setActiveTab} />
         )}
 
-        {/* Backup button - hidden when keyboard open or in room */}
-        {!keyboardOpen && !inRoom && (
+        {!keyboardOpen && activeTab === 'conversation' && !inRoom && (
           <button
-            onClick={() => setShowBackup(true)}
-            className="app-backup-btn"
-            title={t.backup.title}
+            className="app-fab"
+            onClick={() => {
+              setActiveTab('conversation')
+              window.dispatchEvent(new CustomEvent('nymir:focusCreate'))
+            }}
+            aria-label={t.nav.newChat}
           >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
+            <Plus aria-hidden="true" />
           </button>
-        )}
-
-        {showBackup && (
-          <Suspense fallback={<LoadingFallback />}>
-            <BackupPanel onClose={() => setShowBackup(false)} />
-          </Suspense>
-        )}
-
-        {showSignaling && (
-          <Suspense fallback={<LoadingFallback />}>
-            <SignalingSettings onClose={() => setShowSignaling(false)} />
-          </Suspense>
         )}
 
         {!inRoom && <InstallPrompt />}
@@ -256,7 +225,9 @@ function AppContent() {
 export default function App() {
   return (
     <I18nProvider>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </I18nProvider>
   )
 }

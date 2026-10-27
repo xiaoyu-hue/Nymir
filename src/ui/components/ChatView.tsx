@@ -1,4 +1,19 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import {
+  ArrowLeft,
+  MoreVertical,
+  Handshake,
+  ShieldCheck,
+  KeyRound,
+  Timer,
+  Copy,
+  LogOut,
+  Check,
+  TriangleAlert,
+  CircleCheck,
+  CircleX,
+  MessageCircle,
+} from 'lucide-react'
 import type { Message, BurnConfig } from '../../core/types'
 import { BurnMode } from '../../core/types'
 import { messageManager } from '../../core/message'
@@ -7,13 +22,14 @@ import { peerManager } from '../../communication/peer'
 import { useRoom } from '../hooks/useRoom'
 import { useI18n } from '../../i18n'
 import { useKeyboard } from '../../App'
-import { COPY_FEEDBACK_MS } from '../../constants'
 import { error } from '../../utils/logger'
 import { e2eeManager, type VerificationState } from '../../security/e2eeManager'
 import GlassCard from './GlassCard'
 import MessageBubble from './MessageBubble'
 import SafetyCheckDialog from './SafetyCheckDialog'
 import OutOfBandVerify from './OutOfBandVerify'
+import BottomSheet from './BottomSheet'
+import { useToast } from './Toast'
 import { useConfirm } from './useConfirm'
 
 export default function ChatView() {
@@ -21,13 +37,15 @@ export default function ChatView() {
   const { t } = useI18n()
   const { keyboardOpen, viewportHeight } = useKeyboard()
   const { confirm, ConfirmDialog } = useConfirm()
+  const { show: showToast } = useToast()
   const [messages, setMessages] = useState<Message[]>(() =>
     messageManager.getMessages(),
   )
   const [input, setInput] = useState('')
   const [burnMode, setBurnMode] = useState<BurnMode>(BurnMode.PERSIST)
   const [burnAfter, setBurnAfter] = useState(60)
-  const [copied, setCopied] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [burnOpen, setBurnOpen] = useState(false)
   const [safetyOpen, setSafetyOpen] = useState(false)
   const [oobOpen, setOobOpen] = useState(false)
   const [verifyState, setVerifyState] = useState<VerificationState>('unverified')
@@ -155,21 +173,22 @@ export default function ChatView() {
     ta.style.height = Math.min(ta.scrollHeight, 120) + 'px'
   }, [])
 
-  const handleLeave = useCallback(() => {
-    roomManager.leaveRoom()
-  }, [])
+  const handleLeaveConfirm = useCallback(async () => {
+    setMenuOpen(false)
+    const ok = await confirm(t.chat.leaveConfirm)
+    if (ok) roomManager.leaveRoom()
+  }, [confirm, t])
 
   const handleCopyCode = useCallback(async () => {
     const roomId = roomManager.room?.id
     if (!roomId) return
     try {
       await navigator.clipboard.writeText(roomId)
-      setCopied(true)
-      setTimeout(() => setCopied(false), COPY_FEEDBACK_MS)
+      showToast(t.room.copied, 'success')
     } catch {
       // Clipboard API not available (non-secure context)
     }
-  }, [])
+  }, [showToast, t])
 
   const handleDestroy = useCallback(() => {
     setMessages(messageManager.getMessages())
@@ -184,10 +203,16 @@ export default function ChatView() {
       {/* Header */}
       <GlassCard variant="strong" className="chat-header">
         <div className="chat-header-inner">
+          <button
+            onClick={handleLeaveConfirm}
+            className="chat-icon-btn"
+            aria-label={t.chat.back}
+            title={t.chat.back}
+          >
+            <ArrowLeft aria-hidden="true" />
+          </button>
           <div className="chat-header-left">
             <div className="chat-header-name">{room?.name ?? t.room.join}</div>
-          </div>
-          <div className="chat-header-right">
             <div className="chat-header-status">
               <div className={`chat-status-dot ${status}`} aria-hidden="true" />
               <span className="chat-status-text">
@@ -198,51 +223,84 @@ export default function ChatView() {
                     : t.room.disconnected}
               </span>
             </div>
-            {peerId && (
-              <button
-                onClick={() => setSafetyOpen(true)}
-                className={`chat-safety-btn ${verifyState}`}
-                aria-label={t.safety.title}
-                title={
-                  verifyState === 'verified'
-                    ? t.safety.verified
-                    : verifyState === 'changed'
-                      ? t.safety.changed
-                      : t.safety.unconfirmed
-                }
-              >
-                {verifyState === 'changed' ? '⚠️' : '🛡️'}
-              </button>
-            )}
-            {peerId && (
-              <button
-                onClick={handleRotateKeys}
-                className={`chat-rotate-btn ${rotateState}`}
-                aria-label={t.keyRotation.title}
-                title={t.keyRotation.title}
-                disabled={rotateState === 'busy'}
-              >
-                {rotateState === 'busy' ? '⏳' : '🔑'}
-              </button>
-            )}
+          </div>
+          <div className="chat-header-right">
             {/* 带外核对：不依赖对端在线，未连接时也应可用（ADR-0009） */}
             <button
               onClick={() => setOobOpen(true)}
-              className="chat-oob-btn"
+              className="chat-icon-btn chat-oob-btn"
               aria-label={t.oob.title}
               title={t.oob.title}
             >
-              {'🤝'}
+              <Handshake aria-hidden="true" />
             </button>
             <button
-              onClick={handleLeave}
-              className="chat-leave-btn"
+              onClick={() => setMenuOpen(true)}
+              className="chat-icon-btn"
+              aria-label={t.chat.menuTitle}
+              title={t.chat.menuTitle}
             >
-              {t.room.leave}
+              <MoreVertical aria-hidden="true" />
             </button>
           </div>
         </div>
       </GlassCard>
+
+      {/* 对话操作菜单 */}
+      <BottomSheet open={menuOpen} onClose={() => setMenuOpen(false)} title={t.chat.menuTitle}>
+        <div className="sheet-menu">
+          {room?.id && (
+            <button className="settings-row" onClick={handleCopyCode}>
+              <Copy className="settings-row-icon" aria-hidden="true" />
+              <span className="settings-row-label">{t.room.roomCode}</span>
+              <span className="menu-code-value">{room.id}</span>
+            </button>
+          )}
+          {peerId && (
+            <button
+              className="settings-row"
+              aria-label={t.safety.title}
+              onClick={() => {
+                setMenuOpen(false)
+                setSafetyOpen(true)
+              }}
+            >
+              <ShieldCheck
+                className={`settings-row-icon ${verifyState === 'changed' ? 'danger' : ''}`}
+                aria-hidden="true"
+              />
+              <span className="settings-row-label">{t.safety.title}</span>
+              <span className={`settings-row-value ${verifyState === 'changed' ? 'danger' : ''}`}>
+                {verifyState === 'verified'
+                  ? t.chat.verifyOk
+                  : verifyState === 'changed'
+                    ? t.chat.verifyChanged
+                    : t.safety.unconfirmed}
+              </span>
+            </button>
+          )}
+          {peerId && (
+            <button
+              className="settings-row"
+              aria-label={t.keyRotation.title}
+              onClick={() => {
+                setMenuOpen(false)
+                handleRotateKeys()
+              }}
+            >
+              <KeyRound className="settings-row-icon" aria-hidden="true" />
+              <span className="settings-row-label">{t.keyRotation.title}</span>
+              <span className="settings-row-value">
+                {rotateState === 'busy' ? t.keyRotation.busy : ''}
+              </span>
+            </button>
+          )}
+          <button className="settings-row settings-row-danger" onClick={handleLeaveConfirm}>
+            <LogOut className="settings-row-icon" aria-hidden="true" />
+            <span className="settings-row-label">{t.room.leave}</span>
+          </button>
+        </div>
+      </BottomSheet>
 
       {/* 未核对安全码时的黄色提示条（可点击直接打开核对弹窗） */}
       {peerId && verifyState === 'unverified' && (
@@ -258,7 +316,7 @@ export default function ChatView() {
             }
           }}
         >
-          <span aria-hidden="true">⚠️</span>
+          <TriangleAlert size={16} aria-hidden="true" />
           <span>{t.safety.unverifiedBanner}</span>
         </div>
       )}
@@ -269,32 +327,13 @@ export default function ChatView() {
           className={`rotate-banner ${rotateState === 'success' ? 'rotate-banner-ok' : 'rotate-banner-fail'}`}
           role="status"
         >
-          <span aria-hidden="true">{rotateState === 'success' ? '✅' : '❌'}</span>
+          {rotateState === 'success' ? (
+            <CircleCheck size={16} aria-hidden="true" />
+          ) : (
+            <CircleX size={16} aria-hidden="true" />
+          )}
           <span>
             {rotateState === 'success' ? t.keyRotation.success : t.keyRotation.fail}
-          </span>
-        </div>
-      )}
-
-      {/* Room code - hidden when keyboard open */}
-      {room?.id && !keyboardOpen && (
-        <div
-          className="room-code-bar"
-          onClick={handleCopyCode}
-          role="button"
-          tabIndex={0}
-          aria-label={t.room.copy}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              handleCopyCode()
-            }
-          }}
-        >
-          <span className="room-code-label">{t.room.roomCode}</span>
-          <span className="room-code-value">{room.id}</span>
-          <span className={`pop-in room-code-status ${copied ? 'copied' : 'default'}`}>
-            {copied ? t.room.copied : t.room.copy}
           </span>
         </div>
       )}
@@ -303,7 +342,7 @@ export default function ChatView() {
       <div className="chat-messages">
         {messages.length === 0 && (
           <div className="chat-empty">
-            <div className="chat-empty-icon">💬</div>
+            <MessageCircle size={44} strokeWidth={1.5} className="chat-empty-icon" aria-hidden="true" />
             <span>{t.room.empty}</span>
           </div>
         )}
@@ -316,40 +355,30 @@ export default function ChatView() {
       {/* Input */}
       <GlassCard variant="strong" className="chat-input-area">
         <div className={`chat-input-inner ${keyboardOpen ? 'compressed' : ''}`}>
-          {/* Burn mode selector - hidden when keyboard is open */}
-          {!keyboardOpen && (
-            <div className="burn-mode-row">
-              {[
-                { mode: BurnMode.PERSIST, label: t.burn.persist },
-                { mode: BurnMode.READ_ONCE, label: t.burn.readOnce },
-                { mode: BurnMode.TIMED, label: t.burn.timed },
-              ].map(({ mode, label }) => (
-                <button
-                  key={mode}
-                  onClick={() => setBurnMode(mode)}
-                  className={`burn-mode-btn ${burnMode === mode ? 'active' : ''}`}
-                >
-                  {label}
-                </button>
-              ))}
-              {burnMode === BurnMode.TIMED && (
-                <select
-                  value={burnAfter}
-                  onChange={(e) => setBurnAfter(Number(e.target.value))}
-                  className="burn-timer-select"
-                >
-                  <option value={10}>{t.burn.timer10s}</option>
-                  <option value={30}>{t.burn.timer30s}</option>
-                  <option value={60}>{t.burn.timer1m}</option>
-                  <option value={300}>{t.burn.timer5m}</option>
-                  <option value={600}>{t.burn.timer10m}</option>
-                </select>
-              )}
-            </div>
-          )}
-
           {/* Input row */}
           <div className="chat-input-row">
+            <button
+              type="button"
+              onClick={() => setBurnOpen(true)}
+              className={`chat-burn-btn burn-${burnMode}`}
+              aria-label={t.burn.title}
+              title={
+                burnMode === BurnMode.TIMED
+                  ? `${t.burn.timed} · ${
+                      burnAfter >= 60 ? `${burnAfter / 60} min` : `${burnAfter} s`
+                    }`
+                  : burnMode === BurnMode.READ_ONCE
+                    ? t.burn.readOnce
+                    : t.burn.persist
+              }
+            >
+              <Timer aria-hidden="true" />
+              {burnMode === BurnMode.TIMED && (
+                <span className="chat-burn-duration">
+                  {burnAfter >= 60 ? `${burnAfter / 60}m` : `${burnAfter}s`}
+                </span>
+              )}
+            </button>
             <textarea
               ref={textareaRef}
               value={input}
@@ -370,6 +399,47 @@ export default function ChatView() {
           </div>
         </div>
       </GlassCard>
+
+      {/* 阅后即焚模式选择 */}
+      <BottomSheet open={burnOpen} onClose={() => setBurnOpen(false)} title={t.burn.title}>
+        <div className="burn-sheet" role="radiogroup" aria-label={t.burn.title}>
+          {[
+            { mode: BurnMode.PERSIST, label: t.burn.persist, desc: t.burn.persistDesc },
+            { mode: BurnMode.READ_ONCE, label: t.burn.readOnce, desc: t.burn.readOnceDesc },
+            { mode: BurnMode.TIMED, label: t.burn.timed, desc: t.burn.timedDesc },
+          ].map(({ mode, label, desc }) => (
+            <button
+              key={mode}
+              onClick={() => setBurnMode(mode)}
+              className={`burn-option ${burnMode === mode ? 'active' : ''}`}
+              role="radio"
+              aria-checked={burnMode === mode}
+            >
+              <span className="burn-option-text">
+                <span className="burn-option-label">{label}</span>
+                <span className="burn-option-desc">{desc}</span>
+              </span>
+              {burnMode === mode && <Check className="burn-option-check" aria-hidden="true" />}
+            </button>
+          ))}
+          {burnMode === BurnMode.TIMED && (
+            <div className="burn-duration-row">
+              <span>{t.burn.duration}</span>
+              <select
+                value={burnAfter}
+                onChange={(e) => setBurnAfter(Number(e.target.value))}
+                className="burn-timer-select"
+              >
+                <option value={10}>{t.burn.timer10s}</option>
+                <option value={30}>{t.burn.timer30s}</option>
+                <option value={60}>{t.burn.timer1m}</option>
+                <option value={300}>{t.burn.timer5m}</option>
+                <option value={600}>{t.burn.timer10m}</option>
+              </select>
+            </div>
+          )}
+        </div>
+      </BottomSheet>
 
       {/* 离线/重连提示 */}
       {(status === 'reconnecting' || status === 'disconnected') && (
@@ -401,9 +471,12 @@ export default function ChatView() {
         }}
       />
 
-      {oobOpen && (
-        <OutOfBandVerify peerId={peerId} onClose={() => setOobOpen(false)} />
-      )}
+      {/* 带外身份核对抽屉 */}
+      <OutOfBandVerify
+        open={oobOpen}
+        peerId={peerId}
+        onClose={() => setOobOpen(false)}
+      />
 
       {/* 密钥轮换确认弹窗 */}
       <ConfirmDialog />

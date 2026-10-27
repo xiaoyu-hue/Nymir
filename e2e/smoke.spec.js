@@ -37,6 +37,8 @@ test('冒烟: 首页零错误、CSP 零违规、静态资源全部 200', async (
     });
   });
   await page.goto('/');
+  // M6 新增 Welcome 引导页：首次访问（未设密码）会先显示，点「开始使用」进入 LockScreen
+  await page.locator('.welcome-cta').first().click({ timeout: 3000 }).catch(() => {});
   // 首次访问：安全密码界面（LockScreen）出现
   await expect(page.locator('.lock-input').first()).toBeVisible({ timeout: 20000 });
   // 忽略 favicon 等非关键资源缺失（浏览器对图标请求容忍度差异大）
@@ -48,6 +50,8 @@ test('冒烟: 首页零错误、CSP 零违规、静态资源全部 200', async (
 test('冒烟: 首次设置密码 → 创建房间 → 进入聊天界面', async ({ page }) => {
   const breaches = collectBreaches(page);
   await page.goto('/');
+  // M6 新增 Welcome 引导页：首次访问（未设密码）会先显示，点「开始使用」进入 LockScreen
+  await page.locator('.welcome-cta').first().click({ timeout: 3000 }).catch(() => {});
   // 1) 设置密码（两个输入框一致）
   await expect(page.locator('.lock-input').first()).toBeVisible({ timeout: 20000 });
   await page.locator('.lock-input').nth(0).fill('e2e-pass-2026');
