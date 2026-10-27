@@ -127,6 +127,8 @@ const en: Translations = {
     aboutBody: 'Nymir is a backend-free, peer-to-peer (P2P) anonymous encrypted chat. Messages are end-to-end encrypted and stored only locally in your browser; no server retains them. The signaling server only helps discover and connect peers, and never sees message plaintext.',
     privacy: 'No cloud, no cross-device sync: to move devices, restore from a local encrypted backup file.',
     version: 'Version',
+    sourceCode: 'Source code (AGPL-3.0)',
+    sourceNote: 'Released under AGPL-3.0. The Corresponding Source is available here; if you modify it and offer it over a network, section 13 requires you to offer the source too.',
   },
   security: {
     setupTitle: 'Set Security Password',

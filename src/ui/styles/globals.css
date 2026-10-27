@@ -1499,6 +1499,20 @@ select {
   margin: 0;
 }
 
+.settings-about-source {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.settings-about-link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-all;
+}
+
 /* ========== 信令设置表单（BottomSheet 内） ========== */
 .signaling-body {
   display: flex;
