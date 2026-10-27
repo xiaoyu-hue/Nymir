@@ -21,7 +21,7 @@
 
 <br>
 
-**[🔗 在线体验（GitHub Pages 主站）](https://xiaoyu-hue.github.io/Nymir/) · [备用副站（Cloudflare Pages）](https://nymir.pages.dev/)**
+**[🔗 在线体验（Cloudflare Pages 主站）](https://nymir.pages.dev/) · [镜像副站（GitHub Pages）](https://xiaoyu-hue.github.io/Nymir/)**
 
 [![React](https://img.shields.io/badge/React_19-61DAFB?logo=react&logoColor=white&style=flat-square)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript_6-3178C6?logo=typescript&logoColor=white&style=flat-square)](https://www.typescriptlang.org)
