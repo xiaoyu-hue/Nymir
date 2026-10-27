@@ -29,7 +29,7 @@
 
 ### 🧪 测试
 
-- 全量测试：317 个用例通过；类型检查、lint、构建均通过
+- 全量测试：319 个用例通过；类型检查、lint、构建均通过
 - `OutOfBandVerify.test.tsx`、`burn.test.ts`（scheduled 段保留）覆盖身份核对与阅后即焚兼容逻辑
 
 ---

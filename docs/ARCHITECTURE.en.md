@@ -1,4 +1,4 @@
-# Nymir Technical Architecture (Current · v1.7.0)
+# Nymir Technical Architecture (Current · v1.8.0)
 
 > This document describes the **real current structure** and stays in sync with the code. Security trust boundaries are defined in [THREAT_MODEL.md](./THREAT_MODEL.md); "why we did it this way" lives in [adr/](./adr/README.md).
 > Maintenance rule: any file added/moved/changed in responsibility must be reflected here.
@@ -150,7 +150,7 @@ BurnConfig = { mode, burnAfter?, burnAt? }
 
 ## 7. Testing
 
-- **Entry**: `npm test` (Vitest), 317 cases, 36 test files (`src/__tests__/`), covering: crypto/e2ee/fingerprint/keyRotation/burn/db/backup/base64/id/noise/signaling/outOfBand, and UI components (BurnTimer/ConfirmDialog/ErrorBoundary/GlassCard), etc.
+- **Entry**: `npm test` (Vitest), 319 cases, 37 test files (`src/__tests__/`), covering: crypto/e2ee/fingerprint/keyRotation/burn/db/backup/base64/id/noise/signaling/outOfBand, and UI components (BurnTimer/ConfirmDialog/ErrorBoundary/GlassCard/SettingsPage), etc.
 - **Gates**: `npm run typecheck` (tsc) + `npm run lint` (oxlint), CI (GitHub Actions).
 - Security invariants are preferably locked in as tests (threat model §9: before changing security code, consult the threat model).
 

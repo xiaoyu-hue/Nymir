@@ -63,5 +63,5 @@
 ## 验证
 
 - `npm run build` / `typecheck` / `lint` 通过；
-- 全量测试（317+ 用例）通过，含 `OutOfBandVerify.test.tsx`、`burn.test.ts`（scheduled 段保留）；
+- 全量测试（319 用例）通过，含 `OutOfBandVerify.test.tsx`、`SettingsPage.test.tsx`、`burn.test.ts`（scheduled 段保留）；
 - 真机/模拟器视口（390×844）下验证：底部 Tab 切换、设置页入口、Welcome 首次引导、身份核对抽屉建连前可用。

@@ -3,7 +3,7 @@
 <img src="https://img.shields.io/github/v/release/xiaoyu-hue/Nymir?style=for-the-badge" alt="release">
 <img src="https://img.shields.io/github/last-commit/xiaoyu-hue/Nymir?style=for-the-badge" alt="last commit">
 <img src="https://img.shields.io/badge/license-AGPL--3.0-22c55e?style=for-the-badge" alt="license">
-<img src="https://img.shields.io/badge/tests-317_passing-2ea44f?style=for-the-badge" alt="tests">
+<img src="https://img.shields.io/badge/tests-319_passing-2ea44f?style=for-the-badge" alt="tests">
 <img src="https://github.com/xiaoyu-hue/Nymir/actions/workflows/test-gate.yml/badge.svg" alt="CI">
 <img src="https://github.com/xiaoyu-hue/Nymir/actions/workflows/deploy.yml/badge.svg" alt="Deploy">
 
@@ -91,6 +91,21 @@ To be honest, Nymir is not a universal privacy tool. Please think twice or choos
 
 ---
 
+## ✦ UI & Experience (v1.8.0 mobile "big-tech" overhaul)
+
+In **v1.8.0**, Nymir completed a round of **mobile UI "big-tech" overhaul (M1–M7)**, bringing the on-phone experience closer to mainstream IM apps:
+
+- **Bottom Tab navigation**: a persistent `BottomTabBar` with main sections "Chats / Settings" — lower learning curve, more natural gestures
+- **Unified sub-page container**: backups, signaling, about, and identity verification now live in a `BottomSheet` half-screen drawer — swipe-down to dismiss, conversation context preserved, no more full-screen jump cuts
+- **Icon system upgrade**: `lucide-react` replaces ad-hoc emoji icons — crisp vectors, themeable, consistent across platforms
+- **Toned-down glassmorphism**: reduced blur radius — a step back from pure aesthetics toward long-session readability
+- **First-run Welcome page**: shown only on first launch (no lock password set); three cards explain the core pitch "no backend / E2EE / read-and-burn" before password setup
+- **Pre-connection identity verification (M7)**: a new "Identity & Security Code" entry in Settings lets you share your identity string / QR code **before connecting**, or paste a peer's string to compute the security code instantly — no peer online, no room joined, MITM blocked first (see [ADR-0010](./docs/adr/0010-mobile-ui-redesign.md))
+
+> The overhaul only touches the front-end UI and a few dependencies — **the crypto / protocol layer is untouched**, so the security model is identical to previous versions.
+
+---
+
 ## ✦ Roadmap
 
 ### Completed
@@ -108,11 +123,10 @@ To be honest, Nymir is not a universal privacy tool. Please think twice or choos
 - [x] Weak forward secrecy (one-shot ephemeral X25519 keys dropped on disconnect, ADR-008)
 - [x] Configurable / self-hostable signaling (3 strategies' URLs + redundancy editable in Settings, ADR-009)
 - [x] Pre-connection offline identity verification (export/paste identity string to compute security code, ADR-009)
+- [x] Mobile UI "big-tech" overhaul M1–M7 (bottom Tab nav / BottomSheet sub-pages / lucide icons / toned-down glassmorphism / first-run Welcome / pre-connection identity verification entry, v1.8.0)
 
 ### Planned
 
-- [x] Signaling de-dependency phase 1 (multi-relay redundancy + Nostr fallback chain, v1.5.0)
-- [x] QR offline pairing (scan code to join room, v1.6.0)
 - [ ] Search, voice, multi-device sync
 - [ ] Encrypted rendezvous (requires forking Trystero to change the Nostr coordination protocol)
 - [ ] Persist out-of-band verification result as "verified" (requires redesigning the TOFU/rotation state machine)
@@ -142,6 +156,7 @@ Nymir stands on the shoulders of these open-source projects. Without them, a zer
 |---------|---------|-------|
 | [React](https://react.dev) | MIT | UI framework |
 | [React DOM](https://react.dev) | MIT | DOM rendering |
+| [lucide-react](https://lucide.dev) | ISC | Vector icons (replaces emoji, themeable) |
 | [@trystero-p2p/mqtt](https://www.npmjs.com/package/@trystero-p2p/mqtt) | MIT | P2P signaling (MQTT channel) |
 | [@trystero-p2p/torrent](https://www.npmjs.com/package/@trystero-p2p/torrent) | MIT | P2P signaling (WebTorrent channel) |
 | [@trystero-p2p/nostr](https://www.npmjs.com/package/@trystero-p2p/nostr) | MIT | P2P signaling (Nostr channel) |
@@ -155,7 +170,7 @@ Nymir stands on the shoulders of these open-source projects. Without them, a zer
 |---------|---------|-------|
 | [TypeScript](https://www.typescriptlang.org) | Apache-2.0 | Type system |
 | [Vite](https://vite.dev) | MIT | Build tool |
-| [Vitest](https://vitest.dev) | MIT | Test framework (317 tests) |
+| [Vitest](https://vitest.dev) | MIT | Test framework (319 tests) |
 | [Oxlint](https://oxc.rs) | MIT | Linter (CI gate) |
 | [vite-plugin-pwa](https://vite-pwa-org.netlify.app) | MIT | PWA support (installable, offline-capable) |
 | [jsdom](https://github.com/jsdom/jsdom) | MIT | DOM test environment |

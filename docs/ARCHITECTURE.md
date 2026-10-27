@@ -1,4 +1,4 @@
-# Nymir 技术架构（当前 · v1.7.0）
+# Nymir 技术架构（当前 · v1.8.0）
 
 > 本文档描述**当前代码真实结构**，与代码同步维护。安全信任边界以 [THREAT_MODEL.md](./THREAT_MODEL.md) 为准；"为什么这样设计"见 [adr/](./adr/README.md)。
 > 维护约定：任何文件新增/移动/职责变化，必须同步更新本文档。
@@ -145,7 +145,7 @@ BurnConfig = { mode, burnAfter?, burnAt? }
 
 ## 7. 测试体系
 
-- **入口**：`npm test`（Vitest），317 项，36 个测试文件（`src/__tests__/`），覆盖：crypto/e2ee/fingerprint/keyRotation(+Verifiable)/burn/db/backup/base64/id/噪声/signaling/outOfBand、UI 组件（BurnTimer/ConfirmDialog/ErrorBoundary/GlassCard）等。
+- **入口**：`npm test`（Vitest），319 项，37 个测试文件（`src/__tests__/`），覆盖：crypto/e2ee/fingerprint/keyRotation(+Verifiable)/burn/db/backup/base64/id/噪声/signaling/outOfBand、UI 组件（BurnTimer/ConfirmDialog/ErrorBoundary/GlassCard/SettingsPage）等。
 - **配套**：`npm run typecheck`（tsc）+ `npm run lint`（oxlint），CI 门禁（GitHub Actions）。
 - 安全不变量优先以测试固化（威胁模型 §9：改安全代码先对照威胁模型）。
 

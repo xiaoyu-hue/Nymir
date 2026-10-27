@@ -4,7 +4,7 @@
 <img src="https://img.shields.io/github/last-commit/xiaoyu-hue/Nymir?style=for-the-badge" alt="last commit">
 <img src="https://img.shields.io/badge/license-AGPL--3.0-22c55e?style=for-the-badge" alt="license">
 <img src="https://img.shields.io/badge/docs-CC%20BY--NC--SA%204.0-8B5CF6?style=for-the-badge" alt="docs-license">
-<img src="https://img.shields.io/badge/tests-317_passing-2ea44f?style=for-the-badge" alt="tests">
+<img src="https://img.shields.io/badge/tests-319_passing-2ea44f?style=for-the-badge" alt="tests">
 <img src="https://github.com/xiaoyu-hue/Nymir/actions/workflows/test-gate.yml/badge.svg" alt="CI">
 <img src="https://github.com/xiaoyu-hue/Nymir/actions/workflows/osv-scanner.yml/badge.svg" alt="OSV-Scanner">
 <img src="https://github.com/xiaoyu-hue/Nymir/actions/workflows/deploy.yml/badge.svg" alt="Deploy">
@@ -103,6 +103,21 @@ Nymir **不是完全去中心化**的。数据存储与消息传输是本地/P2P
 
 ---
 
+## ✦ 界面与体验（v1.8.0 移动端大厂化改造）
+
+Nymir 在 **v1.8.0** 完成了一轮**移动端体验的大厂化改造（M1–M7）**，让产品在手机上更接近主流 IM 的体感：
+
+- **底部 Tab 导航**：常驻 `BottomTabBar`，主分区「对话 / 设置」，降低学习成本，操作更顺手
+- **统一二级页面容器**：备份、信令、关于、身份核对等二级面统一用 `BottomSheet` 半屏抽屉承载，支持下划关闭、保持对话上下文，告别全屏跳转打断
+- **图标体系升级**：引入 `lucide-react` 替换散落的 emoji 图标，矢量清晰、可主题着色、跨平台一致
+- **玻璃拟态收敛**：降低模糊半径，在质感与正文可读性之间回退一步，长时间阅读不刺眼
+- **首次引导页（Welcome）**：仅首次（未设置锁屏密码）展示，用三张卡片讲清「无后端 / 端到端加密 / 阅后即焚」核心卖点，再进入密码设置
+- **身份核对前置（M7）**：设置页新增「身份与安全码」入口，可在**建连前**分享身份串 / 二维码、或粘贴对方串即时算出安全码——无需对方在线、无需加入房间，先把中间人防住（详见 [ADR-0010](./docs/adr/0010-mobile-ui-redesign.md)）
+
+> 改造只动了前端 UI 与少量依赖，**不触碰加密 / 协议层**，安全模型与之前版本完全一致。
+
+---
+
 ## ✦ 路线图
 
 ### 已完成 ✅
@@ -120,11 +135,10 @@ Nymir **不是完全去中心化**的。数据存储与消息传输是本地/P2P
 - [x] 弱前向保密（一次性临时 X25519 密钥，断连丢弃，ADR-008）
 - [x] 信令节点可自配 / 自托管（三策略 URL + 冗余数可在设置中修改，ADR-009）
 - [x] 建连前离线身份核对（导出/粘贴身份串算安全码，ADR-009）
+- [x] 移动端大厂化改造 M1–M7（底部 Tab 导航 / BottomSheet 二级页 / lucide 图标 / 玻璃拟态收敛 / 首次引导 / 身份核对前置，v1.8.0）
 
 ### 计划中 🚀
 
-- [x] 信令去依赖第一阶段（多信令冗余 + Nostr 降级链，v1.5.0）
-- [x] 二维码离线配对（扫码加入房间，v1.6.0）
 - [ ] 消息搜索、语音、多设备同步
 - [ ] 加密 rendezvous（需 fork Trystero 改造 Nostr 协调协议）
 - [ ] 带外核对结果持久化为「已验证」（需重设计 TOFU/轮换状态机）
@@ -161,6 +175,7 @@ Nymir 站在这些开源项目的肩膀上。没有它们，一个零编程基�
 |------|------|------|
 | [React](https://react.dev) | MIT | UI 框架 |
 | [React DOM](https://react.dev) | MIT | DOM 渲染 |
+| [lucide-react](https://lucide.dev) | ISC | 矢量图标（替代 emoji，可主题着色） |
 | [@trystero-p2p/mqtt](https://www.npmjs.com/package/@trystero-p2p/mqtt) | MIT | P2P 信令（MQTT 通道） |
 | [@trystero-p2p/torrent](https://www.npmjs.com/package/@trystero-p2p/torrent) | MIT | P2P 信令（WebTorrent 通道） |
 | [@trystero-p2p/nostr](https://www.npmjs.com/package/@trystero-p2p/nostr) | MIT | P2P 信令（Nostr 通道，降级策略） |
@@ -174,7 +189,7 @@ Nymir 站在这些开源项目的肩膀上。没有它们，一个零编程基�
 |------|------|------|
 | [TypeScript](https://www.typescriptlang.org) | Apache-2.0 | 类型系统 |
 | [Vite](https://vite.dev) | MIT | 构建工具 |
-| [Vitest](https://vitest.dev) | MIT | 测试框架（317 个测试） |
+| [Vitest](https://vitest.dev) | MIT | 测试框架（319 个测试） |
 | [Oxlint](https://oxc.rs) | MIT | 代码检查（CI 门禁） |
 | [vite-plugin-pwa](https://vite-pwa-org.netlify.app) | MIT | PWA 支持（可安装、离线可用） |
 | [jsdom](https://github.com/jsdom/jsdom) | MIT | DOM 测试环境 |
