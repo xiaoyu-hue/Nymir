@@ -97,6 +97,17 @@ export default function SettingsPage() {
             {t.settings.aboutBody}
           </p>
           <p className="settings-about-privacy">{t.settings.privacy}</p>
+          <p className="settings-about-source">
+            {t.settings.sourceNote}{' '}
+            <a
+              className="settings-about-link"
+              href="https://github.com/xiaoyu-hue/Nymir"
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              {t.settings.sourceCode}
+            </a>
+          </p>
         </div>
       </BottomSheet>
     </div>
