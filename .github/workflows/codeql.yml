@@ -2,9 +2,9 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
   schedule:
     # 每周一凌晨 3 点例行扫描（GitHub 公共仓库免费）
     - cron: '0 3 * * 1'
