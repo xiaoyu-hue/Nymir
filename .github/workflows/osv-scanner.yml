@@ -2,7 +2,7 @@ name: "OSV-Scanner"
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
   schedule:
     # 每周一凌晨 3 点例行扫描

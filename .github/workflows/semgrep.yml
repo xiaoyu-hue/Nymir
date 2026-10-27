@@ -2,7 +2,7 @@ name: "Semgrep"
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
   schedule:
     # 每周二凌晨 3 点例行扫描
