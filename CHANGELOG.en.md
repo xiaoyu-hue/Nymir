@@ -14,6 +14,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **CI red X (Deploy to GitHub Pages)**: after the default branch was renamed `master` -> `main`, the `github-pages` environment deployment branch policy still allowed only `master`, so the deploy job was rejected (`Branch "main" is not allowed to deploy to github-pages`). Added `main` to the policy and removed the stale `master` entry
 - **E2E Smoke hang**: `npx playwright install --with-deps` occasionally stalls on the apt mirror and filled the 20-minute job timeout, cancelling the whole run; now Playwright browsers are cached, the install step is bounded by `timeout`, and the job timeout is tightened to 15 minutes
 - **E2E WebKit missing system libraries (root-cause fix)**: the runner's apt mirror only fetched 10 packages in 5.5 minutes, so `install-deps` installed nothing within its 4-minute cap and all 6 WebKit tests failed (missing `libgstcodecparsers-1.0.so.0`, `libflite.so.1`, `libmanette-0.2.so.0`, `libavif.so.16`, `libGLESv2.so.2`, ...). E2E now runs inside the official `mcr.microsoft.com/playwright:v1.63.0-noble` image — browsers and system libraries are preinstalled and apt is never touched; `continue-on-error` is removed so a real E2E failure actually shows up
+- **Cloudflare Pages white screen**: the Pages project at `https://nymir.pages.dev/` had no build configured and published the repository root as static assets, so `index.html` pointed at the dev entry `/src/main.tsx`, which browsers cannot execute and `#root` stayed empty (`/manifest.webmanifest` was also served the SPA fallback HTML). Fix: set the Pages project's Build command to `npm run build` and the output directory to `dist`; no `BASE_PATH` is needed since its default `/` matches the domain root (only GitHub Pages' `/Nymir/` subpath needs `BASE_PATH=/Nymir/`)
+
+### 📝 Docs
+
+- **Site role swap**: Cloudflare Pages (https://nymir.pages.dev/) is now the primary site and GitHub Pages (https://xiaoyu-hue.github.io/Nymir/) is the mirror; `index.html` gained `<link rel="canonical">` and `og:url` pointing at the primary site, and the README live-demo links were swapped to match
 
 ---
 
