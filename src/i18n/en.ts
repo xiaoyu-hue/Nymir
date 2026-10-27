@@ -120,6 +120,8 @@ const en: Translations = {
     backupDesc: 'Export or import local encrypted backup',
     signaling: 'Signaling',
     signalingDesc: 'Customize discovery node endpoints',
+    identity: 'Identity & Safety Code',
+    identityDesc: 'Verify peer identity before connecting, to defeat man-in-the-middle',
     about: 'About Nymir',
     aboutTitle: 'About security',
     aboutBody: 'Nymir is a backend-free, peer-to-peer (P2P) anonymous encrypted chat. Messages are end-to-end encrypted and stored only locally in your browser; no server retains them. The signaling server only helps discover and connect peers, and never sees message plaintext.',

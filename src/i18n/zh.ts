@@ -118,6 +118,8 @@ const zh = {
     backupDesc: '导出或导入本地加密备份',
     signaling: '信令设置',
     signalingDesc: '自定义发现节点的接入点',
+    identity: '身份与安全码',
+    identityDesc: '建连前核对对方身份，防范中间人攻击',
     about: '关于 Nymir',
     aboutTitle: '关于安全',
     aboutBody: 'Nymir 是一个无后端、点对点（P2P）的匿名加密聊天工具。消息端到端加密，仅在你的浏览器本地存储，不经由任何服务器留存。信令服务器只负责“发现对方并建连”，不接触消息明文。',

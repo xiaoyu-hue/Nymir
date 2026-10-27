@@ -22,6 +22,7 @@
 | [ADR-007](./0007-verifiable-key-rotation.md) | 可验证密钥轮换（签名衔接协议，旧钥签新钥） | Accepted |
 | [ADR-008](./0008-ephemeral-forward-secrecy.md) | 临时 X25519 会话公钥，提供弱前向保密 | Accepted |
 | [ADR-009](./0009-self-hosted-signaling-and-oob-verification.md) | 信令节点可自配 / 自托管 + 带外身份核对 | Accepted |
+| [ADR-0010](./0010-mobile-ui-redesign.md) | 移动端界面大厂化改造（M1–M7）+ 保留 BurnMode.SCHEDULED | Accepted |
 
 ---
 
