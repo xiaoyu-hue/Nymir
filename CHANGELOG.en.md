@@ -12,7 +12,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### 🐛 Fixed
 
 - **CI red X (Deploy to GitHub Pages)**: after the default branch was renamed `master` -> `main`, the `github-pages` environment deployment branch policy still allowed only `master`, so the deploy job was rejected (`Branch "main" is not allowed to deploy to github-pages`). Added `main` to the policy and removed the stale `master` entry
-- **E2E Smoke hang**: `npx playwright install --with-deps` occasionally stalls on the apt mirror and filled the 20-minute job timeout, cancelling the whole run; now Playwright browsers are cached (`actions/cache`), the install step is bounded by `timeout`, and the job timeout is tightened to 15 minutes
+- **E2E Smoke hang**: `npx playwright install --with-deps` occasionally stalls on the apt mirror and filled the 20-minute job timeout, cancelling the whole run; now Playwright browsers are cached, the install step is bounded by `timeout`, and the job timeout is tightened to 15 minutes
+- **E2E WebKit missing system libraries (root-cause fix)**: the runner's apt mirror only fetched 10 packages in 5.5 minutes, so `install-deps` installed nothing within its 4-minute cap and all 6 WebKit tests failed (missing `libgstcodecparsers-1.0.so.0`, `libflite.so.1`, `libmanette-0.2.so.0`, `libavif.so.16`, `libGLESv2.so.2`, ...). E2E now runs inside the official `mcr.microsoft.com/playwright:v1.63.0-noble` image — browsers and system libraries are preinstalled and apt is never touched; `continue-on-error` is removed so a real E2E failure actually shows up
 
 ---
 
