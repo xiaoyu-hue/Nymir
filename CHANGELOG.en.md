@@ -7,6 +7,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## Unreleased
+
+### 🐛 Fixed
+
+- **CI red X (Deploy to GitHub Pages)**: after the default branch was renamed `master` -> `main`, the `github-pages` environment deployment branch policy still allowed only `master`, so the deploy job was rejected (`Branch "main" is not allowed to deploy to github-pages`). Added `main` to the policy and removed the stale `master` entry
+- **E2E Smoke hang**: `npx playwright install --with-deps` occasionally stalls on the apt mirror and filled the 20-minute job timeout, cancelling the whole run; now Playwright browsers are cached (`actions/cache`), the install step is bounded by `timeout`, and the job timeout is tightened to 15 minutes
+
+---
+
 ## 1.8.0 - 2026-10-27 (Mobile UI polish: big-company feel, M1–M7)
 
 ### ✨ Features

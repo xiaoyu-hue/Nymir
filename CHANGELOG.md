@@ -7,6 +7,15 @@
 
 ---
 
+## 未发布
+
+### 🐛 修复
+
+- **CI 红叉（Deploy to GitHub Pages）**：仓库默认分支由 `master` 改名为 `main` 后，`github-pages` 环境的部署分支白名单仍只允许 `master`，导致 deploy job 被保护规则拒绝（`Branch "main" is not allowed to deploy to github-pages`）。已在仓库设置中把 `main` 加入白名单并移除失效的 `master` 条目
+- **E2E Smoke 挂死**：`npx playwright install --with-deps` 偶发卡在 apt 源下载，把 20min 的 job 超时跑满后整轮被 cancelled；改为缓存 Playwright 浏览器（`actions/cache`）、用 `timeout` 给安装步骤兜底，并把 job 超时收敛到 15min
+
+---
+
 ## 1.8.0 - 2026-10-27（移动端大厂化改造 M1–M7）
 
 ### ✨ 新功能
