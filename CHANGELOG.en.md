@@ -7,7 +7,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## Unreleased
+## 1.9.0 - 2026-10-29
 
 ### ✨ Features
 
@@ -19,6 +19,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **E2E Smoke hang**: `npx playwright install --with-deps` occasionally stalls on the apt mirror and filled the 20-minute job timeout, cancelling the whole run; now Playwright browsers are cached, the install step is bounded by `timeout`, and the job timeout is tightened to 15 minutes
 - **E2E WebKit missing system libraries (root-cause fix)**: the runner's apt mirror only fetched 10 packages in 5.5 minutes, so `install-deps` installed nothing within its 4-minute cap and all 6 WebKit tests failed (missing `libgstcodecparsers-1.0.so.0`, `libflite.so.1`, `libmanette-0.2.so.0`, `libavif.so.16`, `libGLESv2.so.2`, ...). E2E now runs inside the official `mcr.microsoft.com/playwright:v1.63.0-noble` image — browsers and system libraries are preinstalled and apt is never touched; `continue-on-error` is removed so a real E2E failure actually shows up
 - **Cloudflare Pages white screen**: the Pages project at `https://nymir.pages.dev/` had no build configured and published the repository root as static assets, so `index.html` pointed at the dev entry `/src/main.tsx`, which browsers cannot execute and `#root` stayed empty (`/manifest.webmanifest` was also served the SPA fallback HTML). Fix: set the Pages project's Build command to `npm run build` and the output directory to `dist`; no `BASE_PATH` is needed since its default `/` matches the domain root (only GitHub Pages' `/Nymir/` subpath needs `BASE_PATH=/Nymir/`)
+- **Dependency scan red cross (OSV)**: `deepmerge` (pulled in transitively via `vite-plugin-pwa` → `workbox-build` → `@rollup/plugin-node-resolve`, a build-time devDependency only) was flagged by OSV as GHSA-gcqx-w48m-w2h4 (LOW, prototype pollution). OSV marks it `fixed=[]` (no patched version upstream), so it cannot be resolved by upgrading; and `deepmerge` only runs at build time — it never ships to users and never touches the runtime or crypto layer. It is now listed as an "accepted risk" in `osv-scanner.toml`, clearing the CI red cross.
 
 ### 📝 Docs
 

@@ -1,0 +1,11 @@
+# OSV-Scanner 配置
+# 该文件用于把经过评估、确认为「已接受的风险（accepted risk）」的漏洞从 CI 阻断中排除。
+# 被忽略的漏洞不会让扫描以非零状态退出，从而消除 CI 红叉；但漏洞本身仍会被记录与展示。
+
+[[ignore]]
+id = "GHSA-gcqx-w48m-w2h4"
+# deepmerge 经由 vite-plugin-pwa(devDependency, 仅构建期) → workbox-build → @rollup/plugin-node-resolve 传递引入，
+# 漏洞等级 LOW（mergeObject 原型链污染）。该依赖仅在构建阶段运行，不进入发给用户的产物、不触及运行时与加密层；
+# 上游在 OSV 中标记为 fixed=[]（无已修复版本），无法通过升级消除。经评估为构建期、低影响、不可修复的依赖，
+# 作为已接受的风险忽略，避免无意义地阻断 CI。
+reason = "deepmerge 仅为构建期传递依赖(vite-plugin-pwa)，LOW 级原型链污染且仅构建期生效，不进用户产物、不碰运行时/加密层；上游无已修复版本(fixed=[])，评估为已接受风险。"

@@ -7,7 +7,7 @@
 
 ---
 
-## 未发布
+## 1.9.0 - 2026-10-29
 
 ### ✨ 新功能
 
@@ -19,6 +19,7 @@
 - **E2E Smoke 挂死**：`npx playwright install --with-deps` 偶发卡在 apt 源下载，把 20min 的 job 超时跑满后整轮被 cancelled；改为缓存 Playwright 浏览器、用 `timeout` 给安装步骤兜底，并把 job 超时收敛到 15min
 - **E2E WebKit 缺少系统库（根治）**：runner 的 apt 源实测 5.5 分钟只下完 10 个包，`install-deps` 在 4 分钟上限内一个包都没装上，导致 WebKit 两端 6 个用例全挂（缺 `libgstcodecparsers-1.0.so.0`、`libflite.so.1`、`libmanette-0.2.so.0`、`libavif.so.16`、`libGLESv2.so.2` 等）。改为在官方镜像 `mcr.microsoft.com/playwright:v1.63.0-noble` 内运行 E2E —— 浏览器与系统库全部预装、不再触碰 apt；并移除 `continue-on-error`，让 E2E 真失败时能被看见
 - **Cloudflare Pages 白屏**：`https://nymir.pages.dev/` 的 Pages 项目没有配置构建，直接把仓库根目录当静态资源发布，`index.html` 里引用的是开发入口 `/src/main.tsx`，浏览器无法执行，`#root` 永远是空的（`/manifest.webmanifest` 也被 SPA 兜底成了 HTML）。修复：Pages 项目把 Build command 设为 `npm run build`、输出目录设为 `dist`；不需要设 `BASE_PATH`，其默认 `/` 正好匹配域名根路径（只有 GitHub Pages 的 `/Nymir/` 子路径才需要 `BASE_PATH=/Nymir/`）
+- **依赖扫描红叉（OSV）**：`deepmerge`（经 `vite-plugin-pwa`→`workbox-build`→`@rollup/plugin-node-resolve` 传递引入，仅构建期 devDependency）被 OSV 标记为 GHSA-gcqx-w48m-w2h4（LOW，原型链污染）。该漏洞在 OSV 中标记为 `fixed=[]`（上游无已修复版本），无法通过升级消除；且 `deepmerge` 仅在构建阶段运行，不进入用户产物、不触及运行时与加密层。已在 `osv-scanner.toml` 将其列为「已评估并接受的风险（accepted risk）」，消除 CI 红叉。
 
 ### 📝 文档
 
