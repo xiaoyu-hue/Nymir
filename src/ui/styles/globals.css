@@ -1513,6 +1513,100 @@ select {
   word-break: break-all;
 }
 
+/* ========== 关于抽屉：第三方开源致谢（可折叠） ========== */
+.settings-about-ack-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: var(--bg-secondary, rgba(255, 255, 255, 0.04));
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.settings-about-ack-toggle:hover {
+  border-color: var(--accent);
+}
+
+.settings-about-ack-chevron {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+}
+
+.settings-about-ack-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.settings-about-ack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 4px 4px 0;
+}
+
+.settings-about-ack-desc {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.settings-about-ack-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-about-ack-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 4px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.settings-about-ack-item:last-child {
+  border-bottom: none;
+}
+
+.settings-about-ack-link {
+  color: var(--accent);
+  font-size: 0.82rem;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.settings-about-ack-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.settings-about-ack-license {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg-secondary, rgba(255, 255, 255, 0.06));
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
 /* ========== 信令设置表单（BottomSheet 内） ========== */
 .signaling-body {
   display: flex;

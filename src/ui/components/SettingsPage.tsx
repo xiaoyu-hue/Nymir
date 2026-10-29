@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Lock, Languages, Database, Radio, ShieldCheck, Fingerprint, ChevronRight, Info } from 'lucide-react'
+import { Lock, Languages, Database, Radio, ShieldCheck, Fingerprint, ChevronRight, ChevronDown, Info } from 'lucide-react'
 import { securityManager } from '../../security'
 import { useI18n } from '../../i18n'
+import { runtimeDependencies } from '../../thirdParty'
 import BackupPanel from './BackupPanel'
 import SignalingSettings from './SignalingSettings'
 import OutOfBandVerify from './OutOfBandVerify'
@@ -12,6 +13,7 @@ export default function SettingsPage() {
   const [showBackup, setShowBackup] = useState(false)
   const [showSignaling, setShowSignaling] = useState(false)
   const [showAbout, setShowAbout] = useState(false)
+  const [showAck, setShowAck] = useState(false)
   const [showIdentity, setShowIdentity] = useState(false)
 
   return (
@@ -108,6 +110,39 @@ export default function SettingsPage() {
               {t.settings.sourceCode}
             </a>
           </p>
+
+          <button
+            type="button"
+            className="settings-about-ack-toggle"
+            onClick={() => setShowAck((v) => !v)}
+            aria-expanded={showAck}
+          >
+            <span>{t.settings.acknowledgments}</span>
+            <ChevronDown
+              className={`settings-about-ack-chevron ${showAck ? 'is-open' : ''}`}
+              aria-hidden="true"
+            />
+          </button>
+          {showAck && (
+            <div className="settings-about-ack">
+              <p className="settings-about-ack-desc">{t.settings.acknowledgmentsDesc}</p>
+              <ul className="settings-about-ack-list">
+                {runtimeDependencies.map((dep) => (
+                  <li key={dep.name} className="settings-about-ack-item">
+                    <a
+                      className="settings-about-ack-link"
+                      href={dep.url}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      {dep.name}
+                    </a>
+                    <span className="settings-about-ack-license">{dep.license}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </BottomSheet>
     </div>

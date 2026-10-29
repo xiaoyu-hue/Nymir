@@ -9,6 +9,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### ✨ Features
+
+- **Open Source Acknowledgments on About page**: Settings → About now has a collapsible section listing the 9 runtime dependencies with their licenses (React / React DOM / lucide-react / @trystero-p2p trio / idb / qrcode / jsQR), kept in sync with the README "Acknowledgments & Dependencies" section and available in both Chinese and English. The data source lives in `src/thirdParty.ts` so future maintenance touches only one place. No new dependencies; the crypto layer is untouched.
+
 ### 🐛 Fixed
 
 - **CI red X (Deploy to GitHub Pages)**: after the default branch was renamed `master` -> `main`, the `github-pages` environment deployment branch policy still allowed only `master`, so the deploy job was rejected (`Branch "main" is not allowed to deploy to github-pages`). Added `main` to the policy and removed the stale `master` entry
