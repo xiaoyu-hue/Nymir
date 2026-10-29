@@ -9,6 +9,10 @@
 
 ## 未发布
 
+### ✨ 新功能
+
+- **关于页新增「开源致谢」**：设置 → 关于 抽屉内新增可折叠的第三方开源组件致谢区块，列出 9 个运行时依赖及其许可证（React / React DOM / lucide-react / @trystero-p2p 三件套 / idb / qrcode / jsQR），与 README「致谢与依赖」保持一致，中英双语。数据源抽至 `src/thirdParty.ts`，后续维护只改一处；未引入新依赖，不触碰加密层。
+
 ### 🐛 修复
 
 - **CI 红叉（Deploy to GitHub Pages）**：仓库默认分支由 `master` 改名为 `main` 后，`github-pages` 环境的部署分支白名单仍只允许 `master`，导致 deploy job 被保护规则拒绝（`Branch "main" is not allowed to deploy to github-pages`）。已在仓库设置中把 `main` 加入白名单并移除失效的 `master` 条目

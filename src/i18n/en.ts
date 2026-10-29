@@ -129,6 +129,8 @@ const en: Translations = {
     version: 'Version',
     sourceCode: 'Source code (AGPL-3.0)',
     sourceNote: 'Released under AGPL-3.0. The Corresponding Source is available here; if you modify it and offer it over a network, section 13 requires you to offer the source too.',
+    acknowledgments: 'Open Source Acknowledgments',
+    acknowledgmentsDesc: 'Nymir is built on top of these open source projects. Thanks to their authors and communities.',
   },
   security: {
     setupTitle: 'Set Security Password',

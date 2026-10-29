@@ -127,6 +127,8 @@ const zh = {
     version: '版本',
     sourceCode: '查看源码（AGPL-3.0）',
     sourceNote: '本应用以 AGPL-3.0 发布，完整对应源码可在此获取；若你修改后通过网络向他人提供服务，请同样按第 13 条开放源码。',
+    acknowledgments: '开源致谢',
+    acknowledgmentsDesc: 'Nymir 建立在以下开源项目之上，感谢它们的作者与社区。',
   },
   security: {
     setupTitle: '设置安全密码',
